@@ -1539,7 +1539,7 @@ const SVG = {   // DRAWING
         "orangered", "maroon", "yellow"],
     TYPES_COLOR: {
         "U": "black",
-        "F": "lightgray",
+        "F": "gray",
         "M": "red",
         "V": "blue",
         "B": "black",
