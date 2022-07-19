@@ -9,7 +9,7 @@
     <div>Import 
         <input type="file" id="import-file"/>
     </div>
-    <div id="fold-controls">
+    <div id="fold-controls" style="display:none">
         Text <input type="checkbox" id="display-text">
         Limit <select id="limit-select">
             <option value="1">1</option>
@@ -18,11 +18,11 @@
         </select>
         <input type="button" id="fold_button" value="Fold Model">
         <input type="button" id="export_button" value="Export">
-        <a download="out.fold" id="fold_link">FOLD</a>
-        <a download="out.svg" id="svg_link">SVG</a>
-        <a download="out.txt" id="log_link">LOG</a>
+        <a download="out.fold" id="fold_link" style="display:none">FOLD</a>
+        <a download="out.svg"  id="svg_link"  style="display:none">SVG</a>
+        <a download="out.txt"  id="log_link"  style="display:none">LOG</a>
     </div>
-    <div id="state-display">
+    <div id="state-display"style=" display:none">
         <div id="num-states" style="display:inline-block"></div>
         <div id="state-controls">
             Flip <input type="checkbox" id="flip">

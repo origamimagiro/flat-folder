@@ -8,15 +8,12 @@ window.onload = () => {     // entry point
             file_reader.readAsText(e.target.files[0]);
         }
     };
-    SVG.init("main", {h: 700, w: 700, x:   0, y:   0, s:  700, m:  0}); 
-    SVG.init("flat", {h: 350, w: 350, x:   0, y:   0, s: 1000, m: 50}); 
-    SVG.init("cell", {h: 350, w: 350, x: 350, y:   0, s: 1000, m: 50}); 
-    SVG.init("xray", {h: 350, w: 350, x:   0, y: 350, s: 1000, m: 50}); 
-    SVG.init("fold", {h: 350, w: 350, x: 350, y: 350, s: 1000, m: 50}); 
-    for (const id of ["fold-controls", "state-display", "fold_link", 
-            "svg_link", "log_link"]) {
-        document.getElementById(id).style.display = "none";
-    }
+    const [w, b, s] = [350, 50, SVG.SCALE];
+    SVG.init("main", {h: 2*w, w: 2*w, x: 0, y: 0, s: 2*w, m: 0}); 
+    SVG.init("flat", {h:   w, w:   w, x: 0, y: 0, s:   s, m: b}); 
+    SVG.init("cell", {h:   w, w:   w, x: w, y: 0, s:   s, m: b}); 
+    SVG.init("xray", {h:   w, w:   w, x: 0, y: w, s:   s, m: b}); 
+    SVG.init("fold", {h:   w, w:   w, x: w, y: w, s:   s, m: b}); 
 };
 
 const process_file = (e) => {
