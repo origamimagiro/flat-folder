@@ -1036,7 +1036,7 @@ const IO = {    // INPUT-OUTPUT
                 line.set("type", 1);
                 for (const node of opx_line.children) {
                     const property = node.getAttribute("property");
-                    line.set(property, +node.firstElementChild.getInnerHTML());
+                    line.set(property, +node.firstElementChild.innerHTML);
                 }
                 const [x0, x1, y0, y1] = coords.map(c => line.get(c));
                 const type = map[line.get("type")];
