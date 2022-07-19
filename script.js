@@ -1000,14 +1000,13 @@ const X = {     // CONVERSION
 
 const IO = {    // INPUT-OUTPUT
     write: (FOLD) => {
-        const {V, EV, EA, FV, FO} = FOLD;
+        const {V, EV, EA, FV} = FOLD;
         const out = {
-            vertices_coords:  Vf,
+            vertices_coords:  V,
             edges_vertices:   EV,
             edges_assignment: EA,
             faces_vertices:   FV,
         };
-        if (FO != undefined) { out.faceOrders = FO; }
         const fold = new Blob([JSON.stringify(out, undefined, 2)], {
             type: "application/json"});
         const main = document.getElementById("main");
