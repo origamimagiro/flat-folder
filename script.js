@@ -1176,7 +1176,7 @@ const GUI = {   // INTERFACE
         if (VK != undefined) {
             const K = [];
             for (let i = 0; i < VK.length; ++i) {
-                if (VK[i] > 0.0000001) { K.push(V[i]); }
+                if (VK[i] > 0.0001) { K.push(V[i]); }
             }
             SVG.draw_points(svg, K, {fill: "red", r: 10});
         }
