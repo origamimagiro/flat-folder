@@ -731,7 +731,7 @@ const X = {     // CONVERSION
             }
         }
         for (const p of Vf) { if (p == undefined) { debugger; } }
-        return M.center_points(Vf, 0.5, 0.5);
+        return Vf;
     },
     EV_FV_2_EF: (EV, FV) => {
         const EV_map = new Map();
@@ -1739,23 +1739,10 @@ const M = {     // MATH
         }
         const x_diff = x_max - x_min;
         const y_diff = y_max - y_min;
-        const diff = (x_diff < y_diff) ? y_diff : x_diff;
-        return P.map(p => M.div(M.sub(p, [x_min, y_min]), diff));
-    },
-    center_points: (P, cx, cy) => {
-        const inf = Infinity;
-        let [min_x, min_y, max_x, max_y] = [inf, inf, -inf, -inf];
-        for (const p of P) {
-            if (p == undefined) { debugger; }
-            const [x, y] = p;
-            if (x < min_x) { min_x = x; }
-            if (y < min_y) { min_y = y; }
-            if (x > max_x) { max_x = x; }
-            if (y > max_y) { max_y = y; }
-        }
-        const dx = cx - (max_x + min_x)/2;
-        const dy = cy - (max_y + min_y)/2;
-        return P.map(([x, y]) => [x + dx, y + dy]);
+        const is_tall = (x_diff < y_diff);
+        const diff = is_tall ? y_diff : x_diff;
+        const off = [0.5 - x_diff/2/diff, 0.5 - y_diff/2/diff];
+        return P.map(p => M.add(M.div(M.sub(p, [x_min, y_min]), diff), off));
     },
     orientation: (P) => {
         const n = P.length;
