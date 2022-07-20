@@ -7,6 +7,9 @@
 </head>
 <body style="background:darkgray">
     <div>
+        <span style="font-family:sans-serif">
+            <b>Flat-Folder&nbsp;&nbsp;</b>
+        </span>
         <input type="file" id="import"/>
         <input type="button" id="export_button" value="Export" style="display:none">
         <div id="export" style="display:inline"></div>
@@ -14,11 +17,7 @@
     <div id="fold_controls" style="display:none">
         <input type="button" id="fold_button" value="Fold Model">
         <label for="limit_select">Limit</label>
-        <select id="limit_select">
-            <option value="all">All</option>
-            <option value="10">10</option>
-            <option value="1">1</option>
-        </select>
+        <select id="limit_select"></select>
         <label for="text">Text</label>
         <input type="checkbox" id="text">
         <div id="state_controls">
@@ -32,14 +31,15 @@
             <select id="state_select"></select>
         </div>
         <span id="num_states"></span>
-        <div>
-            <svg id="main">
-                <svg id="flat"></svg>
-                <svg id="cell"></svg>
-                <svg id="fold"></svg>
-            </svg>
-        </div>
     </div>
+    <div>
+        <svg id="main">
+            <svg id="flat"></svg>
+            <svg id="cell"></svg>
+            <svg id="fold"></svg>
+        </svg>
+    </div>
+    <div>© Jason S. Ku 2022</div>
     <script type="module" src="./script.js"></script>
 </body>
 </html>

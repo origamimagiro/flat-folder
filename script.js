@@ -31,6 +31,13 @@ const MAIN = {
                 svg.setAttribute(k, v);
             }
         }
+        const limit_select = document.getElementById("limit_select");
+        for (const val of ["all", "10", "1"]) {
+            const el = document.createElement("option");
+            el.setAttribute("value", val);
+            el.textContent = val;
+            limit_select.appendChild(el);
+        }
     },
     process_file: (e) => {
         NOTE.clear_log();
@@ -169,7 +176,7 @@ const MAIN = {
             };
             GUI.update_fold(FOLD, CELL, BF, GB, GA, GI);
             const comp_select = SVG.clear("component_select");
-            for (const opt of ["all", "none"]) {
+            for (const opt of ["none", "all"]) {
                 const el = document.createElement("option");
                 el.setAttribute("value", opt);
                 el.textContent = opt;
