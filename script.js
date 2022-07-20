@@ -1741,7 +1741,7 @@ const M = {     // MATH
         const y_diff = y_max - y_min;
         const is_tall = (x_diff < y_diff);
         const diff = is_tall ? y_diff : x_diff;
-        const off = [0.5 - x_diff/2/diff, 0.5 - y_diff/2/diff];
+        const off = M.sub([0.5, 0.5], M.div([x_diff, y_diff], 2*diff));
         return P.map(p => M.add(M.div(M.sub(p, [x_min, y_min]), diff), off));
     },
     orientation: (P) => {
