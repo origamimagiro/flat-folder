@@ -1205,7 +1205,6 @@ const GUI = {   // INTERFACE
         NOTE.time("Drawing cell");
         const svg = SVG.clear("cell");
         if (CELL == undefined) {
-            console.log("HERE");
             const {Vf, FV} = FOLD;
             const F = FV.map(f => M.expand(f, Vf));
             SVG.draw_polygons(svg, F, {opacity: 0.05});
@@ -1229,8 +1228,6 @@ const GUI = {   // INTERFACE
                 SVG.draw_points(svg, P, {text: visible, id: "p", fill: "green"});
             }
         }
-        console.log("Here");
-        console.log(svg.id);
         SVG.append("g", svg, {id: "cell_notes"});
         SVG.append("g", svg, {id: "constraint_notes"});
     },
@@ -1889,7 +1886,7 @@ const M = {     // MATH
                 }
             }
         }
-        console.assert("Error: input array shorter than requested length");
+        debugger; // input array shorter than requested length
     },
 };
 
