@@ -6,39 +6,40 @@
     <link rel="icon" href="./favicon.png">
 </head>
 <body style="background:darkgray">
-    <div>Import 
-        <input type="file" id="import-file"/>
+    <div>
+        <input type="file" id="import"/>
+        <input type="button" id="export_button" value="Export" style="display:none">
+        <div id="export" style="display:inline"></div>
     </div>
-    <div id="fold-controls" style="display:none">
-        Text <input type="checkbox" id="display-text">
-        Limit <select id="limit-select">
-            <option value="1">1</option>
-            <option value="10">10</option>
-            <option value="all">All</option>
-        </select>
+    <div id="fold_controls" style="display:none">
         <input type="button" id="fold_button" value="Fold Model">
-        <input type="button" id="export_button" value="Export">
-        <a download="out.fold" id="fold_link" style="display:none">FOLD</a>
-        <a download="out.svg"  id="svg_link"  style="display:none">SVG</a>
-        <a download="out.txt"  id="log_link"  style="display:none">LOG</a>
-    </div>
-    <div id="state-display"style=" display:none">
-        <div id="num-states" style="display:inline-block"></div>
-        <div id="state-controls">
-            Flip <input type="checkbox" id="flip">
-            <div style="display:inline-block" id="component-label">
-                Component
-            </div> 
-            <select id="component-select"></select>
-            State <select id="state-select"></select>
+        <label for="limit_select">Limit</label>
+        <select id="limit_select">
+            <option value="all">All</option>
+            <option value="10">10</option>
+            <option value="1">1</option>
+        </select>
+        <label for="text">Text</label>
+        <input type="checkbox" id="text">
+        <div id="state_controls">
+            <label for="flip">Flip</label>
+            <input type="checkbox" id="flip">
+            <label for="component_select">Component</label>
+            <select id="component_select"></select>
+        </div>
+        <div id="state_config" style="display:none">
+            <label for="state_select">State</label>
+            <select id="state_select"></select>
+        </div>
+        <span id="num_states"></span>
+        <div>
+            <svg id="main">
+                <svg id="flat"></svg>
+                <svg id="cell"></svg>
+                <svg id="fold"></svg>
+            </svg>
         </div>
     </div>
-    <svg id="main">
-        <svg id="flat"></svg>
-        <svg id="cell"></svg>
-        <svg id="xray"></svg>
-        <svg id="fold"></svg>
-    </svg>
     <script type="module" src="./script.js"></script>
 </body>
 </html>

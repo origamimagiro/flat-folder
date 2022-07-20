@@ -1,191 +1,202 @@
 import {CONSTRAINTS, CON, NOC} from "./constraints.js";
 
-window.onload = () => {     // entry point
-    document.getElementById("import-file").onchange = (e) => {
-        if (e.target.files.length > 0) {
-            const file_reader = new FileReader();
-            file_reader.onload = process_file;
-            file_reader.readAsText(e.target.files[0]);
+const MAIN = {
+    startup: () => {
+        document.getElementById("import").onchange = (e) => {
+            if (e.target.files.length > 0) {
+                const file_reader = new FileReader();
+                file_reader.onload = MAIN.process_file;
+                file_reader.readAsText(e.target.files[0]);
+            }
+        };
+        const [b, s] = [50, SVG.SCALE];
+        const main = document.getElementById("main");
+        for (const [k, v] of Object.entries({
+            xmlns: SVG.NS, 
+            style: `background: white`, 
+            viewBox: [0, 0, 3*s, s].join(" "),
+        })) {
+            main.setAttribute(k, v);
         }
-    };
-    const [w, b, s] = [350, 50, SVG.SCALE];
-    SVG.init("main", {h: 2*w, w: 2*w, x: 0, y: 0, s: 2*w, m: 0}); 
-    SVG.init("flat", {h:   w, w:   w, x: 0, y: 0, s:   s, m: b}); 
-    SVG.init("cell", {h:   w, w:   w, x: w, y: 0, s:   s, m: b}); 
-    SVG.init("xray", {h:   w, w:   w, x: 0, y: w, s:   s, m: b}); 
-    SVG.init("fold", {h:   w, w:   w, x: w, y: w, s:   s, m: b}); 
-};
-
-const process_file = (e) => {
-    NOTE.clear_log();
-    NOTE.time("*** Starting File Import ***");
-    const start = Date.now();
-    NOTE.start_lap();
-    const doc = e.target.result;
-    const file_name = document.getElementById("import-file").value;
-    const parts = file_name.split(".");
-    const type = parts[parts.length - 1].toLowerCase();
-    NOTE.time(`Importing from file ${file_name}`);
-    const [P, VV, EV, EA, EF, FV] = IO.doc_type_2_V_VV_EV_EA_EF_FV(doc, type);
-    if (P == undefined) { return; }
-    const VK = (VV == undefined) ? undefined : X.V_VV_EV_EA_2_VK(P, VV, EV, EA);
-    const V = M.normalize_points(P);
-    NOTE.annotate(V, "vertices_coords");
-    NOTE.annotate(EV, "edges_vertices");
-    NOTE.annotate(EA, "edges_assignments");
-    NOTE.annotate(EF, "edges_faces");
-    NOTE.annotate(FV, "faces_vertices");
-    const Vf = M.normalize_points(X.V_VF_EV_EA_2_Vf(V, FV, EV, EA));
-    NOTE.annotate(Vf, "vertices_coords_folded");
-    const Ff = X.V_FV_2_Ff(Vf, FV);
-    NOTE.annotate(Ff, "faces_flip");
-    NOTE.lap();
-    const FOLD = {V, Vf, VK, EV, EA, EF, FV, Ff};
-    NOTE.time("Updating Interface...");
-    GUI.update_flat(FOLD);
-    GUI.update_xray(FOLD);
-    for (const id of ["fold", "cell", "component-select", "state-select", 
-            "num-states"]) {
-        SVG.clear(id);
-    }
-    document.getElementById("state-display").style.display = "none";
-    document.getElementById("fold-controls").style.display = "block";
-    document.getElementById("display-text").onchange = (e) => {
+        for (const [i, id] of ["flat", "cell", "fold"].entries()) {
+            const svg = document.getElementById(id);
+            for (const [k, v] of Object.entries({
+                xmlns: SVG.NS,
+                height: s,
+                width: s,
+                x: i*s,
+                y: 0,
+                viewBox: [-b, -b, s + 2*b, s + 2*b].join(" "),
+            })) {
+                svg.setAttribute(k, v);
+            }
+        }
+    },
+    process_file: (e) => {
+        NOTE.clear_log();
+        NOTE.time("*** Starting File Import ***");
+        const start = Date.now();
+        NOTE.start_lap();
+        const doc = e.target.result;
+        const file_name = document.getElementById("import").value;
+        const parts = file_name.split(".");
+        const type = parts[parts.length - 1].toLowerCase();
+        NOTE.time(`Importing from file ${file_name}`);
+        const [P, VV, EV, EA, EF, FV] = IO.doc_type_2_V_VV_EV_EA_EF_FV(doc, type);
+        if (P == undefined) { return; }
+        const VK = (VV == undefined) ? undefined : X.V_VV_EV_EA_2_VK(P, VV, EV, EA);
+        const V = M.normalize_points(P);
+        NOTE.annotate(V, "vertices_coords");
+        NOTE.annotate(EV, "edges_vertices");
+        NOTE.annotate(EA, "edges_assignments");
+        NOTE.annotate(EF, "edges_faces");
+        NOTE.annotate(FV, "faces_vertices");
+        const Vf = M.normalize_points(X.V_VF_EV_EA_2_Vf(V, FV, EV, EA));
+        NOTE.annotate(Vf, "vertices_coords_folded");
+        const Ff = X.V_FV_2_Ff(Vf, FV);
+        NOTE.annotate(Ff, "faces_flip");
+        NOTE.lap();
+        const FOLD = {V, Vf, VK, EV, EA, EF, FV, Ff};
+        NOTE.time("Updating Interface...");
         GUI.update_flat(FOLD);
-    };
-    document.getElementById("export_button").onclick = (e) => {
-        IO.write(FOLD);
-    };
-    document.getElementById("fold_button").onclick = (e) => {
-        compute_cells(FOLD);
-    };
-    NOTE.lap();
-    stop = Date.now();
-    NOTE.time(`End of computation, total time elapsed ${
-        NOTE.time_string(stop - start)}`);
-};
-
-const compute_cells = (FOLD) => {
-    const start = Date.now();
-    NOTE.time("*** Computing cell graph ***");
-    const {V, Vf, EV, FV, Ff} = FOLD;
-    const L = EV.map((P) => M.expand(P, Vf));
-    const eps = M.min_line_length(L) / M.EPS;
-    NOTE.lap();
-    NOTE.time(`Using eps ${eps} from min line length ${eps*M.EPS}`);
-    NOTE.time("Constructing points and segments from edges...");
-    const [P, SP, SE] = X.L_2_V_EV_EL(L, eps);
-    NOTE.annotate(P, "points_coords");
-    NOTE.annotate(SP, "segments_points");
-    NOTE.lap();
-    NOTE.time("Constructing cells from segments...");
-    const [,CP] = X.V_EV_2_VV_FV(P, SP);
-    NOTE.annotate(CP, "cells_points");
-    NOTE.lap();
-    NOTE.time("Computing segments_cells");
-    const SC = X.EV_FV_2_EF(SP, CP);
-    NOTE.annotate(SC, "segments_cells");
-    NOTE.lap();
-    NOTE.time("Making face-cell maps");
-    const [CF, FC] = X.V_FV_P_CP_2_CF_FC(Vf, FV, P, CP);
-    NOTE.count(CF, "face-cell adjacencies");
-    NOTE.lap();
-    const CELL = {P, SP, SE, CP, SC, CF, FC};
-    GUI.update_cell(CELL);
-    NOTE.lap();
-    document.getElementById("display-text").onchange = (e) => {
-        GUI.update_flat(FOLD);
-        GUI.update_cell(CELL);
-    };
-    window.setTimeout(compute_constraints, 0, FOLD, CELL, start);
-};
-
-const compute_constraints = (FOLD, CELL, start) => {
-    const {V, Vf, EV, EA, EF, FV, Ff} = FOLD;
-    const {P, SP, SE, CP, SC, CF, FC} = CELL;
-    NOTE.time("*** Computing constraints ***");
-    NOTE.time("Computing edge-edge overlaps");
-    const ExE = X.SE_2_ExE(SE);
-    NOTE.count(ExE, "edge-edge adjacencies");
-    NOTE.lap();
-    NOTE.time("Computing edge-face overlaps");
-    const ExF = X.SE_CF_SC_2_ExF(SE, CF, SC);
-    NOTE.count(ExF, "edge-face adjacencies");
-    NOTE.lap();
-    NOTE.time("Computing variables");
-    const BF = X.CF_2_BF(CF);
-    NOTE.annotate(BF, "variables_faces");
-    NOTE.lap();
-    NOTE.time("Computing transitivity constraints");
-    const BT3 = X.FC_CF_BF_2_BT3(FC, CF, BF);
-    NOTE.count(BT3, "initial transitivity", 3);
-    NOTE.lap();
-    NOTE.time("Computing non-transitivity constraints");
-    const [BT0, BT1, BT2] = X.BF_EF_ExE_ExF_BT3_2_BT0_BT1_BT2(BF, EF, ExE, ExF, BT3);
-    NOTE.count(BT0, "taco-taco", 6);
-    NOTE.count(BT1, "taco-tortilla", 3);
-    NOTE.count(BT2, "tortilla-tortilla", 2);
-    NOTE.count(BT3, "independent transitivity", 3);
-    const BT = BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
-    NOTE.lap();
-    GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
-    document.getElementById("display-text").onchange = (e) => {
-        GUI.update_flat(FOLD);
-        GUI.update_cell(CELL);
+        GUI.update_cell(FOLD);
+        SVG.clear("fold");
+        SVG.clear("component_select");
+        SVG.clear("state_select");
+        document.getElementById("num_states").innerHTML = "";
+        document.getElementById("fold_controls").style.display = "inline";
+        document.getElementById("state_controls").style.display = "none";
+        document.getElementById("state_config").style.display = "none";
+        document.getElementById("export_button").style.display = "inline";
+        document.getElementById("export_button").onclick = (e => IO.write(FOLD));
+        document.getElementById("text").onchange = (e => GUI.update_flat(FOLD));
+        document.getElementById("fold_button").onclick = (e) => {
+            MAIN.compute_cells(FOLD);
+        };
+        NOTE.lap();
+        stop = Date.now();
+        NOTE.time(`End of computation, total time elapsed ${
+            NOTE.time_string(stop - start)}`);
+    },
+    compute_cells: (FOLD) => {
+        const start = Date.now();
+        NOTE.time("*** Computing cell graph ***");
+        const {V, Vf, EV, FV, Ff} = FOLD;
+        const L = EV.map((P) => M.expand(P, Vf));
+        const eps = M.min_line_length(L) / M.EPS;
+        NOTE.lap();
+        NOTE.time(`Using eps ${eps} from min line length ${eps*M.EPS}`);
+        NOTE.time("Constructing points and segments from edges...");
+        const [P, SP, SE] = X.L_2_V_EV_EL(L, eps);
+        NOTE.annotate(P, "points_coords");
+        NOTE.annotate(SP, "segments_points");
+        NOTE.lap();
+        NOTE.time("Constructing cells from segments...");
+        const [,CP] = X.V_EV_2_VV_FV(P, SP);
+        NOTE.annotate(CP, "cells_points");
+        NOTE.lap();
+        NOTE.time("Computing segments_cells");
+        const SC = X.EV_FV_2_EF(SP, CP);
+        NOTE.annotate(SC, "segments_cells");
+        NOTE.lap();
+        NOTE.time("Making face-cell maps");
+        const [CF, FC] = X.V_FV_P_CP_2_CF_FC(Vf, FV, P, CP);
+        NOTE.count(CF, "face-cell adjacencies");
+        NOTE.lap();
+        const CELL = {P, SP, SE, CP, SC, CF, FC};
+        GUI.update_cell(FOLD, CELL);
+        NOTE.lap();
+        document.getElementById("text").onchange = (e) => {
+            GUI.update_flat(FOLD);
+            GUI.update_cell(FOLD, CELL);
+        };
+        window.setTimeout(MAIN.compute_constraints, 0, FOLD, CELL, start);
+    },
+    compute_constraints: (FOLD, CELL, start) => {
+        const {V, Vf, EV, EA, EF, FV, Ff} = FOLD;
+        const {P, SP, SE, CP, SC, CF, FC} = CELL;
+        NOTE.time("*** Computing constraints ***");
+        NOTE.time("Computing edge-edge overlaps");
+        const ExE = X.SE_2_ExE(SE);
+        NOTE.count(ExE, "edge-edge adjacencies");
+        NOTE.lap();
+        NOTE.time("Computing edge-face overlaps");
+        const ExF = X.SE_CF_SC_2_ExF(SE, CF, SC);
+        NOTE.count(ExF, "edge-face adjacencies");
+        NOTE.lap();
+        NOTE.time("Computing variables");
+        const BF = X.CF_2_BF(CF);
+        NOTE.annotate(BF, "variables_faces");
+        NOTE.lap();
+        NOTE.time("Computing transitivity constraints");
+        const BT3 = X.FC_CF_BF_2_BT3(FC, CF, BF);
+        NOTE.count(BT3, "initial transitivity", 3);
+        NOTE.lap();
+        NOTE.time("Computing non-transitivity constraints");
+        const [BT0, BT1, BT2] = X.BF_EF_ExE_ExF_BT3_2_BT0_BT1_BT2(BF, EF, ExE, ExF, BT3);
+        NOTE.count(BT0, "taco-taco", 6);
+        NOTE.count(BT1, "taco-tortilla", 3);
+        NOTE.count(BT2, "tortilla-tortilla", 2);
+        NOTE.count(BT3, "independent transitivity", 3);
+        const BT = BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
+        NOTE.lap();
         GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
-    };
-    window.setTimeout(compute_states, 0, FOLD, CELL, BF, BT, start);
-};
-
-const compute_states = (FOLD, CELL, BF, BT, start) => {
-    const {V, Vf, EV, EA, EF, FV, Ff} = FOLD;
-    const {P, SP, SE, CP, SC, CF, FC} = CELL;
-    NOTE.time("*** Computing states ***");
-    const BA0 = X.EF_EA_Ff_BF_2_BA(EF, EA, Ff, BF);
-    const val = document.getElementById("limit-select").value;
-    const lim = (val == "1") ? 1 : ((val == "10") ? 10 : Infinity);
-    const [GB, GA] = SOLVER.solve(BF, BT, BA0, lim);
-    let n = 0;
-    if (GA != undefined) {
-        n = 1;
-        for (const A of GA) {
-            n *= A.length;
-        }
-    }
-    NOTE.count(n, "folded states");
-    NOTE.lap();
-    GUI.update_xray(FOLD, BF, GB, GA);
-    NOTE.lap();
-    document.getElementById("state-display").style.display = "block";
-    const state_controls = document.getElementById("state-controls");
-    const num_states = document.getElementById("num-states");
-    if (n == 0) {
-        state_controls.style.display = "none"; 
-        num_states.textContent = `# States Found: 0 || `;
-    } else {
-        state_controls.style.display = "inline"; 
-        num_states.textContent = `# States Found: ${n} || `;
+        document.getElementById("text").onchange = (e) => {
+            GUI.update_flat(FOLD);
+            GUI.update_cell(FOLD, CELL);
+            GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
+        };
+        window.setTimeout(MAIN.compute_states, 0, FOLD, CELL, BF, BT, start);
+    },
+    compute_states: (FOLD, CELL, BF, BT, start) => {
+        const {V, Vf, EV, EA, EF, FV, Ff} = FOLD;
+        const {P, SP, SE, CP, SC, CF, FC} = CELL;
+        NOTE.time("*** Computing states ***");
+        const BA0 = X.EF_EA_Ff_BF_2_BA(EF, EA, Ff, BF);
+        const val = document.getElementById("limit_select").value;
+        const lim = (val == "1") ? 1 : ((val == "10") ? 10 : Infinity);
+        const [GB, GA] = SOLVER.solve(BF, BT, BA0, lim);
+        const n = (GA == undefined) ? 0 : GA.reduce((s, A) => s*A.length, 1);
+        NOTE.count(n, "folded states");
+        NOTE.lap();
+        const num_states = document.getElementById("num_states");
+        num_states.textContent = `# States Found: ${n}`;
         const GI = GB.map(() => 0);
-        const comp_select = SVG.clear("component-select");
-        for (let i = 0; i < GI.length; ++i) {
-            const el = document.createElement("option");
-            el.setAttribute("value", `${i}`);
-            el.textContent = `${i}`
-            comp_select.appendChild(el);
-        }
-        comp_select.onchange = (e) => {
-            GUI.update_component(FOLD, CELL, BF, GB, GA, GI, +e.target.value);
-        };
-        document.getElementById("flip").onchange = (e) => {
+        if (n > 0) {
+            document.getElementById("state_controls").style.display = "inline"; 
+            document.getElementById("flip").onchange = (e) => {
+                GUI.update_fold(FOLD, CELL, BF, GB, GA, GI);
+            };
             GUI.update_fold(FOLD, CELL, BF, GB, GA, GI);
+            const comp_select = SVG.clear("component_select");
+            for (const opt of ["all", "none"]) {
+                const el = document.createElement("option");
+                el.setAttribute("value", opt);
+                el.textContent = opt;
+                comp_select.appendChild(el);
+            }
+            for (const [i, _] of GB.entries()) {
+                const el = document.createElement("option");
+                el.setAttribute("value", `${i}`);
+                el.textContent = `${i}`;
+                comp_select.appendChild(el);
+            }
+            comp_select.onchange = (e) => {
+                GUI.update_component(FOLD, CELL, BF, GB, GA, GI);
+            };
+        }
+        document.getElementById("text").onchange = (e) => {
+            GUI.update_flat(FOLD);
+            GUI.update_cell(FOLD, CELL);
+            GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
+            GUI.update_component(FOLD, CELL, BF, GB, GA, GI);
         };
-        GUI.update_component(FOLD, CELL, BF, GB, GA, GI, 0);
-        GUI.update_fold(FOLD, CELL, BF, GB, GA, GI);
-    }
-    NOTE.lap();
-    stop = Date.now();
-    NOTE.time(`End of computation, total time elapsed ${
-        NOTE.time_string(stop - start)}`);
+        GUI.update_component(FOLD, CELL, BF, GB, GA, GI);
+        NOTE.lap();
+        stop = Date.now();
+        NOTE.time(`End of computation, total time elapsed ${
+            NOTE.time_string(stop - start)}`);
+    },
 };
 
 const SOLVER = {    // STATE SOLVER
@@ -229,12 +240,11 @@ const SOLVER = {    // STATE SOLVER
             const i = B[idx];
             const [f1, f2] = M.decode(BF[i]);
             const C = BT[i];
-            for (let type = 0; type < 4; ++type) {
-                const T = (type == 3) ? M.decode(C[type]) : C[type];
-                for (let F of T) {
-                    if (type == CON.transitivity) {
-                        F = [f1, f2, F];
-                    }
+            for (const type of [0, 1, 2, 3]) {
+                const is_trans = (type == CON.transitivity);
+                const T = is_trans ? M.decode(C[type]) : C[type];
+                for (const f3 of T) {
+                    const F = is_trans ? [f1, f2, f3] : f3;
                     const I = SOLVER.infer([type, F], BI, BA);
                     if (I) {
                         for (const [j, s] of I) {
@@ -265,8 +275,8 @@ const SOLVER = {    // STATE SOLVER
         const GB = [];
         const seen = new Set();
         NOTE.start_check("variable", BF);
-        for (let bi = 0; bi < BA.length; ++bi) {
-            if (!seen.has(bi) && (BA[bi] == 0)) {
+        for (const [bi, a] of BA.entries()) {
+            if (!seen.has(bi) && (a == 0)) {
                 const stack = [bi]; // DS for connected component
                 seen.add(bi);
                 let si = 0;
@@ -274,12 +284,10 @@ const SOLVER = {    // STATE SOLVER
                     const bi_ = stack[si];
                     const C = BT[bi_];
                     const [f1, f2] = M.decode(BF[bi_]);
-                    for (let type = 0; type < 4; ++type) {
+                    for (const type of [0, 1, 2, 3]) {
                         const T = (type == 3) ? M.decode(C[type]) : C[type];
-                        for (let F of T) {
-                            if (type == CON.transitivity) {
-                                F = [f1, f2, F];
-                            }
+                        for (const f3 of T) {
+                            const F = (type == 3) ? [f1, f2, f3] : f3;
                             const vars = X.T_2_pairs([type, F]).map(
                                 (p) => M.encode_order_pair(p));
                             for (const k__ of vars) {
@@ -307,7 +315,6 @@ const SOLVER = {    // STATE SOLVER
         const A = [];
         let idx = 0;
         let backtracking = false;  
-        let start = Date.now();    
         NOTE.start_check("state"); // at start of loop, idx is an index of G     
         while (true) {             // if backtracking, idx after the last guess
             NOTE.check(A.length);  //            else, idx to guess next        
@@ -374,16 +381,14 @@ const SOLVER = {    // STATE SOLVER
         //          | returns [] if no solutions found
         const BA = BF.map(() => 0);
         const BI = new Map();
-        for (let i = 0; i < BF.length; ++i) { 
-            BI.set(BF[i], i);
+        for (const [i, F] of BF.entries()) {
+            BI.set(F, i);
         }
         NOTE.time("Assigning orders based on crease assignment");
-        const L = [];
-        let n = 0;
         NOTE.start_check("crease", BA0);
-        for (let i = 0; i < BA0.length; ++i) {
+        const L = [];
+        for (const [i, a] of BA0.entries()) {
             NOTE.check(i);
-            const a = BA0[i];
             if (a != 0) {
                 if (BA[i] != 0) {
                     if (BA[i] != a) {
@@ -395,7 +400,6 @@ const SOLVER = {    // STATE SOLVER
                         return [];
                     } else {
                         L.push(B); 
-                        n += B.length;
                     }
                 }
             }
@@ -413,8 +417,8 @@ const SOLVER = {    // STATE SOLVER
         NOTE.count(GB.length - 1, "unassigned components");
         NOTE.lap();
         const GA = [[M.bit_encode(B0.map(i => BA[i]))]];
-        for (let i = 1; i < GB.length; ++i) {
-            const B = GB[i];
+        for (const [i, B] of GB.entries()) {
+            if (i == 0) { continue; }
             NOTE.time(`Solving component ${i} with size ${B.length}`);
             const A = SOLVER.guess_vars(B, BI, BF, BT, BA, lim);
             NOTE.count(A.length, "assignments");
@@ -428,12 +432,11 @@ const SOLVER = {    // STATE SOLVER
     BF_GB_GA_GI_2_edges: (BF, GB, GA, GI) => {
         const edges = [];
         NOTE.start_check("group", GB);
-        for (let i = 0; i < GB.length; ++i) {
+        for (const [i, B] of GB.entries()) {
             NOTE.check(i);
-            const B = GB[i];
             const orders = M.bit_decode(GA[i][GI[i]], B.length);
-            for (let j = 0; j < B.length; ++j) {
-                const [f1, f2] = M.decode(BF[B[j]]);
+            for (const [j, F] of B.entries()) {
+                const [f1, f2] = M.decode(BF[F]);
                 const o = orders[j];
                 edges.push(M.encode((o == 1) ? [f1, f2] : [f2, f1]));
             }
@@ -458,9 +461,9 @@ const SOLVER = {    // STATE SOLVER
     },
     EF_SE_SC_CD_2_SD: (EF, SE, SC, CD) => {
         const FE_map = new Map();
-        for (let i = 0; i < EF.length; ++i) {
-            if (EF[i].length == 2) {
-                FE_map.set(M.encode_order_pair(EF[i]), i);
+        for (const [i, F] of EF.entries()) {
+            if (F.length == 2) {
+                FE_map.set(M.encode_order_pair(F), i);
             }
         }
         const SE_map = SE.map(E => new Set(E));
@@ -499,13 +502,13 @@ const X = {     // CONVERSION
         const P = [];
         let crossings = [];
         NOTE.start_check("line", L);
-        for (let i = 0; i < L.length; ++i) {    // find line-line intersections
+        for (const [i, idx] of I.entries()) {    // find line-line intersections
             NOTE.check(i);
-            const [a, b] = L[I[i]];
-            P.push([a, I[i]]);
-            P.push([b, I[i]]);
-            for (let k = 0; k < crossings.length; ++k) {
-                const [[c, d], j] = crossings[k];
+            const [a, b] = L[idx];
+            P.push([a, idx]);
+            P.push([b, idx]);
+            for (const [k, X] of crossings.entries()) {
+                const [[c, d], j] = X;
                 const [x1, y1] = a;
                 const [x2, y2] = d;
                 if ((d[0] + eps) < a[0]) {
@@ -513,16 +516,16 @@ const X = {     // CONVERSION
                 } else {
                     const x = M.intersect([a, b], [c, d], eps);         
                     if (x != undefined) {
-                        P.push([x, I[i]]);
+                        P.push([x, idx]);
                         P.push([x, j]);
                     }
-                    if (M.on_segment(a, b, c, eps)) { P.push([c, I[i]]); }
-                    if (M.on_segment(a, b, d, eps)) { P.push([d, I[i]]); }
+                    if (M.on_segment(a, b, c, eps)) { P.push([c, idx]); }
+                    if (M.on_segment(a, b, d, eps)) { P.push([d, idx]); }
                     if (M.on_segment(c, d, a, eps)) { P.push([a, j]); }
                     if (M.on_segment(c, d, b, eps)) { P.push([b, j]); }
                 }
             }
-            const temp = [[[a, b], I[i]]];
+            const temp = [[[a, b], idx]];
             for (const line of crossings) {
                 if (line != undefined) {
                     temp.push(line);
@@ -535,28 +538,27 @@ const X = {     // CONVERSION
         });
         let curr = [P[0]];
         const compressed_P = [curr];
-        for (let i = 1; i < P.length; ++i) {
+        for (const point of P) {
             const [p, i1] = curr[0];
-            const [q, i2] = P[i];
+            const [q, i2] = point;
             if (M.close(p, q, eps)) {
-                curr.push(P[i]);
+                curr.push(point);
             } else {
-                curr = [P[i]];
+                curr = [point];
                 compressed_P.push(curr);
             }
         }
         const V = compressed_P.map((ps) => ps[0][0]); 
         // 2) Constructing map from edges to overlapping lines
         const LP = L.map(() => new Set());
-        for (let i = 0; i < compressed_P.length; ++i) {
-            const cP = compressed_P[i];
+        for (const [i, cP] of compressed_P.entries()) {
             for (const [, j] of cP) {
                 LP[j].add(i);
             }
         }
         const edges = new Map();
-        for (let i = 0; i < LP.length; ++i) {
-            const points_on_line = Array.from(LP[i]);
+        for (const [i, S] of LP.entries()) {
+            const points_on_line = Array.from(S);
             const [a, b] = L[i];
             const dir = M.sub(b, a);
             points_on_line.sort((pk, qk) => {
@@ -565,15 +567,15 @@ const X = {     // CONVERSION
                 return dp - dq;
             });
             let prev = points_on_line[0];
-            for (let j = 1; j < points_on_line.length; ++j) {
-                const curr = points_on_line[j];
+            for (const [j, curr] of points_on_line.entries()) {
+                if (j == 0) { continue; }
                 const k = M.encode_order_pair([curr, prev]);
-                let E = edges.get(k);
+                const E = edges.get(k);
                 if (E == undefined) {
-                    E = [];
-                    edges.set(k, E);
+                    edges.set(k, [i]);
+                } else {
+                    E.push(i);
                 }
-                E.push(i);
                 prev = curr;
             }
         }
@@ -587,14 +589,12 @@ const X = {     // CONVERSION
     },
     V_EV_2_VV_FV: (V, EV) => {
         const adj = V.map(() => []);
-        for (let i = 0; i < EV.length; ++i) {
-            const [pi, qi] = EV[i];
+        for (const [pi, qi] of EV) {
             adj[pi].push(qi); 
             adj[qi].push(pi); 
         }
         const VV = [];
-        for (let i = 0; i < V.length; ++i) {
-            const v0 = V[i];
+        for (const [i, v0] of V.entries()) {
             const A = [];
             for (const vi of adj[i]) {
                 A.push([vi, M.angle(M.sub(V[vi], v0))]);
@@ -605,18 +605,18 @@ const X = {     // CONVERSION
         const FV = [];
         const seen = new Set();
         NOTE.start_check("vertex", VV);
-        for (let i = 0; i < VV.length; ++i) {
-            NOTE.check(i);
-            for (let j of VV[i]) {
-                const key = M.encode([i, j]);
+        for (const [v1, A] of VV.entries()) {
+            NOTE.check(v1);
+            for (const v2 of A) {
+                const key = M.encode([v1, v2]);
                 if (!(seen.has(key))) {
                     seen.add(key);
-                    const F = [i];
-                    let k = i;
-                    while (j != i) {
+                    const F = [v1];
+                    let [i, j] = [v1, v2];
+                    while (j != v1) {
                         F.push(j);
-                        [k, j] = [j, M.previous_in_list(VV[j], k)];
-                        seen.add(M.encode([k, j]));
+                        [i, j] = [j, M.previous_in_list(VV[j], i)];
+                        seen.add(M.encode([i, j]));
                     }
                     if (F.length > 2) {
                         FV.push(F);
@@ -630,18 +630,17 @@ const X = {     // CONVERSION
     },
     V_VV_EV_EA_2_VK: (V, VV, EV, EA) => {
         const VVA_map = new Map();
-        for (let i = 0; i < EV.length; ++i) {
-            const [v1, v2] = EV[i];
+        for (const [i, [v1, v2]] of EV.entries()) {
             const a = EA[i];
             VVA_map.set(M.encode([v1, v2]), a);
             VVA_map.set(M.encode([v2, v1]), a);
         }
         const VK = [];
-        for (let i = 0; i < VV.length; ++i) {
+        for (const [i, A] of VV.entries()) {
             const adj = [];
             let boundary = false;
             let [count_M, count_V, count_U] = [0, 0, 0];
-            for (const j of VV[i]) {
+            for (const j of A) {
                 const a = VVA_map.get(M.encode([i, j]));
                 if (a == "B") {
                     boundary = true;
@@ -654,37 +653,34 @@ const X = {     // CONVERSION
                 if (a == "V") { ++count_V; }
                 if (a == "U") { ++count_U; }
             }
-            let kawasaki;
             if (boundary || (adj.length == 0)) {
-                kawasaki = 0;
+                VK.push(0);
             } else if (
                 ((count_U == 0) && (Math.abs(count_M - count_V) != 2)) || 
                 (adj.length % 2 != 0)
             ) {                       // violates Maekawa
-                kawasaki = Math.PI/2; // obviously far from zero
+                VK.push(1);           // far from zero
             } else {
                 const angles = adj.map(j => M.angle(M.sub(V[j], V[i])));
-                kawasaki = 0;
+                let kawasaki = 0;
                 for (let j = 0; j < angles.length; j += 2) {
                     kawasaki += angles[j + 1] - angles[j];
                 }
-                kawasaki = Math.abs(kawasaki - Math.PI);
+                VK.push(Math.abs(kawasaki - Math.PI));
             }
-            VK.push(kawasaki);
         }
         return VK;
     },
     V_VF_EV_EA_2_Vf: (V, FV, EV, EA) => {
         const EA_map = new Map();
-        for (let i = 0; i < EV.length; ++i) {
-            EA_map.set(M.encode_order_pair(EV[i]), EA[i]);
+        for (const [i, vs] of EV.entries()) {
+            EA_map.set(M.encode_order_pair(vs), EA[i]);
         }
         const EF_map = new Map();
-        for (let i = 0; i < FV.length; ++i) {
-            const F = FV[i];
-            for (let j = 0; j < F.length; ++j) {
-                const k = (j + 1) % F.length;
-                EF_map.set(M.encode([F[k],F[j]]), i);
+        for (const [i, F] of FV.entries()) {
+            for (const [j, v1] of F.entries()) {
+                const v2 = F[(j + 1) % F.length];
+                EF_map.set(M.encode([v2, v1]), i);
             }
         }
         const Vf = V.map((p) => undefined);
@@ -739,24 +735,23 @@ const X = {     // CONVERSION
     },
     EV_FV_2_EF: (EV, FV) => {
         const EV_map = new Map();
-        for (let i = 0; i < EV.length; ++i) {
-            EV_map.set(M.encode(EV[i]), i);
+        for (const [i, V] of EV.entries()) {
+            EV_map.set(M.encode(V), i);
         }
         const EF = EV.map(() => [undefined, undefined]);
-        for (let i = 0; i < FV.length; ++i) {
-            const F = FV[i];
-            for (let j = 0; j < F.length; ++j) {
-                const k = (j + 1) % F.length;
-                const ei = EV_map.get(M.encode_order_pair([F[j], F[k]]));
-                const c = (F[k] < F[j]) ? 0 : 1;
+        for (const [i, F] of FV.entries()) {
+            for (const [j, v1] of F.entries()) {
+                const v2 = F[(j + 1) % F.length];
+                const ei = EV_map.get(M.encode_order_pair([v1, v2]));
+                const c = (v2 < v1) ? 0 : 1;
                 EF[ei][c] = i;
             }
         }
-        for (let i = 0; i < EF.length; ++i) {
-            const c = (EF[i][0] == undefined) ? 1 : 
-                ((EF[i][1] == undefined) ? 0 : undefined);
+        for (const [i, F] of EF.entries()) {
+            const c = (F[0] == undefined) ? 1 : 
+                     ((F[1] == undefined) ? 0 : undefined);
             if (c != undefined) {
-                EF[i] = [EF[i][c]];
+                EF[i] = [F[c]];
             }
         }
         return EF;
@@ -771,28 +766,24 @@ const X = {     // CONVERSION
         const FC = FV.map((f, i) => {
             NOTE.check(i);
             const F = M.expand(f, V);
-            const C = [];
-            for (let j = 0; j < CP.length; ++j) {
+            const Cs = [];
+            for (const [j, Fs] of CF.entries()) {
                 if (M.convex_contains_point(F, centers[j])) {
-                    CF[j].push(i);
-                    C.push(j);
+                    Fs.push(i);
+                    Cs.push(j);
                 }
             }
-            return C;
+            return Cs;
         });
         return [CF, FC];
     },
     SE_2_ExE: (SE) => {
         const ExE = new Set();
-        for (let i = 0; i < SE.length; ++i) {
-            const edges = SE[i];
-            for (let j = 0; j < edges.length; ++j) {
+        for (const edges of SE) {
+            for (const [j, v1] of edges.entries()) {
                 for (let k = j + 1; k < edges.length; ++k) {
-                    const es = [edges[j], edges[k]]
-                    if (edges[k] < edges[j]) {
-                        es.reverse();
-                    }
-                    ExE.add(M.encode(es)); 
+                    const v2 = edges[k];
+                    ExE.add(M.encode_order_pair([v1, v2])); 
                 }
             }
         } 
@@ -800,10 +791,10 @@ const X = {     // CONVERSION
     },
     SE_CF_SC_2_ExF: (SE, CF, SC) => {
         const ExF = new Set();
-        for (let i = 0; i < SC.length; ++i) {
-            if (SC[i].length == 2) {
+        for (const [i, C] of SC.entries()) {
+            if (C.length == 2) {
                 const E = SE[i];
-                const [c1, c2] = SC[i];
+                const [c1, c2] = C;
                 const F = [];
                 const F1 = new Set(CF[c1]);
                 for (const fi of CF[c2]) {
@@ -823,12 +814,12 @@ const X = {     // CONVERSION
     CF_2_BF: (CF) => {
         const BF_set = new Set();
         NOTE.start_check("cell", CF);
-        for (let i = 0; i < CF.length; ++i) { 
+        for (const [i, F] of CF.entries()) {
             NOTE.check(i);
-            const F = CF[i];
-            for (let j = 0; j < F.length; j++) {
+            for (const [j, f1] of F.entries()) {
                 for (let k = j + 1; k < F.length; k++) {
-                    BF_set.add(M.encode([F[j], F[k]]));
+                    const f2 = F[k];
+                    BF_set.add(M.encode([f1, f2]));
                 }
             }
         }
@@ -856,14 +847,13 @@ const X = {     // CONVERSION
         const BT2 = BF.map(() => []); // tortilla-tortilla
         const BT = [BT0, BT1, BT2];
         const BF_map = new Map(); 
-        for (let i = 0; i < BF.length; ++i) {
-            BF_map.set(BF[i], i);
+        for (const [i, F] of BF.entries()) {
+            BF_map.set(F, i);
         }
         NOTE.time("Computing from edge-edge intersections");
         NOTE.start_check("edge-edge intersection", ExE);
-        for (let i = 0; i < ExE.length; ++i) {
+        for (const [i, k] of ExE.entries()) {
             NOTE.check(i);
-            const k = ExE[i];
             const [e1, e2] = M.decode(k);
             if ((EF[e1].length != 2) || (EF[e2].length != 2)) { continue; }
             const [f1, f2] = EF[e1];
@@ -897,9 +887,9 @@ const X = {     // CONVERSION
         }
         NOTE.time("Computing from edge-face intersections");
         NOTE.start_check("edge-face intersection", ExF);
-        for (let i = 0; i < ExF.length; ++i) {
+        for (const [i, k] of ExF.entries()) {
             NOTE.check(i);
-            const [e, f3] = M.decode(ExF[i]);
+            const [e, f3] = M.decode(k);
             if (EF[e].length != 2) { continue; }
             const [f1, f2] = EF[e];
             if ((f1 == f3) || (f2 == f3)) { continue; }
@@ -914,9 +904,9 @@ const X = {     // CONVERSION
         }
         NOTE.time("Cleaning transitivity constraints");
         NOTE.start_check("variable", BF);
-        for (let i = 0; i < BF.length; ++i) {
+        for (const [i, k] of BF.entries()) {
             NOTE.check(i);
-            const [f1, f2] = M.decode(BF[i]);
+            const [f1, f2] = M.decode(k);
             const T3 = new Set(M.decode(BT3[i]));
             for (const T of [BT0[i], BT1[i]]) {
                 for (const F of T) {
@@ -931,12 +921,11 @@ const X = {     // CONVERSION
     },
     FC_CF_BF_2_BT3: (FC, CF, BF) => {
         const BT3 = [];
-        let start = Date.now();
         const FC_sets = FC.map(C => new Set(C));
         NOTE.start_check("variable", BF);
-        for (let i = 0; i < BF.length; ++i) { 
+        for (const [i, k] of BF.entries()) {
             NOTE.check(i);
-            const [f1, f2] = M.decode(BF[i]);
+            const [f1, f2] = M.decode(k);
             const T = new Set();
             const C = FC_sets[f1];
             for (const c of FC[f2]) {
@@ -954,12 +943,11 @@ const X = {     // CONVERSION
     },
     EF_EA_Ff_BF_2_BA: (EF, EA, Ff, BF) => {
         const BI_map = new Map();
-        for (let i = 0; i < BF.length; ++i) {
-            BI_map.set(BF[i], i);
+        for (const [i, k] of BF.entries()) {
+            BI_map.set(k, i);
         }
         const BA = BF.map(() => 0);
-        for (let i = 0; i < EA.length; ++i) {
-            const a = EA[i];
+        for (const [i, a] of EA.entries()) {
             if ((a == "M") || (a == "V")) {
                 const k = M.encode_order_pair(EF[i]);
                 const [f1, f2] = M.decode(k);
@@ -997,23 +985,48 @@ const X = {     // CONVERSION
 
 const IO = {    // INPUT-OUTPUT
     write: (FOLD) => {
-        const {V, EV, EA, FV} = FOLD;
-        const out = {
+        const {V, Vf, EV, EA, FV, FO} = FOLD;
+        const path = document.getElementById("import").value.split("\\");
+        const name = path[path.length - 1].split(".")[0];
+        FOLD = {
+            file_spec: 1.1,
+            file_creator: "flat-folder",
+            file_title: `${name}_cp`,
+            file_class: "singleModel",
             vertices_coords:  V,
             edges_vertices:   EV,
             edges_assignment: EA,
             faces_vertices:   FV,
         };
-        const fold = new Blob([JSON.stringify(out, undefined, 2)], {
+        const data = {};
+        data.cp = new Blob([JSON.stringify(FOLD, undefined, 2)], {
             type: "application/json"});
-        const main = document.getElementById("main");
-        const svg = new Blob([main.outerHTML], {type: "image/svg+xml"});
-        const log = new Blob([NOTE.lines.join("\n")], {type: "text/plain"});
-        for (const [id, data] of [["fold", fold], ["svg", svg], ["log", log]]) {
-            const link = document.getElementById(`${id}_link`);
-            window.URL.revokeObjectURL(link);
-            link.setAttribute("style", {display: "inline-block"})
-            link.setAttribute("href", window.URL.createObjectURL(data));
+        FOLD.vertices_coords = Vf;
+        FOLD.file_title = `${name}_state`;
+        if (FO != undefined) {
+            FOLD.faceOrders = FO;   // TODO: remove implied face orders?
+        }
+        data.state = new Blob([JSON.stringify(FOLD, undefined, 2)], {
+            type: "application/json"});
+        data.img = new Blob([document.getElementById("main").outerHTML], {
+            type: "image/svg+xml"});
+        data.log = new Blob([NOTE.lines.join("\n")], {
+            type: "text/plain"});
+        const ex = SVG.clear("export");
+        for (const [type, ext] of [
+            ["cp", "fold"], 
+            ["state", "fold"], 
+            ["img", "svg"], 
+            ["log", "txt"]
+        ]) {
+            const link = document.createElement("a");
+            const button = document.createElement("input");
+            ex.appendChild(link); 
+            link.appendChild(button); 
+            link.setAttribute("download", `${name}_${type}.${ext}`);
+            link.setAttribute("href", window.URL.createObjectURL(data[type]));
+            button.setAttribute("type", "button");
+            button.setAttribute("value", type);
         }
     },
     OPX_2_L: (doc) => {
@@ -1068,9 +1081,8 @@ const IO = {    // INPUT-OUTPUT
             for (const pair of sty) {
                 const parts = pair.split(":");
                 if (parts.length == 2) {
-                    let [attr, val] = parts;
-                    attr = attr.trim();
-                    val = val.trim();
+                    const attr = parts[0].trim();
+                    const  val = parts[1].trim();
                     if (attr == "stroke") {
                         if (val == "red" || val == "#FF0000") {
                             color = "M";
@@ -1143,8 +1155,8 @@ const IO = {    // INPUT-OUTPUT
             [VV, FV] = X.V_EV_2_VV_FV(V, EV);
         }
         const EF = X.EV_FV_2_EF(EV, FV);
-        for (let i = 0; i < EF.length; ++i) {   // boundary edge assignment
-            if (EF[i].length == 1) {
+        for (const [i, F] of EF.entries()) {    // boundary edge assignment
+            if (F.length == 1) {
                 EA[i] = "B";
             }
         }
@@ -1163,8 +1175,8 @@ const GUI = {   // INTERFACE
         NOTE.time("Drawing flat");
         const {V, VK, EV, EA, FV} = FOLD;
         const svg = SVG.clear("flat");
-        const visible = document.getElementById("display-text").checked;
-        let F = FV.map(f => M.expand(f, V));
+        const visible = document.getElementById("text").checked;
+        const F = FV.map(f => M.expand(f, V));
         if (visible) {
             const shrunk = F.map(f => {
                 const c = M.centroid(f);
@@ -1175,8 +1187,8 @@ const GUI = {   // INTERFACE
         SVG.draw_polygons(svg, F, {text: visible, opacity: 0.1, id: "f"});
         if (VK != undefined) {
             const K = [];
-            for (let i = 0; i < VK.length; ++i) {
-                if (VK[i] > 0.0001) { K.push(V[i]); }
+            for (const [i, k] of VK.entries()) {
+                if (K > 0.0001) { K.push(V[i]); }
             }
             SVG.draw_points(svg, K, {fill: "red", r: 10});
         }
@@ -1187,50 +1199,40 @@ const GUI = {   // INTERFACE
         if (visible) {
             SVG.draw_points(svg, V, {text: visible, id: "v", fill: "green"});
         }
+        SVG.append("g", svg, {id: "face_notes"});
     },
-    update_xray: (FOLD, BF, GB) => {
-        NOTE.time("Drawing xray");
-        const {Vf, FV} = FOLD;
-        const svg = SVG.clear("xray");
-        const F = FV.map(f => M.expand(f, Vf));
-        SVG.draw_polygons(svg, F, {opacity: 0.05});
-        if (GB != undefined) {
-            for (let i = 0; i < GB.length; ++i) {
-                if ((i == 0) && GB[0].length > 10000) {
-                    continue;
-                }
-                const lines = GB[i].map(i => {
-                    const [f1, f2] = M.decode(BF[i]);
-                    const p1 = M.centroid(M.expand(FV[f1], Vf));
-                    const p2 = M.centroid(M.expand(FV[f2], Vf));
-                    return [p1, p2];
-                });
-                const stroke = SVG.COLORS[i % SVG.COLORS.length];
-                SVG.draw_segments(svg, lines, {stroke});
-            }
-        }
-    },
-    update_cell: (CELL) => {
+    update_cell: (FOLD, CELL) => {
         NOTE.time("Drawing cell");
-        const {P, SP, SE, CP, SC, CF, FC} = CELL;
         const svg = SVG.clear("cell");
-        const visible = document.getElementById("display-text").checked;
-        let max_layers = 0;
-        for (const F of CF) {
-            if (max_layers < F.length) {
-                max_layers = F.length;
+        if (CELL == undefined) {
+            console.log("HERE");
+            const {Vf, FV} = FOLD;
+            const F = FV.map(f => M.expand(f, Vf));
+            SVG.draw_polygons(svg, F, {opacity: 0.05});
+        } else {
+            const {P, SP, SE, CP, SC, CF, FC} = CELL;
+            const visible = document.getElementById("text").checked;
+            let max_layers = 0;
+            for (const F of CF) {
+                if (max_layers < F.length) {
+                    max_layers = F.length;
+                }
+            }
+            const Ccolors = CF.map(F => 0.1 + F.length/max_layers*0.7);
+            const cells = CP.map(f => M.expand(f, P));
+            const lines = SP.map(l => M.expand(l, P));
+            SVG.draw_polygons(svg, cells, {
+                text: visible, opacity: Ccolors, id: "c"});
+            SVG.draw_segments(svg, lines, {
+                text: visible, id: "s", stroke: "black", stroke_width: GUI.WIDTH});
+            if (visible) {
+                SVG.draw_points(svg, P, {text: visible, id: "p", fill: "green"});
             }
         }
-        const Ccolors = CF.map(F => 0.1 + F.length/max_layers*0.7);
-        const cells = CP.map(f => M.expand(f, P));
-        const lines = SP.map(l => M.expand(l, P));
-        SVG.draw_polygons(svg, cells, {
-            text: visible, opacity: Ccolors, id: "c"});
-        SVG.draw_segments(svg, lines, {
-            text: visible, id: "s", stroke: "black", stroke_width: GUI.WIDTH});
-        if (visible) {
-            SVG.draw_points(svg, P, {text: visible, id: "p", fill: "green"});
-        }
+        console.log("Here");
+        console.log(svg.id);
+        SVG.append("g", svg, {id: "cell_notes"});
+        SVG.append("g", svg, {id: "constraint_notes"});
     },
     update_fold: (FOLD, CELL, BF, GB, GA, GI) => {
         NOTE.time("Computing state");
@@ -1249,38 +1251,66 @@ const GUI = {   // INTERFACE
         const colors = CD.map(d => (Ff[d] != flip) ? "gray" : "lightgray");
         SVG.draw_polygons(svg, cells, {fill: colors, stroke: colors});
         const [creases, segments] = [[], []];
-        for (let i = 0; i < SD.length; ++i) {
-            const a = SD[i];
+        for (const [i, a] of SD.entries()) {
             if (a == "C") { creases.push(M.expand(SP[i], Q)); }
             if (a == "B") { segments.push(M.expand(SP[i], Q)); }
         }
         SVG.draw_segments(svg, creases, {stroke: SVG.TYPES_COLOR["C"]});
         SVG.draw_segments(svg, segments, {stroke: SVG.TYPES_COLOR["B"]});
     },
-    update_component: (FOLD, CELL, BF, GB, GA, GI, c) => {
+    update_component: (FOLD, CELL, BF, GB, GA, GI) => {
         NOTE.time("Updating component");
-        const comp_label = document.getElementById("component-label");
-        comp_label.style.backgroundColor = SVG.COLORS[c];
-        const state_select = SVG.clear("state-select");
-        for (let i = 0; i < GA[c].length; ++i) {
-            const el = document.createElement("option");
-            el.setAttribute("value", `${i}`);
-            el.textContent = `${i}`
-            state_select.appendChild(el);
+        const comp_select = document.getElementById("component_select");
+        const c = comp_select.value;
+        document.getElementById("state_config").style.display = "none"; 
+        document.getElementById("component_select").style.background = "white";
+        const C = [];
+        if (c == "none") {
+        } else if (c == "all") {
+            for (const [i, _] of GA.entries()) { 
+                C.push(i);
+            }
+        } else {
+            C.push(c);
+            if (GA[c].length > 1) {
+                document.getElementById("state_config").style.display = "inline"; 
+                const state_select = SVG.clear("state_select");
+                for (const [i, _] of GA[c].entries()) {
+                    const el = document.createElement("option");
+                    el.setAttribute("value", `${i}`);
+                    el.textContent = `${i}`
+                    state_select.appendChild(el);
+                }
+                const el = document.getElementById("component_select");
+                el.style.background = SVG.COLORS[c % SVG.COLORS.length];
+                state_select.onchange = (e) => {
+                    const j = e.target.value;
+                    GI[c] = +j;
+                    GUI.update_fold(FOLD, CELL, BF, GB, GA, GI);
+                };
+            }
         }
-        state_select.onchange = (e) => {
-            const j = e.target.value;
-            GI[c] = +j;
-            GUI.update_fold(FOLD, CELL, BF, GB, GA, GI);
-        };
+        const {Vf, FV} = FOLD;
+        const svg = document.getElementById("cell");
+        const g = SVG.clear("constraint_notes");
+        for (const comp of C) {
+            const lines = GB[comp].map(b => {
+                const [f1, f2] = M.decode(BF[b]);
+                const p1 = M.centroid(M.expand(FV[f1], Vf));
+                const p2 = M.centroid(M.expand(FV[f2], Vf));
+                return [p1, p2];
+            });
+            const stroke = SVG.COLORS[comp % SVG.COLORS.length];
+            SVG.draw_segments(g, lines, {stroke});
+        }
     },
     update_cell_face_listeners: (FOLD, CELL, BF, BT) => {
         NOTE.time("Updating cell-face listeners");
         const {V, EV, FV} = FOLD;
         const {P, SP, CP, CF, FC, SE} = CELL;
         const ES_map = new Map();
-        for (let i = 0; i < SE.length; ++i) {
-            for (const e of SE[i]) {
+        for (const [i, E] of SE.entries()) {
+            for (const e of E) {
                 const k = M.encode(EV[e]);
                 const A = ES_map.get(k);
                 if (A == undefined) {
@@ -1291,13 +1321,13 @@ const GUI = {   // INTERFACE
             }
         }
         const SE_map = new Map();
-        for (let i = 0; i < SE.length; ++i) {
-            SE_map.set(M.encode(SP[i]), SE[i]);
+        for (const [i, E] of SE.entries()) {
+            SE_map.set(M.encode(SP[i]), E);
         }
         const FM = FV.map(F => M.centroid(M.expand(F, V)));
         const FB_map = new Map();
-        for (let i = 0; i < BF.length; ++i) {
-            FB_map.set(BF[i], i);
+        for (const [i, F] of BF.entries()) {
+            FB_map.set(F, i);
         }
         const FB = FC.map(() => []);
         for (const k of BF) { 
@@ -1306,17 +1336,15 @@ const GUI = {   // INTERFACE
             FB[f2].push(f1);
         }
         const active = [];
-        const flat_svg = document.getElementById("flat");
-        const cell_svg = document.getElementById("cell");
+        const face_notes = document.getElementById("face_notes");
+        const cell_notes = document.getElementById("cell_notes");
         NOTE.start_check("face", FC);
-        for (let i = 0; i < FC.length; ++i) {
+        for (const [i, C] of FC.entries()) {
             NOTE.check(i);
             const face = document.getElementById(`f${i}`);
             face.onclick = () => {
                 const color = face.getAttribute("fill");
                 GUI.clear_active(CF, FC);
-                const flat_note = SVG.append("g", flat_svg, {id: "flat_notes"});
-                const cell_note = SVG.append("g", cell_svg, {id: "cell_notes"});
                 if (active.length == 1) {
                     if (color == GUI.COLORS.B) {
                         active.push(i);
@@ -1344,18 +1372,18 @@ const GUI = {   // INTERFACE
                                 k => M.decode(k).map(x => FM[x]));
                         }
                         for (const j of [1, 2, 0]) {
-                            SVG.draw_segments(flat_note, L[j], {fill: "none", 
+                            SVG.draw_segments(face_notes, L[j], {fill: "none", 
                                 stroke: GUI.COLORS.T[j], stroke_width: 5});
                         }
-                        const C = new Set(FC[f1]);
                         for (const f of [f1, f2]) {
                             for (const c of FC[f]) {
                                 const el = document.getElementById(`c${c}`);
                                 el.setAttribute("fill", GUI.COLORS.active);
                             }
                         }
+                        const C1 = new Set(FC[f1]);
                         for (const c of FC[f2]) {
-                            if (C.has(c)) {
+                            if (C1.has(c)) {
                                 const el = document.getElementById(`c${c}`);
                                 el.setAttribute("fill", GUI.COLORS.T[3]);
                             }
@@ -1366,7 +1394,7 @@ const GUI = {   // INTERFACE
                 } else {
                     while (active.length > 0) { active.pop(); }
                     active.push(i);
-                    GUI.change_active(face, FC[i], "c", GUI.COLORS.active);
+                    GUI.change_active(face, C, "c", GUI.COLORS.active);
                     for (const f of FB[i]) {
                         const el = document.getElementById(`f${f}`);
                         el.setAttribute("fill", GUI.COLORS.B);
@@ -1385,9 +1413,9 @@ const GUI = {   // INTERFACE
                         Lcolors.push(color);
                         return [v1, v2].map(p => V[p]);
                     });
-                    SVG.draw_segments(flat_note, L, {
+                    SVG.draw_segments(face_notes, L, {
                         stroke: Lcolors, stroke_width: 5});
-                    SVG.draw_segments(cell_note, S, {
+                    SVG.draw_segments(cell_notes, S, {
                         stroke: Scolors, stroke_width: 5});
                 }
                 for (const f of active) {
@@ -1396,15 +1424,13 @@ const GUI = {   // INTERFACE
                 }
             };
         }
-        for (let i = 0; i < CF.length; ++i) {
+        for (const [i, F] of CF.entries()) {
             const cell = document.getElementById(`c${i}`);
             cell.onclick = () => {
                 const active = (cell.getAttribute("fill") != "black");
                 GUI.clear_active(CF, FC);
-                const flat_note = SVG.append("g", flat_svg, {id: "flat_notes"});
-                const cell_note = SVG.append("g", cell_svg, {id: "cell_notes"});
                 if (!active) {
-                    GUI.change_active(cell, CF[i], "f", GUI.COLORS.active);
+                    GUI.change_active(cell, F, "f", GUI.COLORS.active);
                     const L = [];
                     const Lcolors = [];
                     const Scolors = [];
@@ -1419,9 +1445,9 @@ const GUI = {   // INTERFACE
                         Scolors.push(color);
                         return [p1, p2].map(p => P[p]);
                     });
-                    SVG.draw_segments(flat_note, L, {
+                    SVG.draw_segments(face_notes, L, {
                         stroke: Lcolors, stroke_width: 5});
-                    SVG.draw_segments(cell_note, S, {
+                    SVG.draw_segments(cell_notes, S, {
                         stroke: Scolors, stroke_width: 5});
                 }
             };
@@ -1429,24 +1455,18 @@ const GUI = {   // INTERFACE
         NOTE.lap();
     },
     clear_active: (CF, FC) => {
-        const flat_notes = document.getElementById("flat_notes");
-        if (flat_notes != undefined) {
-            flat_notes.parentElement.removeChild(flat_notes);
-        }
-        const cell_notes = document.getElementById("cell_notes");
-        if (cell_notes != undefined) {
-            cell_notes.parentElement.removeChild(cell_notes);
-        }
-        for (let i = 0; i < FC.length; ++i) {
+        SVG.clear("face_notes");
+        SVG.clear("cell_notes");
+        for (const [i, C] of FC.entries()) {
             const f = document.getElementById(`f${i}`);
             if (f.getAttribute("fill") != "black") {
-                GUI.change_active(f, FC[i], "c", "black");
+                GUI.change_active(f, C, "c", "black");
             }
         }
-        for (let i = 0; i < CF.length; ++i) {
+        for (const [i, F] of CF.entries()) {
             const c = document.getElementById(`c${i}`);
             if (c.getAttribute("fill") != "black") {
-                GUI.change_active(c, CF[i], "f", "black");
+                GUI.change_active(c, F, "f", "black");
             }
         }
     },
@@ -1543,17 +1563,6 @@ const SVG = {   // DRAWING
         "C": "white",
     },
     NS: "http://www.w3.org/2000/svg",
-    init: (id, {h, w, x, y, s, m}) => {
-        const svg = document.getElementById(id);
-        svg.setAttribute("xmlns", SVG.NS);
-        svg.setAttribute("style", `background: white`);
-        svg.setAttribute("height", h);
-        svg.setAttribute("width", w);
-        svg.setAttribute("x", x);
-        svg.setAttribute("y", y);
-        svg.setAttribute("viewBox", [-m, -m, s + 2*m, s + 2*m].join(" "));
-        return svg;
-    },
     append: (type, par, attrs = {}) => {
         const el = document.createElementNS(SVG.NS, type);
         for (const [k, v] of Object.entries(attrs)) { 
@@ -1564,8 +1573,10 @@ const SVG = {   // DRAWING
     },
     clear: (id) => {
         const el = document.getElementById(id);
-        while (el.children.length > 0) {
-            el.removeChild(el.children[0]);
+        if (el.children != undefined) {
+            while (el.children.length > 0) {
+                el.removeChild(el.firstChild);
+            }
         }
         return el;
     },
@@ -1586,8 +1597,8 @@ const SVG = {   // DRAWING
     draw_points: (svg, P, options) => {
         const g = SVG.append("g", svg);
         if (options.id != undefined) { g.setAttribute("id", options.id); }
-        for (let i = 0; i < P.length; ++i) {
-            const [x, y] = M.mul(P[i], SVG.SCALE);
+        for (const [i, p] of P.entries()) {
+            const [x, y] = M.mul(p, SVG.SCALE);
             const color = SVG.get_val(options.fill, i, "black");
             SVG.draw_point(g, [x, y], color, SVG.get_val(options.r, i, 2));
             if (options.text) {
@@ -1600,9 +1611,9 @@ const SVG = {   // DRAWING
         const g = SVG.append("g", svg);
         if (options.id != undefined) { g.setAttribute("id", options.id); }
         NOTE.start_check("segment", L);
-        for (let i = 0; i < L.length; ++i) {
+        for (const [i, l] of L.entries()) {
             NOTE.check(i);
-            const [[x1, y1], [x2, y2]] = L[i].map(p => M.mul(p, SVG.SCALE));
+            const [[x1, y1], [x2, y2]] = l.map(p => M.mul(p, SVG.SCALE));
             const p = SVG.append("line", g, {x1, x2, y1, y2});
             const color = SVG.get_val(options.stroke, i, "black");
             const width = SVG.get_val(options.stroke_width, i, 1);
@@ -1624,9 +1635,9 @@ const SVG = {   // DRAWING
         const g = SVG.append("g", svg);
         if (options.id != undefined) { g.setAttribute("id", options.id); }
         NOTE.start_check("polygon", P);
-        for (let i = 0; i < P.length; ++i) {
+        for (const [i, ps] of P.entries()) {
             NOTE.check(i);
-            const F = P[i].map(p => M.mul(p, SVG.SCALE));
+            const F = ps.map(p => M.mul(p, SVG.SCALE));
             const color = SVG.get_val(options.fill, i, "black");
             const V = F.map(v => v.join(",")).join(" ");
             const p = SVG.append("polygon", g, {points: V, fill: color});
@@ -1688,11 +1699,11 @@ const M = {     // MATH
         }
         return M.div(p, n);
     },
-    previous_in_list: (list, v) => {
-        for (let i = 0; i < list.length; ++i) {
-            if (list[i] == v) {
-                if (i == 0) { return list[list.length - 1]; } 
-                else        { return list[i - 1]; }
+    previous_in_list: (A, v) => {
+        for (const [i, x] of A.entries()) {
+            if (x == v) {
+                if (i == 0) { return A[A.length - 1]; } 
+                else        { return A[i - 1]; }
             }
         }
     },
@@ -1734,12 +1745,12 @@ const M = {     // MATH
         const diff = (x_diff < y_diff) ? y_diff : x_diff;
         return P.map(p => M.div(M.sub(p, [x_min, y_min]), diff));
     },
-    center_points: (points, cx, cy) => {
+    center_points: (P, cx, cy) => {
         const inf = Infinity;
         let [min_x, min_y, max_x, max_y] = [inf, inf, -inf, -inf];
-        for (let i = 0; i < points.length; ++i) {
-            if (points[i] == undefined) { debugger; }
-            const [x, y] = points[i];
+        for (const p of P) {
+            if (p == undefined) { debugger; }
+            const [x, y] = p;
             if (x < min_x) { min_x = x; }
             if (y < min_y) { min_y = y; }
             if (x > max_x) { max_x = x; }
@@ -1747,15 +1758,15 @@ const M = {     // MATH
         }
         const dx = cx - (max_x + min_x)/2;
         const dy = cy - (max_y + min_y)/2;
-        return points.map(([x, y]) => [x + dx, y + dy]);
+        return P.map(([x, y]) => [x + dx, y + dy]);
     },
     orientation: (P) => {
         const n = P.length;
-        let [i, j] = [n - 2, n - 1];
-        for (let k = 0; k < n; ++k) {
-            const o = Math.sign(M.area2(P[i], P[j], P[k]));
+        let [p1, p2] = [P[n - 2], P[n - 1]];
+        for (const p3 of P) {
+            const o = Math.sign(M.area2(p1, p2, p3));
             if (o != 0) { return o; }
-            [i, j] = [j, k];
+            [p1, p2] = [p2, p3];
         }
         return 0; 
     },
@@ -1763,8 +1774,8 @@ const M = {     // MATH
         const n = P.length;
         let best_triangle;
         let max_area = -Infinity;
-        for (let i = 0; i < P.length; ++i) {
-            const [p1, p2, p3] = [P[i], P[(i + 1) % n], P[(i + 2) % n]];
+        let [p1, p2] = [P[n - 2], P[n - 1]];
+        for (const p3 of P) {
             let found = true;
             for (const p of P) {
                 if ((p != p1) && (p != p2) && (p != p3) && 
@@ -1781,6 +1792,7 @@ const M = {     // MATH
                     best_triangle = [p1, p2, p3];
                 }
             }
+            [p1, p2] = [p2, p3];
         }
         if (best_triangle == undefined) { debugger; }
         return M.centroid(best_triangle);
@@ -1810,9 +1822,10 @@ const M = {     // MATH
     },
     polygon_area2: (P) => {
         let area = 0;
-        for (let i = 0; i < P.length; ++i) {
-            const j = (i + 1) % P.length;
-            area += (P[i][0] + P[j][0])*(P[j][1] - P[i][1]);
+        let p1 = P[P.length - 1];
+        for (const p2 of P) {
+            area += (p1[0] + p2[0])*(p2[1] - p1[1]);
+            p1 = p2;
         }
         return area;
     },
@@ -1879,3 +1892,5 @@ const M = {     // MATH
         console.assert("Error: input array shorter than requested length");
     },
 };
+
+window.onload = MAIN.startup;   // entry point
