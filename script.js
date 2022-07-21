@@ -68,8 +68,6 @@ const MAIN = {
         GUI.update_flat(FOLD);
         GUI.update_cell(FOLD);
         SVG.clear("fold");
-        SVG.clear("component_select");
-        SVG.clear("state_select");
         document.getElementById("num_states").innerHTML = "";
         document.getElementById("fold_controls").style.display = "inline";
         document.getElementById("state_controls").style.display = "none";
@@ -313,6 +311,7 @@ const SOLVER = {    // STATE SOLVER
             }
         }
         GB.sort((A, B) => A.length - B.length);
+        GB.reverse();
         GB.push(B0);
         GB.reverse();
         return GB;
@@ -320,6 +319,7 @@ const SOLVER = {    // STATE SOLVER
     guess_vars: (G, BI, BF, BT, BA, lim) => {
         const guesses = [];
         const A = [];
+        const sol = G.map(() => 0);
         let idx = 0;
         let backtracking = false;  
         NOTE.start_check("state"); // at start of loop, idx is an index of G     
@@ -352,7 +352,9 @@ const SOLVER = {    // STATE SOLVER
                 }
             } else {
                 if (idx == G.length) {
-                    const sol = G.map(i => BA[i]);
+                    for (const [i, gi] of G.entries()) {
+                        sol[i] = BA[gi];
+                    }
                     A.push(M.bit_encode(sol));
                     if (A.length >= lim) {
                         return A;
@@ -1267,7 +1269,7 @@ const GUI = {   // INTERFACE
         const comp_select = document.getElementById("component_select");
         const c = comp_select.value;
         document.getElementById("state_config").style.display = "none"; 
-        document.getElementById("component_select").style.background = "white";
+        comp_select.style.background = "white";
         const C = [];
         if (c == "none") {
         } else if (c == "all") {
@@ -1276,20 +1278,19 @@ const GUI = {   // INTERFACE
             }
         } else {
             C.push(c);
-            if (GA[c].length > 1) {
+            const n = GA[c].length;
+            comp_select.style.background = SVG.COLORS[c % SVG.COLORS.length];
+            if (n > 1) {
                 document.getElementById("state_config").style.display = "inline"; 
-                const state_select = SVG.clear("state_select");
-                for (const [i, _] of GA[c].entries()) {
-                    const el = document.createElement("option");
-                    el.setAttribute("value", `${i}`);
-                    el.textContent = `${i}`
-                    state_select.appendChild(el);
-                }
-                const el = document.getElementById("component_select");
-                el.style.background = SVG.COLORS[c % SVG.COLORS.length];
+                const state_label = document.getElementById("state_label");
+                const state_select = document.getElementById("state_select");
+                state_label.innerHTML = `${n} States`;
+                state_select.setAttribute("min", 1);
+                state_select.setAttribute("max", n);
+                state_select.value = 1;
                 state_select.onchange = (e) => {
                     const j = e.target.value;
-                    GI[c] = +j;
+                    GI[c] = +j - 1;
                     GUI.update_fold(FOLD, CELL, BF, GB, GA, GI);
                 };
             }
@@ -1670,9 +1671,21 @@ const SVG = {   // DRAWING
 
 const M = {     // MATH
     EPS: 300,
-    encode: (A) => A.map(i => String.fromCodePoint(i)).join(""),
+    encode: (A) => {
+        const B = [];
+        for (const a of A) {
+            B.push(String.fromCodePoint(a));
+        }
+        return B.join("");
+    },
     encode_order_pair: ([a, b]) => M.encode((a < b) ? [a, b] : [b, a]),
-    decode: (S) => Array.from(S).map(c => c.codePointAt(0)),
+    decode: (S) => {
+        const B = [];
+        for (const s of S) {
+            B.push(s.codePointAt(0));
+        }
+        return B;
+    },
     expand: (F, V) => F.map((vi) => V[vi]),
     mul: ([x, y], s) => [s*x, s*y],
     div: (v, s) => M.mul(v, 1/s),
