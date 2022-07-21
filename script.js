@@ -928,7 +928,8 @@ const X = {     // CONVERSION
                     }
                 }
             }
-            BT3[i] = M.encode(Array.from(T3));
+            BT3[i] = M.encode(T3);
+            T3.clear();
         }
         return BT;
     },
@@ -950,7 +951,8 @@ const X = {     // CONVERSION
             }
             T.delete(f1);
             T.delete(f2);
-            BT3.push(M.encode(Array.from(T)));
+            BT3.push(M.encode(T));
+            T.clear();
         }
         return BT3;
     },
