@@ -32,7 +32,7 @@ const MAIN = {
             }
         }
         const limit_select = document.getElementById("limit_select");
-        for (const val of ["all", "10", "1"]) {
+        for (const val of ["all", 1000, 100, 10, 1]) {
             const el = document.createElement("option");
             el.setAttribute("value", val);
             el.textContent = val;
@@ -159,7 +159,7 @@ const MAIN = {
         NOTE.time("*** Computing states ***");
         const BA0 = X.EF_EA_Ff_BF_2_BA(EF, EA, Ff, BF);
         const val = document.getElementById("limit_select").value;
-        const lim = (val == "1") ? 1 : ((val == "10") ? 10 : Infinity);
+        const lim = (val == "all") ? Infinity : +val;
         const [GB, GA] = SOLVER.solve(BF, BT, BA0, lim);
         const n = (GA == undefined) ? 0 : GA.reduce((s, A) => s*A.length, 1);
         NOTE.count(n, "folded states");
