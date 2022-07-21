@@ -167,12 +167,16 @@ const MAIN = {
         const num_states = document.getElementById("num_states");
         num_states.textContent = `# States Found: ${n}`;
         const GI = GB.map(() => 0);
+        NOTE.time("Computing state");
+        const edges = SOLVER.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
+        FOLD.FO = SOLVER.edges_Ff_2_FO(edges, Ff);
+        CELL.CD = SOLVER.CF_edges_flip_2_CD(CF, edges);
         if (n > 0) {
             document.getElementById("state_controls").style.display = "inline"; 
             document.getElementById("flip").onchange = (e) => {
-                GUI.update_fold(FOLD, CELL, BF, GB, GA, GI);
+                GUI.update_fold(FOLD, CELL);
             };
-            GUI.update_fold(FOLD, CELL, BF, GB, GA, GI);
+            GUI.update_fold(FOLD, CELL);
             const comp_select = SVG.clear("component_select");
             for (const opt of ["none", "all"]) {
                 const el = document.createElement("option");
@@ -458,14 +462,14 @@ const SOLVER = {    // STATE SOLVER
             return [f1, f2, (Ff[f2] ? 1 : -1)];
         });
     },
-    CF_edges_flip_2_CD: (CF, edges, flip) => {
+    CF_edges_flip_2_CD: (CF, edges) => {
         const edge_map = new Set(edges);
         NOTE.start_check("cell", CF);
         return CF.map((F, i) => {
             NOTE.check(i);
             const S = F.map(i => i);
             S.sort((a, b) => (edge_map.has(M.encode([a, b])) ? 1 : -1));
-            return (flip ? S[0] : S[S.length - 1]);
+            return S;
         });
     },
     EF_SE_SC_CD_2_SD: (EF, SE, SC, CD) => {
@@ -1240,21 +1244,18 @@ const GUI = {   // INTERFACE
         SVG.append("g", svg, {id: "cell_notes"});
         SVG.append("g", svg, {id: "constraint_notes"});
     },
-    update_fold: (FOLD, CELL, BF, GB, GA, GI) => {
-        NOTE.time("Computing state");
+    update_fold: (FOLD, CELL) => {
         const {EF, Ff} = FOLD;
-        const {P, SP, SE, CP, SC, CF} = CELL;
+        const {P, SP, SE, CP, SC, CD} = CELL;
         const svg = SVG.clear("fold");
-        const edges = SOLVER.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
-        FOLD.FO = SOLVER.edges_Ff_2_FO(edges, Ff);
         const flip = document.getElementById("flip").checked;
         NOTE.time("Drawing fold");
-        const CD = SOLVER.CF_edges_flip_2_CD(CF, edges, flip);
-        const SD = SOLVER.EF_SE_SC_CD_2_SD(EF, SE, SC, CD);
+        const tops = CD.map(S => flip ? S[0] : S[S.length - 1]);
+        const SD = SOLVER.EF_SE_SC_CD_2_SD(EF, SE, SC, tops);
         const m = [0.5, 0.5];
         const Q = P.map(p => (flip ? M.add(M.refX(M.sub(p, m)), m) : p));
         const cells = CP.map(V => M.expand(V, Q));
-        const colors = CD.map(d => (Ff[d] != flip) ? "gray" : "lightgray");
+        const colors = tops.map(d => (Ff[d] != flip) ? "gray" : "lightgray");
         SVG.draw_polygons(svg, cells, {fill: colors, stroke: colors});
         const [creases, segments] = [[], []];
         for (const [i, a] of SD.entries()) {
@@ -1291,7 +1292,11 @@ const GUI = {   // INTERFACE
                 state_select.onchange = (e) => {
                     const j = e.target.value;
                     GI[c] = +j - 1;
-                    GUI.update_fold(FOLD, CELL, BF, GB, GA, GI);
+                    NOTE.time("Computing state");
+                    const edges = SOLVER.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
+                    FOLD.FO = SOLVER.edges_Ff_2_FO(edges, FOLD.Ff);
+                    CELL.CD = SOLVER.CF_edges_flip_2_CD(CELL.CF, edges);
+                    GUI.update_fold(FOLD, CELL);
                 };
             }
         }
