@@ -1188,6 +1188,7 @@ const GUI = {   // INTERFACE
     },
     update_flat: (FOLD) => {
         NOTE.time("Drawing flat");
+        SVG.clear("export");
         const {V, VK, EV, EA, FV} = FOLD;
         const svg = SVG.clear("flat");
         const visible = document.getElementById("text").checked;
@@ -1218,6 +1219,7 @@ const GUI = {   // INTERFACE
     },
     update_cell: (FOLD, CELL) => {
         NOTE.time("Drawing cell");
+        SVG.clear("export");
         const svg = SVG.clear("cell");
         if (CELL == undefined) {
             const {Vf, FV} = FOLD;
@@ -1247,11 +1249,12 @@ const GUI = {   // INTERFACE
         SVG.append("g", svg, {id: "constraint_notes"});
     },
     update_fold: (FOLD, CELL) => {
+        NOTE.time("Drawing fold");
+        SVG.clear("export");
         const {EF, Ff} = FOLD;
         const {P, SP, SE, CP, SC, CD} = CELL;
         const svg = SVG.clear("fold");
         const flip = document.getElementById("flip").checked;
-        NOTE.time("Drawing fold");
         const tops = CD.map(S => flip ? S[0] : S[S.length - 1]);
         const SD = SOLVER.EF_SE_SC_CD_2_SD(EF, SE, SC, tops);
         const m = [0.5, 0.5];
@@ -1268,7 +1271,8 @@ const GUI = {   // INTERFACE
         SVG.draw_segments(svg, segments, {stroke: SVG.TYPES_COLOR["B"]});
     },
     update_component: (FOLD, CELL, BF, GB, GA, GI) => {
-        NOTE.time("Updating component");
+        NOTE.time("Drawing component");
+        SVG.clear("export");
         const comp_select = document.getElementById("component_select");
         const c = comp_select.value;
         document.getElementById("state_config").style.display = "none"; 
@@ -1469,6 +1473,7 @@ const GUI = {   // INTERFACE
     clear_active: (CF, FC) => {
         SVG.clear("face_notes");
         SVG.clear("cell_notes");
+        SVG.clear("export");
         for (const [i, C] of FC.entries()) {
             const f = document.getElementById(`f${i}`);
             if (f.getAttribute("fill") != "black") {
