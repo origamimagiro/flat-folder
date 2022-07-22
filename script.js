@@ -4,13 +4,6 @@ window.onload = () => { MAIN.startup(); }   // entry point
 
 const MAIN = {
     startup: () => {
-        document.getElementById("import").onchange = (e) => {
-            if (e.target.files.length > 0) {
-                const file_reader = new FileReader();
-                file_reader.onload = MAIN.process_file;
-                file_reader.readAsText(e.target.files[0]);
-            }
-        };
         const [b, s] = [50, SVG.SCALE];
         const main = document.getElementById("main");
         for (const [k, v] of Object.entries({
@@ -40,11 +33,17 @@ const MAIN = {
             el.textContent = val;
             limit_select.appendChild(el);
         }
+        document.getElementById("import").onchange = (e) => {
+            if (e.target.files.length > 0) {
+                const file_reader = new FileReader();
+                file_reader.onload = MAIN.process_file;
+                file_reader.readAsText(e.target.files[0]);
+            }
+        };
     },
     process_file: (e) => {
         NOTE.clear_log();
-        NOTE.start();
-        NOTE.time("*** Starting File Import ***");
+        NOTE.start("*** Starting File Import ***");
         const doc = e.target.result;
         const file_name = document.getElementById("import").value;
         const parts = file_name.split(".");
@@ -65,8 +64,9 @@ const MAIN = {
         NOTE.annotate(Ff, "faces_flip");
         NOTE.lap();
         const FOLD = {V, Vf, VK, EV, EA, EF, FV, Ff};
-        NOTE.time("Updating Interface");
+        NOTE.time("Drawing flat");
         GUI.update_flat(FOLD);
+        NOTE.time("Drawing cell");
         GUI.update_cell(FOLD);
         SVG.clear("fold");
         document.getElementById("num_states").innerHTML = "";
@@ -74,22 +74,23 @@ const MAIN = {
         document.getElementById("state_controls").style.display = "none";
         document.getElementById("state_config").style.display = "none";
         document.getElementById("export_button").style.display = "inline";
-        document.getElementById("export_button").onclick = (e => IO.write(FOLD));
-        document.getElementById("text").onchange = (e => GUI.update_flat(FOLD));
-        document.getElementById("fold_button").onclick = (e) => {
+        document.getElementById("export_button").onclick = () => IO.write(FOLD);
+        document.getElementById("text").onchange = () => {
+            NOTE.start("Toggling Text");
+            GUI.update_flat(FOLD);
+            NOTE.end();
+        };
+        document.getElementById("fold_button").onclick = () => {
             MAIN.compute_cells(FOLD);
         };
         NOTE.lap();
-        NOTE.time("End of computation");
-        NOTE.time_elapsed();
+        NOTE.end();
     },
     compute_cells: (FOLD) => {
-        NOTE.start();
-        NOTE.time("*** Computing cell graph ***");
+        NOTE.start("*** Computing cell graph ***");
         const {V, Vf, EV, FV, Ff} = FOLD;
         const L = EV.map((P) => M.expand(P, Vf));
         const eps = M.min_line_length(L) / M.EPS;
-        NOTE.lap();
         NOTE.time(`Using eps ${eps} from min line length ${eps*M.EPS}`);
         NOTE.time("Constructing points and segments from edges");
         const [P, SP, SE] = X.L_2_V_EV_EL(L, eps);
@@ -112,8 +113,10 @@ const MAIN = {
         GUI.update_cell(FOLD, CELL);
         NOTE.lap();
         document.getElementById("text").onchange = (e) => {
+            NOTE.start("Toggling Text");
             GUI.update_flat(FOLD);
             GUI.update_cell(FOLD, CELL);
+            NOTE.end();
         };
         window.setTimeout(MAIN.compute_constraints, 0, FOLD, CELL);
     },
@@ -145,11 +148,15 @@ const MAIN = {
         NOTE.count(BT3, "independent transitivity", 3);
         const BT = BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
         NOTE.lap();
+        NOTE.time("Updating cell-face listeners");
         GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
+        NOTE.lap();
         document.getElementById("text").onchange = (e) => {
+            NOTE.start("Toggling Text");
             GUI.update_flat(FOLD);
             GUI.update_cell(FOLD, CELL);
             GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
+            NOTE.end();
         };
         window.setTimeout(MAIN.compute_states, 0, FOLD, CELL, BF, BT);
     },
@@ -162,6 +169,7 @@ const MAIN = {
         const lim = (val == "all") ? Infinity : +val;
         const [GB, GA] = SOLVER.solve(BF, BT, BA0, lim);
         const n = (GA == undefined) ? 0 : GA.reduce((s, A) => s*A.length, 1);
+        NOTE.time("Solve completed");
         NOTE.count(n, "folded states");
         NOTE.lap();
         const num_states = document.getElementById("num_states");
@@ -174,9 +182,10 @@ const MAIN = {
         if (n > 0) {
             document.getElementById("state_controls").style.display = "inline"; 
             document.getElementById("flip").onchange = (e) => {
+                NOTE.start("Flipping model");
                 GUI.update_fold(FOLD, CELL);
+                NOTE.end();
             };
-            GUI.update_fold(FOLD, CELL);
             const comp_select = SVG.clear("component_select");
             for (const opt of ["none", "all"]) {
                 const el = document.createElement("option");
@@ -191,20 +200,26 @@ const MAIN = {
                 comp_select.appendChild(el);
             }
             comp_select.onchange = (e) => {
+                NOTE.start("Changing component");
                 GUI.update_component(FOLD, CELL, BF, GB, GA, GI);
+                NOTE.end();
             };
+            NOTE.time("Drawing fold");
+            GUI.update_fold(FOLD, CELL);
         }
         document.getElementById("text").onchange = (e) => {
+            NOTE.start("Toggling Text");
             GUI.update_flat(FOLD);
             GUI.update_cell(FOLD, CELL);
             GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
             GUI.update_component(FOLD, CELL, BF, GB, GA, GI);
+            NOTE.end();
         };
+        NOTE.time("Drawing component");
         GUI.update_component(FOLD, CELL, BF, GB, GA, GI);
         NOTE.lap();
         stop = Date.now();
-        NOTE.time("End of computation");
-        NOTE.time_elapsed();
+        NOTE.end();
     },
 };
 
@@ -1156,7 +1171,6 @@ const IO = {    // INPUT-OUTPUT
             NOTE.lap();
             const eps = M.min_line_length(L) / M.EPS;
             NOTE.time(`Using eps ${eps} from min line length ${eps*M.EPS}`);
-            NOTE.lap();
             NOTE.time("Constructing FOLD from lines");
             [V, EV, EL] = X.L_2_V_EV_EL(L, eps);
             EA = EL.map(l => L[l[0]][2]); 
@@ -1182,7 +1196,6 @@ const GUI = {   // INTERFACE
         T: ["green", "red", "orange", "cyan"],
     },
     update_flat: (FOLD) => {
-        NOTE.time("Drawing flat");
         SVG.clear("export");
         const {V, VK, EV, EA, FV} = FOLD;
         const svg = SVG.clear("flat");
@@ -1213,7 +1226,6 @@ const GUI = {   // INTERFACE
         SVG.append("g", svg, {id: "face_notes"});
     },
     update_cell: (FOLD, CELL) => {
-        NOTE.time("Drawing cell");
         SVG.clear("export");
         const svg = SVG.clear("cell");
         if (CELL == undefined) {
@@ -1244,7 +1256,6 @@ const GUI = {   // INTERFACE
         SVG.append("g", svg, {id: "constraint_notes"});
     },
     update_fold: (FOLD, CELL) => {
-        NOTE.time("Drawing fold");
         SVG.clear("export");
         const {EF, Ff} = FOLD;
         const {P, SP, SE, CP, SC, CD} = CELL;
@@ -1266,7 +1277,6 @@ const GUI = {   // INTERFACE
         SVG.draw_segments(svg, segments, {stroke: SVG.TYPES_COLOR["B"]});
     },
     update_component: (FOLD, CELL, BF, GB, GA, GI) => {
-        NOTE.time("Drawing component");
         SVG.clear("export");
         const comp_select = document.getElementById("component_select");
         const c = comp_select.value;
@@ -1291,13 +1301,14 @@ const GUI = {   // INTERFACE
                 state_select.setAttribute("max", n);
                 state_select.value = 1;
                 state_select.onchange = (e) => {
+                    NOTE.start("Computing new state");
                     const j = e.target.value;
                     GI[c] = +j - 1;
-                    NOTE.time("Computing state");
                     const edges = SOLVER.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
                     FOLD.FO = SOLVER.edges_Ff_2_FO(edges, FOLD.Ff);
                     CELL.CD = SOLVER.CF_edges_flip_2_CD(CELL.CF, edges);
                     GUI.update_fold(FOLD, CELL);
+                    NOTE.end();
                 };
             }
         }
@@ -1316,7 +1327,6 @@ const GUI = {   // INTERFACE
         }
     },
     update_cell_face_listeners: (FOLD, CELL, BF, BT) => {
-        NOTE.time("Updating cell-face listeners");
         const {V, EV, FV} = FOLD;
         const {P, SP, CP, CF, FC, SE} = CELL;
         const ES_map = new Map();
@@ -1463,7 +1473,6 @@ const GUI = {   // INTERFACE
                 }
             };
         }
-        NOTE.lap();
     },
     clear_active: (CF, FC) => {
         SVG.clear("face_notes");
@@ -1833,23 +1842,33 @@ const M = {     // MATH
     },
 };
 
-class Timer {
-    start_time;
-    lap_time;
-    constructor() { this.reset(); }
-    read_time() { return Date.now() - this.start_time; }
-    read_lap() { return Date.now() - this.lap_time; }
-    reset() {
-        this.start_time = Date.now();
-        this.lap_time = this.start_time;
-    }
-    lap() {
+const TIME = {  // TIME
+    main_start: 0, main_lap: 0,
+    est_start:  0, est_lap:  0, est_lim: 0,
+    start_main: () => {
+        TIME.main_start = Date.now();
+        TIME.main_lap = TIME.main_start;
+    },
+    read_time: () => TIME.str(Date.now() - TIME.main_start),
+    lap: () => {
         const stop = Date.now();
-        const time = stop - this.lap_time;
-        this.lap_time = stop;
-        return Timer.str(time);
-    } 
-    static str(time) {
+        const time = stop - TIME.main_lap;
+        TIME.main_lap = stop;
+        return TIME.str(time);
+    },
+    read_est: () => Date.now() - TIME.est_lap,
+    start_est: (lim) => {
+        TIME.est_start = Date.now();
+        TIME.est_lap = TIME.est_start;
+        TIME.est_lim = lim;
+    },
+    remaining: (i) => {
+        const stop = Date.now();
+        const time = stop - TIME.est_lap;
+        TIME.est_lap = stop;
+        return TIME.str((TIME.est_lap - TIME.est_start)*(TIME.est_lim/i - 1));
+    },
+    str: (time) => {
         if (time < 1000) {
             const milli = Math.ceil(time);
             return `${milli} millisecs`;
@@ -1861,80 +1880,57 @@ class Timer {
             const secs = Math.ceil((time - mins*60000) / 1000);
             return `${mins} mins ${secs} secs`;
         }
-    }
-}
-
-class Est_Timer extends Timer {
-    lim;
-    constructor(lim) { 
-        super();
-        this.reset(lim); 
-    }
-    get_limit() { return this.lim; }
-    reset(lim) {
-        super.reset();
-        this.lim = lim;
-    }
-    remaining(i) {
-        return Timer.str((this.lap_time - this.start_time)*(this.lim/i - 1));
-    }
-}
+    },
+};
 
 const NOTE = {  // ANNOTATION
-    main_timer: new Timer(),
-    start: () => NOTE.main_timer.reset(),
-    lap: () => NOTE.log(`   - Time elapsed: ${NOTE.main_timer.lap()}`),
+    start: (label) => {
+        TIME.start_main()
+        if (label != undefined) {
+            NOTE.time(label);
+        }
+    },
+    lap: () => NOTE.log(`   - Time elapsed: ${TIME.lap()}`),
     start_check: (label, A, interval = 5000) => {
         const lim = (A == undefined) ? A : A.length;
-        NOTE.check_timer = new Est_Timer(lim);
+        TIME.start_est(lim);
         NOTE.check_interval = interval;
         NOTE.check_label = label;
     },
-    check: (i, extra) => {
-        if (NOTE.check_timer.read_lap() > NOTE.check_interval) {
-            NOTE.check_timer.lap();
-            const lim = NOTE.check_timer.get_limit();
-            if (lim != undefined) {
+    check: (i) => {
+        if (TIME.read_est() > NOTE.check_interval) {
+            if (TIME.est_lim != undefined) {
                 NOTE.log(`    On ${
                     NOTE.check_label} ${i} out of ${
-                    lim}, est time left: ${
-                    NOTE.check_timer.remaining(i)
-                }`);
+                    TIME.est_lim}, est time left: ${TIME.remaining(i)}`);
             } else {
                 NOTE.log(`    On ${NOTE.check_label} ${i} of unknown`);
-            }
-            if (extra != undefined) {
-                NOTE.log(extra);
             }
         }
     },
     annotate: (A, label) => {
-        if (A.length < 1) { return; }
-        const first = Array.from(A[0]);
-        NOTE.log(`   - Found ${A.length} ${label}`.concat(
-            (first.length == 0) ? "" : `[0] = ${JSON.stringify(first)}`));
+        const main = `   - Found ${A.length} ${label}`;
+        const detail = (A.length == 0) ? "" : `[0] = ${JSON.stringify(A[0])}`;
+        NOTE.log(main.concat(detail));
     },
     time: (label) => {
         const time = (new Date()).toLocaleTimeString();
         NOTE.log(`${time} | ${label}`);
     },
-    time_elapsed: () => {
-        NOTE.log(`   - Total Time elapsed: ${
-            Timer.str(NOTE.main_timer.read_time())}`);
+    end: () => {
+        NOTE.log(`*** Total Time elapsed: ${TIME.read_time()} ***`);
         NOTE.log("");
     },
-    clear_log: () => {
-        NOTE.lines = [];
+    count: (A, label, div = 1) => {
+        const n = Array.isArray(A) ? M.count_subarrays(A)/div : A;
+        NOTE.log(`   - Found ${n} ${label}`);
     },
     log: (str) => {
         console.log(str);
         NOTE.lines.push(str);
     },
-    count: (A, label, div = 1) => {
-        if (A.length != undefined) {
-            A = M.count_subarrays(A)/div;
-        }
-        NOTE.log(`   - Found ${A} ${label}`);
+    clear_log: () => {
+        NOTE.lines = [];
     },
 };
 
