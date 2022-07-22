@@ -270,11 +270,8 @@ const SOLVER = {    // STATE SOLVER
             const i = B[idx];
             const [f1, f2] = M.decode(BF[i]);
             const C = BT[i];
-            for (const type of [0, 1, 2, 3]) {
-                const is_trans = (type == CON.transitivity);
-                const T = is_trans ? M.decode(C[type]) : C[type];
-                for (const f3 of T) {
-                    const F = is_trans ? [f1, f2, f3] : f3;
+            for (const type of CON.types) {
+                for (const F of SOLVER.unpack_cons(C, type, f1, f2)) {
                     const I = SOLVER.infer([type, F], BI, BA);
                     if (I) {
                         for (const [j, s] of I) {
@@ -314,10 +311,8 @@ const SOLVER = {    // STATE SOLVER
                     const bi_ = stack[si];
                     const C = BT[bi_];
                     const [f1, f2] = M.decode(BF[bi_]);
-                    for (const type of [0, 1, 2, 3]) {
-                        const T = (type == 3) ? M.decode(C[type]) : C[type];
-                        for (const f3 of T) {
-                            const F = (type == 3) ? [f1, f2, f3] : f3;
+                    for (const type of CON.types) {
+                        for (const F of SOLVER.unpack_cons(C, type, f1, f2)) {
                             const vars = X.T_2_pairs([type, F]).map(
                                 (p) => M.encode_order_pair(p));
                             for (const k__ of vars) {
@@ -340,6 +335,13 @@ const SOLVER = {    // STATE SOLVER
         GB.push(B0);
         GB.reverse();
         return GB;
+    },
+    unpack_cons: (C, type, f1, f2) => {
+        if (type == CON.transitivity) {
+            return M.decode(C[type]).map(f3 => [f1, f2, f3]);
+        } else {
+            return C[type];
+        }
     },
     guess_vars: (G, BI, BF, BT, BA, lim) => {
         const guesses = [];
@@ -1939,6 +1941,7 @@ const NOTE = {  // ANNOTATION
 };
 
 const CON = {      // CONSTRAINTS
+    types: [0, 1, 2, 3],
     taco_taco: 0,
     taco_tortilla: 1,
     tortilla_tortilla: 2,
