@@ -43,9 +43,8 @@ const MAIN = {
     },
     process_file: (e) => {
         NOTE.clear_log();
+        NOTE.start();
         NOTE.time("*** Starting File Import ***");
-        const start = Date.now();
-        NOTE.start_lap();
         const doc = e.target.result;
         const file_name = document.getElementById("import").value;
         const parts = file_name.split(".");
@@ -66,7 +65,7 @@ const MAIN = {
         NOTE.annotate(Ff, "faces_flip");
         NOTE.lap();
         const FOLD = {V, Vf, VK, EV, EA, EF, FV, Ff};
-        NOTE.time("Updating Interface...");
+        NOTE.time("Updating Interface");
         GUI.update_flat(FOLD);
         GUI.update_cell(FOLD);
         SVG.clear("fold");
@@ -81,24 +80,23 @@ const MAIN = {
             MAIN.compute_cells(FOLD);
         };
         NOTE.lap();
-        stop = Date.now();
-        NOTE.time(`End of computation, total time elapsed ${
-            NOTE.time_string(stop - start)}`);
+        NOTE.time("End of computation");
+        NOTE.time_elapsed();
     },
     compute_cells: (FOLD) => {
-        const start = Date.now();
+        NOTE.start();
         NOTE.time("*** Computing cell graph ***");
         const {V, Vf, EV, FV, Ff} = FOLD;
         const L = EV.map((P) => M.expand(P, Vf));
         const eps = M.min_line_length(L) / M.EPS;
         NOTE.lap();
         NOTE.time(`Using eps ${eps} from min line length ${eps*M.EPS}`);
-        NOTE.time("Constructing points and segments from edges...");
+        NOTE.time("Constructing points and segments from edges");
         const [P, SP, SE] = X.L_2_V_EV_EL(L, eps);
         NOTE.annotate(P, "points_coords");
         NOTE.annotate(SP, "segments_points");
         NOTE.lap();
-        NOTE.time("Constructing cells from segments...");
+        NOTE.time("Constructing cells from segments");
         const [,CP] = X.V_EV_2_VV_FV(P, SP);
         NOTE.annotate(CP, "cells_points");
         NOTE.lap();
@@ -117,9 +115,9 @@ const MAIN = {
             GUI.update_flat(FOLD);
             GUI.update_cell(FOLD, CELL);
         };
-        window.setTimeout(MAIN.compute_constraints, 0, FOLD, CELL, start);
+        window.setTimeout(MAIN.compute_constraints, 0, FOLD, CELL);
     },
-    compute_constraints: (FOLD, CELL, start) => {
+    compute_constraints: (FOLD, CELL) => {
         const {V, Vf, EV, EA, EF, FV, Ff} = FOLD;
         const {P, SP, SE, CP, SC, CF, FC} = CELL;
         NOTE.time("*** Computing constraints ***");
@@ -153,9 +151,9 @@ const MAIN = {
             GUI.update_cell(FOLD, CELL);
             GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
         };
-        window.setTimeout(MAIN.compute_states, 0, FOLD, CELL, BF, BT, start);
+        window.setTimeout(MAIN.compute_states, 0, FOLD, CELL, BF, BT);
     },
-    compute_states: (FOLD, CELL, BF, BT, start) => {
+    compute_states: (FOLD, CELL, BF, BT) => {
         const {V, Vf, EV, EA, EF, FV, Ff} = FOLD;
         const {P, SP, SE, CP, SC, CF, FC} = CELL;
         NOTE.time("*** Computing states ***");
@@ -205,8 +203,8 @@ const MAIN = {
         GUI.update_component(FOLD, CELL, BF, GB, GA, GI);
         NOTE.lap();
         stop = Date.now();
-        NOTE.time(`End of computation, total time elapsed ${
-            NOTE.time_string(stop - start)}`);
+        NOTE.time("End of computation");
+        NOTE.time_elapsed();
     },
 };
 
@@ -247,7 +245,9 @@ const SOLVER = {    // STATE SOLVER
         const B = [bi];
         BA[bi] = a;
         let idx = 0;
+        NOTE.start_check("variable");
         while (idx < B.length) {  // BFS
+            NOTE.check(idx);
             const i = B[idx];
             const [f1, f2] = M.decode(BF[i]);
             const C = BT[i];
@@ -400,8 +400,8 @@ const SOLVER = {    // STATE SOLVER
             BI.set(F, i);
         }
         NOTE.time("Assigning orders based on crease assignment");
-        NOTE.start_check("crease", BA0);
         const B0 = [];
+        NOTE.start_check("crease", BA0);
         for (const [i, a] of BA0.entries()) {
             NOTE.check(i);
             if (a != 0) {
@@ -1157,7 +1157,7 @@ const IO = {    // INPUT-OUTPUT
             const eps = M.min_line_length(L) / M.EPS;
             NOTE.time(`Using eps ${eps} from min line length ${eps*M.EPS}`);
             NOTE.lap();
-            NOTE.time("Constructing FOLD from lines...");
+            NOTE.time("Constructing FOLD from lines");
             [V, EV, EL] = X.L_2_V_EV_EL(L, eps);
             EA = EL.map(l => L[l[0]][2]); 
         }
@@ -1487,77 +1487,6 @@ const GUI = {   // INTERFACE
         for (const c of C) {
             document.getElementById(`${type}${c}`).setAttribute("fill", color);
         }
-    },
-};
-
-const NOTE = {  // ANNOTATION
-    time_string: (time) => {
-        if (time < 1000) {
-            const milli = Math.ceil(time);
-            return `${milli} millisecs`;
-        } else if (time < 60000) {
-            const secs = Math.ceil(time / 1000);
-            return `${secs} secs`;
-        } else {
-            const mins = Math.floor(time / 60000);
-            const secs = Math.ceil((time - mins*60000) / 1000);
-            return `${mins} mins ${secs} secs`;
-        }
-    },
-    start_lap: () => NOTE.lap_start = Date.now(),
-    lap: () => {
-        const stop = Date.now();
-        const time = stop - NOTE.lap_start;
-        NOTE.log(`   - Time elapsed: ${NOTE.time_string(time)}`);
-        NOTE.lap_start = stop;
-    },
-    start_check: (label, target, interval = 5000) => {
-        NOTE.check_start = Date.now();
-        NOTE.check_lap = NOTE.check_start;
-        NOTE.check_interval = interval;
-        NOTE.check_label = label;
-        NOTE.check_lim = (target == undefined) ? "unknown" : target.length;
-    },
-    check: (i, extra) => {
-        if ((Date.now() - NOTE.check_lap) > NOTE.check_interval) {
-            NOTE.check_lap = Date.now();
-            if (NOTE.check_lim == "unknown") {
-                NOTE.log(`    On ${NOTE.check_label} ${i} of unknown`);
-            } else {
-                const time = NOTE.check_lap - NOTE.check_start;
-                NOTE.log(`    On ${
-                    NOTE.check_label} ${i} out of ${
-                    NOTE.check_lim}, est time left: ${
-                    NOTE.time_string(time*(NOTE.check_lim/i - 1))
-                }`);
-            }
-            if (extra != undefined) {
-                NOTE.log(extra);
-            }
-        }
-    },
-    annotate: (A, label) => {
-        if (A.length < 1) { return; }
-        const first = Array.from(A[0]);
-        NOTE.log(`   - Found ${A.length} ${label}`.concat(
-            (first.length == 0) ? "" : `[0] = ${JSON.stringify(first)}`));
-    },
-    time: (label) => {
-        const time = (new Date()).toLocaleTimeString();
-        NOTE.log(`${time} | ${label} ...`);
-    },
-    clear_log: () => {
-        NOTE.lines = [];
-    },
-    log: (str) => {
-        console.log(str);
-        NOTE.lines.push(str);
-    },
-    count: (A, label, div = 1) => {
-        if (A.length != undefined) {
-            A = M.count_subarrays(A)/div;
-        }
-        NOTE.log(`   - Found ${A} ${label}`);
     },
 };
 
@@ -1903,3 +1832,109 @@ const M = {     // MATH
         debugger; // input array shorter than requested length
     },
 };
+
+class Timer {
+    start_time;
+    lap_time;
+    constructor() { this.reset(); }
+    read_time() { return Date.now() - this.start_time; }
+    read_lap() { return Date.now() - this.lap_time; }
+    reset() {
+        this.start_time = Date.now();
+        this.lap_time = this.start_time;
+    }
+    lap() {
+        const stop = Date.now();
+        const time = stop - this.lap_time;
+        this.lap_time = stop;
+        return Timer.str(time);
+    } 
+    static str(time) {
+        if (time < 1000) {
+            const milli = Math.ceil(time);
+            return `${milli} millisecs`;
+        } else if (time < 60000) {
+            const secs = Math.ceil(time / 1000);
+            return `${secs} secs`;
+        } else {
+            const mins = Math.floor(time / 60000);
+            const secs = Math.ceil((time - mins*60000) / 1000);
+            return `${mins} mins ${secs} secs`;
+        }
+    }
+}
+
+class Est_Timer extends Timer {
+    lim;
+    constructor(lim) { 
+        super();
+        this.reset(lim); 
+    }
+    get_limit() { return this.lim; }
+    reset(lim) {
+        super.reset();
+        this.lim = lim;
+    }
+    remaining(i) {
+        return Timer.str((this.lap_time - this.start_time)*(this.lim/i - 1));
+    }
+}
+
+const NOTE = {  // ANNOTATION
+    main_timer: new Timer(),
+    start: () => NOTE.main_timer.reset(),
+    lap: () => NOTE.log(`   - Time elapsed: ${NOTE.main_timer.lap()}`),
+    start_check: (label, A, interval = 5000) => {
+        const lim = (A == undefined) ? A : A.length;
+        NOTE.check_timer = new Est_Timer(lim);
+        NOTE.check_interval = interval;
+        NOTE.check_label = label;
+    },
+    check: (i, extra) => {
+        if (NOTE.check_timer.read_lap() > NOTE.check_interval) {
+            NOTE.check_timer.lap();
+            const lim = NOTE.check_timer.get_limit();
+            if (lim != undefined) {
+                NOTE.log(`    On ${
+                    NOTE.check_label} ${i} out of ${
+                    lim}, est time left: ${
+                    NOTE.check_timer.remaining(i)
+                }`);
+            } else {
+                NOTE.log(`    On ${NOTE.check_label} ${i} of unknown`);
+            }
+            if (extra != undefined) {
+                NOTE.log(extra);
+            }
+        }
+    },
+    annotate: (A, label) => {
+        if (A.length < 1) { return; }
+        const first = Array.from(A[0]);
+        NOTE.log(`   - Found ${A.length} ${label}`.concat(
+            (first.length == 0) ? "" : `[0] = ${JSON.stringify(first)}`));
+    },
+    time: (label) => {
+        const time = (new Date()).toLocaleTimeString();
+        NOTE.log(`${time} | ${label}`);
+    },
+    time_elapsed: () => {
+        NOTE.log(`   - Total Time elapsed: ${
+            Timer.str(NOTE.main_timer.read_time())}`);
+        NOTE.log("");
+    },
+    clear_log: () => {
+        NOTE.lines = [];
+    },
+    log: (str) => {
+        console.log(str);
+        NOTE.lines.push(str);
+    },
+    count: (A, label, div = 1) => {
+        if (A.length != undefined) {
+            A = M.count_subarrays(A)/div;
+        }
+        NOTE.log(`   - Found ${A} ${label}`);
+    },
+};
+
