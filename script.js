@@ -1,5 +1,7 @@
 import {CONSTRAINTS, CON, NOC} from "./constraints.js";
 
+window.onload = () => { MAIN.startup(); }   // entry point
+
 const MAIN = {
     startup: () => {
         document.getElementById("import").onchange = (e) => {
@@ -392,36 +394,26 @@ const SOLVER = {    // STATE SOLVER
         //          |   array of valid assignments:  (max length lim)
         //          |     array for each variable in group: an assignment
         //          | returns [] if no solutions found
-        const BA = BF.map(() => 0);
+        const BA = BA0.map(a => a);
         const BI = new Map();
         for (const [i, F] of BF.entries()) {
             BI.set(F, i);
         }
         NOTE.time("Assigning orders based on crease assignment");
         NOTE.start_check("crease", BA0);
-        const L = [];
+        const B0 = [];
         for (const [i, a] of BA0.entries()) {
             NOTE.check(i);
             if (a != 0) {
-                if (BA[i] != 0) {
-                    if (BA[i] != a) {
-                        return [];
-                    }
+                const B = SOLVER.propagate(i, a, BI, BF, BT, BA);
+                if (B.length == 0) {
+                    return [];
                 } else {
-                    const B = SOLVER.propagate(i, a, BI, BF, BT, BA);
-                    if (B.length == 0) {
-                        return [];
-                    } else {
-                        L.push(B); 
+                    for (const b of B) {
+                        B0.push(b); 
                     }
                 }
             }
-        }
-        const B0 = [];
-        for (const l of L) { 
-            for (const b of l) { 
-                B0.push(b); 
-            } 
         }
         NOTE.annotate(B0, "initially assignable variables");
         NOTE.lap();
@@ -916,11 +908,14 @@ const X = {     // CONVERSION
             X.add_constraint(cons, BF_map, BT);
         }
         NOTE.time("Cleaning transitivity constraints");
+        const T3 = new Set();
         NOTE.start_check("variable", BF);
         for (const [i, k] of BF.entries()) {
             NOTE.check(i);
+            for (const f3 of M.decode(BT3[i])) {
+                T3.add(f3);
+            }
             const [f1, f2] = M.decode(k);
-            const T3 = new Set(M.decode(BT3[i]));
             for (const T of [BT0[i], BT1[i]]) {
                 for (const F of T) {
                     for (const f of F) {
@@ -936,11 +931,11 @@ const X = {     // CONVERSION
     FC_CF_BF_2_BT3: (FC, CF, BF) => {
         const BT3 = [];
         const FC_sets = FC.map(C => new Set(C));
+        const T = new Set();
         NOTE.start_check("variable", BF);
         for (const [i, k] of BF.entries()) {
             NOTE.check(i);
             const [f1, f2] = M.decode(k);
-            const T = new Set();
             const C = FC_sets[f1];
             for (const c of FC[f2]) {
                 if (C.has(c)) {
@@ -1908,5 +1903,3 @@ const M = {     // MATH
         debugger; // input array shorter than requested length
     },
 };
-
-window.onload = MAIN.startup;   // entry point
