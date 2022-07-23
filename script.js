@@ -81,7 +81,7 @@ const MAIN = {
         document.getElementById("export_button").onclick = () => IO.write(FOLD);
         document.getElementById("text").onchange = () => {
             NOTE.start("Toggling Text");
-            GUI.update_flat(FOLD);
+            GUI.update_text(FOLD);
             NOTE.end();
         };
         document.getElementById("fold_button").onclick = () => {
@@ -118,8 +118,7 @@ const MAIN = {
         NOTE.lap();
         document.getElementById("text").onchange = (e) => {
             NOTE.start("Toggling Text");
-            GUI.update_flat(FOLD);
-            GUI.update_cell(FOLD, CELL);
+            GUI.update_text(FOLD, CELL);
             NOTE.end();
         };
         window.setTimeout(MAIN.compute_constraints, 0, FOLD, CELL);
@@ -155,13 +154,6 @@ const MAIN = {
         NOTE.time("Updating cell-face listeners");
         GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
         NOTE.lap();
-        document.getElementById("text").onchange = (e) => {
-            NOTE.start("Toggling Text");
-            GUI.update_flat(FOLD);
-            GUI.update_cell(FOLD, CELL);
-            GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
-            NOTE.end();
-        };
         window.setTimeout(MAIN.compute_states, 0, FOLD, CELL, BF, BT);
     },
     compute_states: (FOLD, CELL, BF, BT) => {
@@ -211,14 +203,6 @@ const MAIN = {
             NOTE.time("Drawing fold");
             GUI.update_fold(FOLD, CELL);
         }
-        document.getElementById("text").onchange = (e) => {
-            NOTE.start("Toggling Text");
-            GUI.update_flat(FOLD);
-            GUI.update_cell(FOLD, CELL);
-            GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
-            GUI.update_component(FOLD, CELL, BF, GB, GA, GI);
-            NOTE.end();
-        };
         NOTE.time("Drawing component");
         GUI.update_component(FOLD, CELL, BF, GB, GA, GI);
         NOTE.lap();
@@ -1224,6 +1208,81 @@ const IO = {    // INPUT-OUTPUT
     },
 };
 
+const CON = {      // CONSTRAINTS
+    types: [0, 1, 2, 3],
+    taco_taco: 0,
+    taco_tortilla: 1,
+    tortilla_tortilla: 2,
+    transitivity: 3,
+    valid: [
+        ["111112", "111121", "111222", "112111",    // 0: taco-taco
+         "121112", "121222", "122111", "122212", 
+         "211121", "211222", "212111", "212221", 
+         "221222", "222111", "222212", "222221"],
+        ["112", "121", "212", "221"],               // 1: taco-tortilla
+        ["11", "22"],                               // 2: tortilla-tortilla
+        ["112", "121", "122", "211", "212", "221"], // 3: transitivity
+    ],
+    implied: [],
+    build: () => {
+        for (const type of [0, 1, 2, 3]) {
+            const n = CON.valid[type][0].length;
+            const I = [];
+            for (let i = 0; i <= n; ++i) {
+                I.push(new Map());
+            }
+            for (let i = 0; i < 3**n; ++i) {
+                let [k, num_zeros] = [i, 0];
+                const A = [];
+                for (let j = 0; j < n; ++j) {
+                    const val = k % 3;
+                    num_zeros += (val == 0) ? 1 : 0;
+                    A.push(val);
+                    k = (k - A[j]) / 3;
+                }
+                I[num_zeros].set(A.join(""), 0);
+            }
+            for (const k of CON.valid[type]) {
+                I[0].set(k, 1);
+            }
+            for (let i = 1; i <= n; ++i) {
+                for (const [k, _] of I[i]) {
+                    const A = Array.from(k);
+                    let good = 0;
+                    for (let j = 0; j < n; ++j) {
+                        const check = [];
+                        if (A[j] == "0") {
+                            for (const c of ["1", "2"]) {
+                                A[j] = c;
+                                if (I[i - 1].get(A.join("")) != 0) {
+                                    check.push([j, +c]);
+                                }
+                            }
+                            A[j] = "0";
+                            if ((good == 0) && (check.length > 0)) {
+                                good = [];
+                            }
+                            if (check.length == 1) {
+                                good.push(check[0]);
+                            }
+                        }
+                    }
+                    if (Array.isArray(good) && (good.length == 0)) {
+                        good = 1;
+                    }
+                    I[i].set(k, good);
+                }
+            }
+            CON.implied[type] = new Map();
+            for (let i = n; i >= 0; --i) {
+                for (const [k, v] of I[i]) {
+                    CON.implied[type].set(k, v);
+                }
+            }
+        }
+    },
+};
+
 const GUI = {   // INTERFACE
     WIDTH: 1,
     COLORS: {
@@ -1231,33 +1290,64 @@ const GUI = {   // INTERFACE
         B: "cyan",
         T: ["green", "red", "orange", "cyan"],
     },
-    update_flat: (FOLD) => {
+    update_text: (FOLD, CELL) => {
         SVG.clear("export");
-        const {V, VK, EV, EA, FV} = FOLD;
-        const svg = SVG.clear("flat");
+        SVG.clear("flat_shrunk");
+        SVG.clear("flat_text");
+        if (CELL != undefined) {
+            SVG.clear("cell_text");
+        }
         const visible = document.getElementById("text").checked;
-        const F = FV.map(f => M.expand(f, V));
         if (visible) {
+            const flat_text = document.getElementById("flat_text");
+            const flat_shrunk = document.getElementById("flat_shrunk");
+            const {V, EV, EA, FV} = FOLD;
+            const F = FV.map(f => M.expand(f, V));
             const shrunk = F.map(f => {
                 const c = M.centroid(f);
                 return f.map(p => M.add(M.mul(M.sub(p, c), 0.5), c));
             });
-            SVG.draw_polygons(svg, shrunk, {opacity: 0.2});
+            SVG.draw_polygons(flat_shrunk, shrunk, {
+                text: true, id: "f_text", opacity: 0.2});
+            const line_centers = EV.map(l => M.centroid(M.expand(l, V)));
+            const colors = EA.map(a => SVG.TYPES_COLOR[a]);
+            SVG.draw_points(flat_text, line_centers, {text: true, 
+                id: "e_text", stroke: colors, stroke_width: GUI.WIDTH});
+            SVG.draw_points(flat_text, V, {
+                text: true, id: "v_text", fill: "green"});
+            if (CELL != undefined) {
+                const {P, SP, CP} = CELL;
+                const cell_text = document.getElementById("cell_text");
+                const cell_centers = CP.map(f => M.centroid(M.expand(f, P)));
+                const seg_centers = SP.map(l => M.centroid(M.expand(l, P)));
+                SVG.draw_points(cell_text, cell_centers, {
+                    text: true, id: "c_text"});
+                SVG.draw_points(cell_text, seg_centers, {text: true,
+                    id: "s_text", stroke: "black", stroke_width: GUI.WIDTH});
+                SVG.draw_points(cell_text, P, {
+                    text: true, id: "p_text", fill: "green"});
+            }
         }
-        SVG.draw_polygons(svg, F, {text: visible, opacity: 0.1, id: "f"});
+    },
+    update_flat: (FOLD) => {
+        SVG.clear("export");
+        const {V, VK, EV, EA, FV} = FOLD;
+        const svg = SVG.clear("flat");
+        SVG.append("g", svg, {id: "flat_shrunk"});
         const K = [];
         for (const [i, k] of VK.entries()) {
             if (k > 0.00001) { K.push(V[i]); }
         }
-        SVG.draw_points(svg, K, {fill: "red", r: 10});
+        SVG.draw_points(svg, K, {id: "flat_check", fill: "red", r: 10});
+        const F = FV.map(f => M.expand(f, V));
+        SVG.draw_polygons(svg, F, {id: "flat_f", opacity: 0.1});
         const lines = EV.map(l => M.expand(l, V));
         const colors = EA.map(a => SVG.TYPES_COLOR[a]);
         SVG.draw_segments(svg, lines, {
-            text: visible, id: "e", stroke: colors, stroke_width: GUI.WIDTH});
-        if (visible) {
-            SVG.draw_points(svg, V, {text: visible, id: "v", fill: "green"});
-        }
-        SVG.append("g", svg, {id: "face_notes"});
+            id: "flat_e", stroke: colors, stroke_width: GUI.WIDTH});
+        SVG.append("g", svg, {id: "flat_text"});
+        SVG.append("g", svg, {id: "flat_notes"});
+        GUI.update_text(FOLD);
     },
     update_cell: (FOLD, CELL) => {
         SVG.clear("export");
@@ -1265,10 +1355,9 @@ const GUI = {   // INTERFACE
         if (CELL == undefined) {
             const {Vf, FV} = FOLD;
             const F = FV.map(f => M.expand(f, Vf));
-            SVG.draw_polygons(svg, F, {opacity: 0.05});
+            SVG.draw_polygons(svg, F, {id: "cell_f", opacity: 0.05});
         } else {
             const {P, SP, SE, CP, SC, CF, FC} = CELL;
-            const visible = document.getElementById("text").checked;
             let max_layers = 0;
             for (const F of CF) {
                 if (max_layers < F.length) {
@@ -1278,16 +1367,13 @@ const GUI = {   // INTERFACE
             const Ccolors = CF.map(F => 0.1 + F.length/max_layers*0.7);
             const cells = CP.map(f => M.expand(f, P));
             const lines = SP.map(l => M.expand(l, P));
-            SVG.draw_polygons(svg, cells, {
-                text: visible, opacity: Ccolors, id: "c"});
+            SVG.draw_polygons(svg, cells, {opacity: Ccolors, id: "cell_c"});
             SVG.draw_segments(svg, lines, {
-                text: visible, id: "s", stroke: "black", stroke_width: GUI.WIDTH});
-            if (visible) {
-                SVG.draw_points(svg, P, {text: visible, id: "p", fill: "green"});
-            }
+                id: "cell_s", stroke: "black", stroke_width: GUI.WIDTH});
         }
+        SVG.append("g", svg, {id: "cell_text"});
         SVG.append("g", svg, {id: "cell_notes"});
-        SVG.append("g", svg, {id: "constraint_notes"});
+        GUI.update_text(FOLD, CELL);
     },
     update_fold: (FOLD, CELL) => {
         SVG.clear("export");
@@ -1301,14 +1387,17 @@ const GUI = {   // INTERFACE
         const Q = P.map(p => (flip ? M.add(M.refX(M.sub(p, m)), m) : p));
         const cells = CP.map(V => M.expand(V, Q));
         const colors = tops.map(d => (Ff[d] != flip) ? "gray" : "lightgray");
-        SVG.draw_polygons(svg, cells, {fill: colors, stroke: colors});
+        SVG.draw_polygons(svg, cells, {
+            id: "fold_c", fill: colors, stroke: colors});
         const [creases, segments] = [[], []];
         for (const [i, a] of SD.entries()) {
             if (a == "C") { creases.push(M.expand(SP[i], Q)); }
             if (a == "B") { segments.push(M.expand(SP[i], Q)); }
         }
-        SVG.draw_segments(svg, creases, {stroke: SVG.TYPES_COLOR["C"]});
-        SVG.draw_segments(svg, segments, {stroke: SVG.TYPES_COLOR["B"]});
+        SVG.draw_segments(svg, creases, {
+            id: "fold_s_crease", stroke: SVG.TYPES_COLOR["C"]});
+        SVG.draw_segments(svg, segments, {
+            id: "fold_s_edge", stroke: SVG.TYPES_COLOR["B"]});
     },
     update_component: (FOLD, CELL, BF, GB, GA, GI) => {
         SVG.clear("export");
@@ -1347,8 +1436,7 @@ const GUI = {   // INTERFACE
             }
         }
         const {Vf, FV} = FOLD;
-        const svg = document.getElementById("cell");
-        const g = SVG.clear("constraint_notes");
+        const g = SVG.clear("cell_notes");
         for (const comp of C) {
             const lines = GB[comp].map(b => {
                 const [f1, f2] = M.decode(BF[b]);
@@ -1357,7 +1445,7 @@ const GUI = {   // INTERFACE
                 return [p1, p2];
             });
             const stroke = SVG.COLORS[comp % SVG.COLORS.length];
-            SVG.draw_segments(g, lines, {stroke});
+            SVG.draw_segments(g, lines, {id: "cell_comp", stroke});
         }
     },
     update_cell_face_listeners: (FOLD, CELL, BF, BT) => {
@@ -1391,12 +1479,12 @@ const GUI = {   // INTERFACE
             FB[f2].push(f1);
         }
         const active = [];
-        const face_notes = document.getElementById("face_notes");
+        const flat_notes = document.getElementById("flat_notes");
         const cell_notes = document.getElementById("cell_notes");
         NOTE.start_check("face", FC);
         for (const [i, C] of FC.entries()) {
             NOTE.check(i);
-            const face = document.getElementById(`f${i}`);
+            const face = document.getElementById(`flat_f${i}`);
             face.onclick = () => {
                 const color = face.getAttribute("fill");
                 GUI.clear_active(CF, FC);
@@ -1409,7 +1497,7 @@ const GUI = {   // INTERFACE
                             const Tj = (j == 1) ? T[j] : M.decode(T[j]);
                             for (const F of Tj) {
                                 const f3 = (j == 1) ? F[2] : F;
-                                const el = document.getElementById(`f${f3}`);
+                                const el = document.getElementById(`flat_f${f3}`);
                                 el.setAttribute("fill", GUI.COLORS.T[j]);
                             }
                         }
@@ -1427,19 +1515,20 @@ const GUI = {   // INTERFACE
                                 k => M.decode(k).map(x => FM[x]));
                         }
                         for (const j of [1, 2, 0]) {
-                            SVG.draw_segments(face_notes, L[j], {fill: "none", 
+                            SVG.draw_segments(flat_notes, L[j], {
+                                id: "flat_cons",
                                 stroke: GUI.COLORS.T[j], stroke_width: 5});
                         }
                         for (const f of [f1, f2]) {
                             for (const c of FC[f]) {
-                                const el = document.getElementById(`c${c}`);
+                                const el = document.getElementById(`cell_c${c}`);
                                 el.setAttribute("fill", GUI.COLORS.active);
                             }
                         }
                         const C1 = new Set(FC[f1]);
                         for (const c of FC[f2]) {
                             if (C1.has(c)) {
-                                const el = document.getElementById(`c${c}`);
+                                const el = document.getElementById(`cell_c${c}`);
                                 el.setAttribute("fill", GUI.COLORS.T[3]);
                             }
                         }
@@ -1449,9 +1538,9 @@ const GUI = {   // INTERFACE
                 } else {
                     while (active.length > 0) { active.pop(); }
                     active.push(i);
-                    GUI.change_active(face, C, "c", GUI.COLORS.active);
+                    GUI.change_active(face, C, "cell_c", GUI.COLORS.active);
                     for (const f of FB[i]) {
-                        const el = document.getElementById(`f${f}`);
+                        const el = document.getElementById(`flat_f${f}`);
                         el.setAttribute("fill", GUI.COLORS.B);
                     }
                     const S = [];
@@ -1468,24 +1557,24 @@ const GUI = {   // INTERFACE
                         Lcolors.push(color);
                         return [v1, v2].map(p => V[p]);
                     });
-                    SVG.draw_segments(face_notes, L, {
-                        stroke: Lcolors, stroke_width: 5});
+                    SVG.draw_segments(flat_notes, L, {
+                        id: "flat_f_bounds", stroke: Lcolors, stroke_width: 5});
                     SVG.draw_segments(cell_notes, S, {
-                        stroke: Scolors, stroke_width: 5});
+                        id: "cell_f_bounds", stroke: Scolors, stroke_width: 5});
                 }
                 for (const f of active) {
-                    const el = document.getElementById(`f${f}`);
+                    const el = document.getElementById(`flat_f${f}`);
                     el.setAttribute("fill", GUI.COLORS.active);
                 }
             };
         }
         for (const [i, F] of CF.entries()) {
-            const cell = document.getElementById(`c${i}`);
+            const cell = document.getElementById(`cell_c${i}`);
             cell.onclick = () => {
                 const active = (cell.getAttribute("fill") != "black");
                 GUI.clear_active(CF, FC);
                 if (!active) {
-                    GUI.change_active(cell, F, "f", GUI.COLORS.active);
+                    GUI.change_active(cell, F, "flat_f", GUI.COLORS.active);
                     const L = [];
                     const Lcolors = [];
                     const Scolors = [];
@@ -1500,35 +1589,35 @@ const GUI = {   // INTERFACE
                         Scolors.push(color);
                         return [p1, p2].map(p => P[p]);
                     });
-                    SVG.draw_segments(face_notes, L, {
-                        stroke: Lcolors, stroke_width: 5});
+                    SVG.draw_segments(flat_notes, L, {
+                        id: "flat_c_bounds", stroke: Lcolors, stroke_width: 5});
                     SVG.draw_segments(cell_notes, S, {
-                        stroke: Scolors, stroke_width: 5});
+                        id: "cell_c_bounds", stroke: Scolors, stroke_width: 5});
                 }
             };
         }
     },
     clear_active: (CF, FC) => {
-        SVG.clear("face_notes");
+        SVG.clear("flat_notes");
         SVG.clear("cell_notes");
         SVG.clear("export");
         for (const [i, C] of FC.entries()) {
-            const f = document.getElementById(`f${i}`);
+            const f = document.getElementById(`flat_f${i}`);
             if (f.getAttribute("fill") != "black") {
-                GUI.change_active(f, C, "c", "black");
+                GUI.change_active(f, C, "cell_c", "black");
             }
         }
         for (const [i, F] of CF.entries()) {
-            const c = document.getElementById(`c${i}`);
+            const c = document.getElementById(`cell_c${i}`);
             if (c.getAttribute("fill") != "black") {
-                GUI.change_active(c, F, "f", "black");
+                GUI.change_active(c, F, "flat_f", "black");
             }
         }
     },
-    change_active: (svg, C, type, color) => {
+    change_active: (svg, C, id, color) => {
         svg.setAttribute("fill", color);
         for (const c of C) {
-            document.getElementById(`${type}${c}`).setAttribute("fill", color);
+            document.getElementById(`${id}${c}`).setAttribute("fill", color);
         }
     },
 };
@@ -1645,6 +1734,98 @@ const SVG = {   // DRAWING
             }
         }
         return g;
+    },
+};
+
+const TIME = {  // TIME
+    main_start: 0, main_lap: 0,
+    est_start:  0, est_lap:  0, est_lim: 0,
+    start_main: () => {
+        TIME.main_start = Date.now();
+        TIME.main_lap = TIME.main_start;
+    },
+    read_time: () => TIME.str(Date.now() - TIME.main_start),
+    lap: () => {
+        const stop = Date.now();
+        const time = stop - TIME.main_lap;
+        TIME.main_lap = stop;
+        return TIME.str(time);
+    },
+    read_est: () => Date.now() - TIME.est_lap,
+    start_est: (lim) => {
+        TIME.est_start = Date.now();
+        TIME.est_lap = TIME.est_start;
+        TIME.est_lim = lim;
+    },
+    remaining: (i) => {
+        const stop = Date.now();
+        const time = stop - TIME.est_lap;
+        TIME.est_lap = stop;
+        return TIME.str((TIME.est_lap - TIME.est_start)*(TIME.est_lim/i - 1));
+    },
+    str: (time) => {
+        if (time < 1000) {
+            const milli = Math.ceil(time);
+            return `${milli} millisecs`;
+        } else if (time < 60000) {
+            const secs = Math.ceil(time / 1000);
+            return `${secs} secs`;
+        } else {
+            const mins = Math.floor(time / 60000);
+            const secs = Math.ceil((time - mins*60000) / 1000);
+            return `${mins} mins ${secs} secs`;
+        }
+    },
+};
+
+const NOTE = {  // ANNOTATION
+    start: (label) => {
+        TIME.start_main()
+        if (label != undefined) {
+            NOTE.time(label);
+        }
+    },
+    lap: () => NOTE.log(`   - Time elapsed: ${TIME.lap()}`),
+    start_check: (label, A, interval = 5000) => {
+        const lim = (A == undefined) ? A : A.length;
+        TIME.start_est(lim);
+        NOTE.check_interval = interval;
+        NOTE.check_label = label;
+    },
+    check: (i) => {
+        if (TIME.read_est() > NOTE.check_interval) {
+            if (TIME.est_lim != undefined) {
+                NOTE.log(`    On ${
+                    NOTE.check_label} ${i} out of ${
+                    TIME.est_lim}, est time left: ${TIME.remaining(i)}`);
+            } else {
+                NOTE.log(`    On ${NOTE.check_label} ${i} of unknown`);
+            }
+        }
+    },
+    annotate: (A, label) => {
+        const main = `   - Found ${A.length} ${label}`;
+        const detail = (A.length == 0) ? "" : `[0] = ${JSON.stringify(A[0])}`;
+        NOTE.log(main.concat(detail));
+    },
+    time: (label) => {
+        const time = (new Date()).toLocaleTimeString();
+        NOTE.log(`${time} | ${label}`);
+    },
+    end: () => {
+        NOTE.log(`*** Total Time elapsed: ${TIME.read_time()} ***`);
+        NOTE.log("");
+    },
+    count: (A, label, div = 1) => {
+        const n = Array.isArray(A) ? M.count_subarrays(A)/div : A;
+        NOTE.log(`   - Found ${n} ${label}`);
+    },
+    log: (str) => {
+        console.log(str);
+        NOTE.lines.push(str);
+    },
+    clear_log: () => {
+        NOTE.lines = [];
     },
 };
 
@@ -1874,172 +2055,5 @@ const M = {     // MATH
             }
         }
         debugger; // input array shorter than requested length
-    },
-};
-
-const TIME = {  // TIME
-    main_start: 0, main_lap: 0,
-    est_start:  0, est_lap:  0, est_lim: 0,
-    start_main: () => {
-        TIME.main_start = Date.now();
-        TIME.main_lap = TIME.main_start;
-    },
-    read_time: () => TIME.str(Date.now() - TIME.main_start),
-    lap: () => {
-        const stop = Date.now();
-        const time = stop - TIME.main_lap;
-        TIME.main_lap = stop;
-        return TIME.str(time);
-    },
-    read_est: () => Date.now() - TIME.est_lap,
-    start_est: (lim) => {
-        TIME.est_start = Date.now();
-        TIME.est_lap = TIME.est_start;
-        TIME.est_lim = lim;
-    },
-    remaining: (i) => {
-        const stop = Date.now();
-        const time = stop - TIME.est_lap;
-        TIME.est_lap = stop;
-        return TIME.str((TIME.est_lap - TIME.est_start)*(TIME.est_lim/i - 1));
-    },
-    str: (time) => {
-        if (time < 1000) {
-            const milli = Math.ceil(time);
-            return `${milli} millisecs`;
-        } else if (time < 60000) {
-            const secs = Math.ceil(time / 1000);
-            return `${secs} secs`;
-        } else {
-            const mins = Math.floor(time / 60000);
-            const secs = Math.ceil((time - mins*60000) / 1000);
-            return `${mins} mins ${secs} secs`;
-        }
-    },
-};
-
-const NOTE = {  // ANNOTATION
-    start: (label) => {
-        TIME.start_main()
-        if (label != undefined) {
-            NOTE.time(label);
-        }
-    },
-    lap: () => NOTE.log(`   - Time elapsed: ${TIME.lap()}`),
-    start_check: (label, A, interval = 5000) => {
-        const lim = (A == undefined) ? A : A.length;
-        TIME.start_est(lim);
-        NOTE.check_interval = interval;
-        NOTE.check_label = label;
-    },
-    check: (i) => {
-        if (TIME.read_est() > NOTE.check_interval) {
-            if (TIME.est_lim != undefined) {
-                NOTE.log(`    On ${
-                    NOTE.check_label} ${i} out of ${
-                    TIME.est_lim}, est time left: ${TIME.remaining(i)}`);
-            } else {
-                NOTE.log(`    On ${NOTE.check_label} ${i} of unknown`);
-            }
-        }
-    },
-    annotate: (A, label) => {
-        const main = `   - Found ${A.length} ${label}`;
-        const detail = (A.length == 0) ? "" : `[0] = ${JSON.stringify(A[0])}`;
-        NOTE.log(main.concat(detail));
-    },
-    time: (label) => {
-        const time = (new Date()).toLocaleTimeString();
-        NOTE.log(`${time} | ${label}`);
-    },
-    end: () => {
-        NOTE.log(`*** Total Time elapsed: ${TIME.read_time()} ***`);
-        NOTE.log("");
-    },
-    count: (A, label, div = 1) => {
-        const n = Array.isArray(A) ? M.count_subarrays(A)/div : A;
-        NOTE.log(`   - Found ${n} ${label}`);
-    },
-    log: (str) => {
-        console.log(str);
-        NOTE.lines.push(str);
-    },
-    clear_log: () => {
-        NOTE.lines = [];
-    },
-};
-
-const CON = {      // CONSTRAINTS
-    types: [0, 1, 2, 3],
-    taco_taco: 0,
-    taco_tortilla: 1,
-    tortilla_tortilla: 2,
-    transitivity: 3,
-    valid: [
-        ["111112", "111121", "111222", "112111",    // 0: taco-taco
-         "121112", "121222", "122111", "122212", 
-         "211121", "211222", "212111", "212221", 
-         "221222", "222111", "222212", "222221"],
-        ["112", "121", "212", "221"],               // 1: taco-tortilla
-        ["11", "22"],                               // 2: tortilla-tortilla
-        ["112", "121", "122", "211", "212", "221"], // 3: transitivity
-    ],
-    implied: [],
-    build: () => {
-        for (const type of [0, 1, 2, 3]) {
-            const n = CON.valid[type][0].length;
-            const I = [];
-            for (let i = 0; i <= n; ++i) {
-                I.push(new Map());
-            }
-            for (let i = 0; i < 3**n; ++i) {
-                let [k, num_zeros] = [i, 0];
-                const A = [];
-                for (let j = 0; j < n; ++j) {
-                    const val = k % 3;
-                    num_zeros += (val == 0) ? 1 : 0;
-                    A.push(val);
-                    k = (k - A[j]) / 3;
-                }
-                I[num_zeros].set(A.join(""), 0);
-            }
-            for (const k of CON.valid[type]) {
-                I[0].set(k, 1);
-            }
-            for (let i = 1; i <= n; ++i) {
-                for (const [k, _] of I[i]) {
-                    const A = Array.from(k);
-                    let good = 0;
-                    for (let j = 0; j < n; ++j) {
-                        const check = [];
-                        if (A[j] == "0") {
-                            for (const c of ["1", "2"]) {
-                                A[j] = c;
-                                if (I[i - 1].get(A.join("")) != 0) {
-                                    check.push([j, +c]);
-                                }
-                            }
-                            A[j] = "0";
-                            if ((good == 0) && (check.length > 0)) {
-                                good = [];
-                            }
-                            if (check.length == 1) {
-                                good.push(check[0]);
-                            }
-                        }
-                    }
-                    if (Array.isArray(good) && (good.length == 0)) {
-                        good = 1;
-                    }
-                    I[i].set(k, good);
-                }
-            }
-            CON.implied[type] = new Map();
-            for (let i = n; i >= 0; --i) {
-                for (const [k, v] of I[i]) {
-                    CON.implied[type].set(k, v);
-                }
-            }
-        }
     },
 };
