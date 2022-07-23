@@ -55,7 +55,7 @@ const MAIN = {
         NOTE.time(`Importing from file ${file_name}`);
         const [P, VV, EV, EA, EF, FV] = IO.doc_type_2_V_VV_EV_EA_EF_FV(doc, type);
         if (P == undefined) { return; }
-        const VK = (VV == undefined) ? undefined : X.V_VV_EV_EA_2_VK(P, VV, EV, EA);
+        const VK = X.V_VV_EV_EA_2_VK(P, VV, EV, EA);
         const V = M.normalize_points(P);
         NOTE.annotate(V, "vertices_coords");
         NOTE.annotate(EV, "edges_vertices");
@@ -264,9 +264,7 @@ const SOLVER = {    // STATE SOLVER
         const B = [bi];
         BA[bi] = a;
         let idx = 0;
-        NOTE.start_check("variable");
         while (idx < B.length) {  // BFS
-            NOTE.check(idx);
             const i = B[idx];
             const [f1, f2] = M.decode(BF[i]);
             const C = BT[i];
@@ -630,9 +628,7 @@ const X = {     // CONVERSION
         }
         const FV = [];
         const seen = new Set();
-        NOTE.start_check("vertex", VV);
         for (const [v1, A] of VV.entries()) {
-            NOTE.check(v1);
             for (const v2 of A) {
                 const key = M.encode([v1, v2]);
                 if (!(seen.has(key))) {
@@ -653,6 +649,38 @@ const X = {     // CONVERSION
         M.sort_faces(FV, V);
         FV.pop(); // remove outer face
         return [VV, FV];
+    },
+    V_FV_2_VV: (V, FV) => {
+        const next = V.map(() => new Map());
+        const prev = V.map(() => new Map());
+        for (const [fi, V] of FV.entries()) {
+            let [v1, v2] = [V[V.length - 2], V[V.length - 1]];
+            for (const v3 of V) {
+                next[v2].set(v1, v3);
+                prev[v2].set(v3, v1);
+                [v1, v2] = [v2, v3];
+            }
+        }
+        const VV = V.map(() => []);
+        for (const [i, Adj] of VV.entries()) {
+            const v0 = next[i].keys().next().value;
+            let [v, v_] = [v0, undefined];
+            const v1 = prev[i].get(v0);
+            if (v1 != undefined) {
+                [v, v_] = [v1, prev[i].get(v)];
+                while ((v_ != undefined) && (v_ != v0)) {
+                    [v, v_] = [v_, prev[i].get(v_)];
+                }
+            }
+            const start = v;
+            Adj.push(start);
+            v = next[i].get(v);
+            while ((v != undefined) && (v != start)) {
+                Adj.push(v);
+                v = next[i].get(v);
+            }
+        }
+        return VV;
     },
     V_VV_EV_EA_2_VK: (V, VV, EV, EA) => {
         const VVA_map = new Map();
@@ -688,6 +716,7 @@ const X = {     // CONVERSION
                 VK.push(1);           // far from zero
             } else {
                 const angles = adj.map(j => M.angle(M.sub(V[j], V[i])));
+                angles.sort((a, b) => a - b);
                 let kawasaki = 0;
                 for (let j = 0; j < angles.length; j += 2) {
                     kawasaki += angles[j + 1] - angles[j];
@@ -1129,8 +1158,8 @@ const IO = {    // INPUT-OUTPUT
         }
         return lines;
     },
-    FOLD_2_V_EV_EA_FV: (doc) => {
-        let V, EV, EA, FV;
+    FOLD_2_V_EV_EA_VV_FV: (doc) => {
+        let V, EV, EA, VV, FV;
         const ex = JSON.parse(doc);
         if ("vertices_coords" in ex) {
             V = ex["vertices_coords"]; 
@@ -1155,13 +1184,14 @@ const IO = {    // INPUT-OUTPUT
         if ("faces_vertices" in ex) {
             FV = ex["faces_vertices"]; 
             M.sort_faces(FV, V);
+            VV = X.V_FV_2_VV(V, FV);
         }
-        return [V, EV, EA, FV];
+        return [V, EV, EA, VV, FV];
     },
     doc_type_2_V_VV_EV_EA_EF_FV: (doc, type) => {
         let V, VV, EV, EA, FV;
         if (type == "fold") {
-            [V, EV, EA, FV] = IO.FOLD_2_V_EV_EA_FV(doc);
+            [V, EV, EA, VV, FV] = IO.FOLD_2_V_EV_EA_VV_FV(doc);
             if (V == undefined) { return []; }
         } else {
             let L, EL;
@@ -1215,13 +1245,11 @@ const GUI = {   // INTERFACE
             SVG.draw_polygons(svg, shrunk, {opacity: 0.2});
         }
         SVG.draw_polygons(svg, F, {text: visible, opacity: 0.1, id: "f"});
-        if (VK != undefined) {
-            const K = [];
-            for (const [i, k] of VK.entries()) {
-                if (K > 0.0001) { K.push(V[i]); }
-            }
-            SVG.draw_points(svg, K, {fill: "red", r: 10});
+        const K = [];
+        for (const [i, k] of VK.entries()) {
+            if (k > 0.00001) { K.push(V[i]); }
         }
+        SVG.draw_points(svg, K, {fill: "red", r: 10});
         const lines = EV.map(l => M.expand(l, V));
         const colors = EA.map(a => SVG.TYPES_COLOR[a]);
         SVG.draw_segments(svg, lines, {
@@ -1835,6 +1863,7 @@ const M = {     // MATH
         return M.encode(B);
     },
     bit_decode: (B, n) => {
+        if (n == 0) { return []; }
         const A = [];
         for (const bite of M.decode(B)) {
             for (let j = 0; j < 8; ++j) {
