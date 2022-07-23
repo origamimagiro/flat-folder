@@ -9,7 +9,7 @@ const MAIN = {
         const main = document.getElementById("main");
         for (const [k, v] of Object.entries({
             xmlns: SVG.NS, 
-            style: `background: white`, 
+            style: `background: ${GUI.COLORS.background}`, 
             viewBox: [0, 0, 3*s, s].join(" "),
         })) {
             main.setAttribute(k, v);
@@ -1287,6 +1287,7 @@ const CON = {      // CONSTRAINTS
 const GUI = {   // INTERFACE
     WIDTH: 1,
     COLORS: {
+        background: "lightgray",
         active: "yellow",
         B: "lightskyblue",
         TE: ["green", "red", "orange", "cyan"],
@@ -1300,7 +1301,7 @@ const GUI = {   // INTERFACE
         },
         face: {
             top: "gray",
-            bottom: "whitesmoke",
+            bottom: "white",
         },
         rand: ["lime", "red", "blue", "green", "aqua", "orange", "pink", 
             "purple", "brown", "darkviolet", "teal", "olivedrab", "fuchsia", 
@@ -1404,7 +1405,7 @@ const GUI = {   // INTERFACE
     },
     CF_2_Cbw: (CF) => {
         return GUI.CF_2_Clayer(CF).map(l => `hsl(0, 0%, ${
-            Math.ceil((0.9 - l*0.7)*100)}%)`);
+            Math.ceil((1 - l*0.8)*100)}%)`);
     },
     CF_2_Clayer: (CF) => {
         let max_layers = 0;
