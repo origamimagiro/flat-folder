@@ -114,6 +114,7 @@ const MAIN = {
         NOTE.count(CF, "face-cell adjacencies");
         NOTE.lap();
         const CELL = {P, SP, SE, CP, SC, CF, FC};
+        NOTE.time("Updating cell");
         GUI.update_cell(FOLD, CELL);
         NOTE.lap();
         document.getElementById("text").onchange = (e) => {
@@ -1287,8 +1288,23 @@ const GUI = {   // INTERFACE
     WIDTH: 1,
     COLORS: {
         active: "yellow",
-        B: "cyan",
-        T: ["green", "red", "orange", "cyan"],
+        B: "lightskyblue",
+        TE: ["green", "red", "orange", "cyan"],
+        TF: ["lightgreen", "lightpink", "lightorange", "lightskyblue"],
+        edge: {
+            U: "black",
+            F: "lightgray",
+            M: "red",
+            V: "blue",
+            B: "black",
+        },
+        face: {
+            top: "gray",
+            bottom: "whitesmoke",
+        },
+        rand: ["lime", "red", "blue", "green", "aqua", "orange", "pink", 
+            "purple", "brown", "darkviolet", "teal", "olivedrab", "fuchsia", 
+            "deepskyblue", "orangered", "maroon", "yellow"],
     },
     update_text: (FOLD, CELL) => {
         SVG.clear("export");
@@ -1310,7 +1326,7 @@ const GUI = {   // INTERFACE
             SVG.draw_polygons(flat_shrunk, shrunk, {
                 text: true, id: "f_text", opacity: 0.2});
             const line_centers = EV.map(l => M.centroid(M.expand(l, V)));
-            const colors = EA.map(a => SVG.TYPES_COLOR[a]);
+            const colors = EA.map(a => GUI.COLORS.edge[a]);
             SVG.draw_points(flat_text, line_centers, {text: true, 
                 id: "e_text", stroke: colors, stroke_width: GUI.WIDTH});
             SVG.draw_points(flat_text, V, {
@@ -1333,18 +1349,31 @@ const GUI = {   // INTERFACE
         SVG.clear("export");
         const {V, VK, EV, EA, FV} = FOLD;
         const svg = SVG.clear("flat");
-        SVG.append("g", svg, {id: "flat_shrunk"});
         const K = [];
         for (const [i, k] of VK.entries()) {
             if (k > 0.00001) { K.push(V[i]); }
         }
         SVG.draw_points(svg, K, {id: "flat_check", fill: "red", r: 10});
         const F = FV.map(f => M.expand(f, V));
-        SVG.draw_polygons(svg, F, {id: "flat_f", opacity: 0.1});
+        SVG.draw_polygons(svg, F, {id: "flat_f", fill: GUI.COLORS.face.bottom});
+        SVG.append("g", svg, {id: "flat_shrunk"});
         const lines = EV.map(l => M.expand(l, V));
-        const colors = EA.map(a => SVG.TYPES_COLOR[a]);
-        SVG.draw_segments(svg, lines, {
-            id: "flat_e", stroke: colors, stroke_width: GUI.WIDTH});
+        const colors = EA.map(a => GUI.COLORS.edge[a]);
+        const creases = [];
+        const edges = [];
+        for (const [i, a] of EA.entries()) {
+            if (a == "F") {
+                creases.push(i);
+            } else {
+                edges.push(i);
+            }
+        }
+        SVG.draw_segments(svg, creases.map(i => lines[i]), {
+            id: "flat_e_flat", stroke: creases.map(i => colors[i]), 
+            stroke_width: GUI.WIDTH});
+        SVG.draw_segments(svg, edges.map(i => lines[i]), {
+            id: "flat_e_folded", stroke: edges.map(i => colors[i]), 
+            stroke_width: GUI.WIDTH});
         SVG.append("g", svg, {id: "flat_text"});
         SVG.append("g", svg, {id: "flat_notes"});
         GUI.update_text(FOLD);
@@ -1358,22 +1387,33 @@ const GUI = {   // INTERFACE
             SVG.draw_polygons(svg, F, {id: "cell_f", opacity: 0.05});
         } else {
             const {P, SP, SE, CP, SC, CF, FC} = CELL;
-            let max_layers = 0;
-            for (const F of CF) {
-                if (max_layers < F.length) {
-                    max_layers = F.length;
-                }
-            }
-            const Ccolors = CF.map(F => 0.1 + F.length/max_layers*0.7);
             const cells = CP.map(f => M.expand(f, P));
             const lines = SP.map(l => M.expand(l, P));
-            SVG.draw_polygons(svg, cells, {opacity: Ccolors, id: "cell_c"});
+            const Ccolors = GUI.CF_2_Cbw(CF);
+            SVG.draw_polygons(svg, cells, {fill: Ccolors, id: "cell_c"});
             SVG.draw_segments(svg, lines, {
                 id: "cell_s", stroke: "black", stroke_width: GUI.WIDTH});
         }
         SVG.append("g", svg, {id: "cell_text"});
         SVG.append("g", svg, {id: "cell_notes"});
         GUI.update_text(FOLD, CELL);
+    },
+    CF_2_Ccolors: (CF) => {
+        return GUI.CF_2_Clayer(CF).map(l => `hsl(${
+            Math.ceil((2 + l)*120)}, 100%, 50%)`);
+    },
+    CF_2_Cbw: (CF) => {
+        return GUI.CF_2_Clayer(CF).map(l => `hsl(0, 0%, ${
+            Math.ceil((0.9 - l*0.7)*100)}%)`);
+    },
+    CF_2_Clayer: (CF) => {
+        let max_layers = 0;
+        for (const F of CF) {
+            if (max_layers < F.length) {
+                max_layers = F.length;
+            }
+        }
+        return CF.map(F => F.length/max_layers);
     },
     update_fold: (FOLD, CELL) => {
         SVG.clear("export");
@@ -1386,7 +1426,8 @@ const GUI = {   // INTERFACE
         const m = [0.5, 0.5];
         const Q = P.map(p => (flip ? M.add(M.refX(M.sub(p, m)), m) : p));
         const cells = CP.map(V => M.expand(V, Q));
-        const colors = tops.map(d => (Ff[d] != flip) ? "gray" : "lightgray");
+        const colors = tops.map(d => (Ff[d] != flip) ? 
+            GUI.COLORS.face.top : GUI.COLORS.face.bottom);
         SVG.draw_polygons(svg, cells, {
             id: "fold_c", fill: colors, stroke: colors});
         const [creases, segments] = [[], []];
@@ -1395,9 +1436,9 @@ const GUI = {   // INTERFACE
             if (a == "B") { segments.push(M.expand(SP[i], Q)); }
         }
         SVG.draw_segments(svg, creases, {
-            id: "fold_s_crease", stroke: SVG.TYPES_COLOR["C"]});
+            id: "fold_s_crease", stroke: GUI.COLORS.edge.F});
         SVG.draw_segments(svg, segments, {
-            id: "fold_s_edge", stroke: SVG.TYPES_COLOR["B"]});
+            id: "fold_s_edge", stroke: GUI.COLORS.edge.B});
     },
     update_component: (FOLD, CELL, BF, GB, GA, GI) => {
         SVG.clear("export");
@@ -1414,7 +1455,7 @@ const GUI = {   // INTERFACE
         } else {
             C.push(c);
             const n = GA[c].length;
-            comp_select.style.background = SVG.COLORS[c % SVG.COLORS.length];
+            comp_select.style.background = GUI.COLORS.rand[c % GUI.COLORS.rand.length];
             if (n > 1) {
                 document.getElementById("state_config").style.display = "inline"; 
                 const state_label = document.getElementById("state_label");
@@ -1444,7 +1485,7 @@ const GUI = {   // INTERFACE
                 const p2 = M.centroid(M.expand(FV[f2], Vf));
                 return [p1, p2];
             });
-            const stroke = SVG.COLORS[comp % SVG.COLORS.length];
+            const stroke = GUI.COLORS.rand[comp % GUI.COLORS.rand.length];
             SVG.draw_segments(g, lines, {id: "cell_comp", stroke});
         }
     },
@@ -1487,7 +1528,7 @@ const GUI = {   // INTERFACE
             const face = document.getElementById(`flat_f${i}`);
             face.onclick = () => {
                 const color = face.getAttribute("fill");
-                GUI.clear_active(CF, FC);
+                GUI.clear_notes(CF, FC, true);
                 if (active.length == 1) {
                     if (color == GUI.COLORS.B) {
                         active.push(i);
@@ -1498,7 +1539,7 @@ const GUI = {   // INTERFACE
                             for (const F of Tj) {
                                 const f3 = (j == 1) ? F[2] : F;
                                 const el = document.getElementById(`flat_f${f3}`);
-                                el.setAttribute("fill", GUI.COLORS.T[j]);
+                                el.setAttribute("fill", GUI.COLORS.TF[j]);
                             }
                         }
                         const L = [new Set(), new Set(), new Set()];
@@ -1517,7 +1558,7 @@ const GUI = {   // INTERFACE
                         for (const j of [1, 2, 0]) {
                             SVG.draw_segments(flat_notes, L[j], {
                                 id: "flat_cons",
-                                stroke: GUI.COLORS.T[j], stroke_width: 5});
+                                stroke: GUI.COLORS.TE[j], stroke_width: 5});
                         }
                         for (const f of [f1, f2]) {
                             for (const c of FC[f]) {
@@ -1529,16 +1570,21 @@ const GUI = {   // INTERFACE
                         for (const c of FC[f2]) {
                             if (C1.has(c)) {
                                 const el = document.getElementById(`cell_c${c}`);
-                                el.setAttribute("fill", GUI.COLORS.T[3]);
+                                el.setAttribute("fill", GUI.COLORS.TF[3]);
                             }
+                        }
+                        for (const f of active) {
+                            const el = document.getElementById(`flat_f${f}`);
+                            el.setAttribute("fill", GUI.COLORS.active);
+                            
                         }
                     } else {
                         active.pop();
                     }
                 } else {
                     while (active.length > 0) { active.pop(); }
+                    if (color != GUI.COLORS.face.bottom) { return; }
                     active.push(i);
-                    GUI.change_active(face, C, "cell_c", GUI.COLORS.active);
                     for (const f of FB[i]) {
                         const el = document.getElementById(`flat_f${f}`);
                         el.setAttribute("fill", GUI.COLORS.B);
@@ -1549,7 +1595,7 @@ const GUI = {   // INTERFACE
                     const L = FV[i].map((v1, j) => {
                         const v2 = FV[i][(j + 1) % FV[i].length];
                         const k = M.encode_order_pair([v1, v2]);
-                        const color = SVG.COLORS[j % SVG.COLORS.length];
+                        const color = GUI.COLORS.rand[j % GUI.COLORS.rand.length];
                         for (const s of ES_map.get(k)) {
                             S.push(SP[s].map(p => P[p]));
                             Scolors.push(color);
@@ -1561,27 +1607,24 @@ const GUI = {   // INTERFACE
                         id: "flat_f_bounds", stroke: Lcolors, stroke_width: 5});
                     SVG.draw_segments(cell_notes, S, {
                         id: "cell_f_bounds", stroke: Scolors, stroke_width: 5});
-                }
-                for (const f of active) {
-                    const el = document.getElementById(`flat_f${f}`);
-                    el.setAttribute("fill", GUI.COLORS.active);
+                    GUI.add_active(face, C, "cell_c");
                 }
             };
         }
         for (const [i, F] of CF.entries()) {
             const cell = document.getElementById(`cell_c${i}`);
             cell.onclick = () => {
-                const active = (cell.getAttribute("fill") != "black");
-                GUI.clear_active(CF, FC);
+                const active = (cell.getAttribute("fill") == GUI.COLORS.active);
+                GUI.clear_notes(CF, FC, !active);
                 if (!active) {
-                    GUI.change_active(cell, F, "flat_f", GUI.COLORS.active);
+                    GUI.add_active(cell, F, "flat_f");
                     const L = [];
                     const Lcolors = [];
                     const Scolors = [];
                     const S = CP[i].map((p1, j) => {
                         const p2 = CP[i][(j + 1) % CP[i].length];
                         const k = M.encode_order_pair([p1, p2]);
-                        const color = SVG.COLORS[j % SVG.COLORS.length];
+                        const color = GUI.COLORS.rand[j % GUI.COLORS.rand.length];
                         for (const e of SE_map.get(k)) {
                             L.push(EV[e].map(p => V[p]));
                             Lcolors.push(color);
@@ -1597,44 +1640,31 @@ const GUI = {   // INTERFACE
             };
         }
     },
-    clear_active: (CF, FC) => {
+    clear_notes: (CF, FC, active) => {
         SVG.clear("flat_notes");
         SVG.clear("cell_notes");
         SVG.clear("export");
         for (const [i, C] of FC.entries()) {
             const f = document.getElementById(`flat_f${i}`);
-            if (f.getAttribute("fill") != "black") {
-                GUI.change_active(f, C, "cell_c", "black");
-            }
+            f.setAttribute("fill", GUI.COLORS.face.bottom);
         }
+        const Ccolors = active ? GUI.CF_2_Cbw(CF) : GUI.CF_2_Cbw(CF);
         for (const [i, F] of CF.entries()) {
             const c = document.getElementById(`cell_c${i}`);
-            if (c.getAttribute("fill") != "black") {
-                GUI.change_active(c, F, "flat_f", "black");
-            }
+            c.setAttribute("fill", Ccolors[i]);
         }
     },
-    change_active: (svg, C, id, color) => {
-        svg.setAttribute("fill", color);
-        for (const c of C) {
-            document.getElementById(`${id}${c}`).setAttribute("fill", color);
+    add_active: (svg, A, id) => {
+        svg.setAttribute("fill", GUI.COLORS.active);
+        for (const a of A) {
+            const el = document.getElementById(`${id}${a}`);
+            el.setAttribute("fill", GUI.COLORS.active);
         }
     },
 };
 
 const SVG = {   // DRAWING
     SCALE: 1000,
-    COLORS: ["lime", "red", "blue", "green", "aqua", "orange", "pink", "purple", 
-        "brown", "darkviolet", "teal", "olivedrab", "fuchsia", "deepskyblue", 
-        "orangered", "maroon", "yellow"],
-    TYPES_COLOR: {
-        "U": "black",
-        "F": "gray",
-        "M": "red",
-        "V": "blue",
-        "B": "black",
-        "C": "white",
-    },
     NS: "http://www.w3.org/2000/svg",
     append: (type, par, attrs = {}) => {
         const el = document.createElementNS(SVG.NS, type);
