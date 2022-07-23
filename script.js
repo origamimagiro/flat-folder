@@ -1397,6 +1397,7 @@ const GUI = {   // INTERFACE
         }
         SVG.append("g", svg, {id: "cell_text"});
         SVG.append("g", svg, {id: "cell_notes"});
+        SVG.append("g", svg, {id: "component_notes"});
         GUI.update_text(FOLD, CELL);
     },
     CF_2_Ccolors: (CF) => {
@@ -1478,7 +1479,7 @@ const GUI = {   // INTERFACE
             }
         }
         const {Vf, FV} = FOLD;
-        const g = SVG.clear("cell_notes");
+        const g = SVG.clear("component_notes");
         for (const comp of C) {
             const lines = GB[comp].map(b => {
                 const [f1, f2] = M.decode(BF[b]);
