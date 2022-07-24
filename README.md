@@ -160,7 +160,8 @@ both assigned and unassigned.
 
 ## Algorithm
 
-Existing software like ORIPA and Orihime/Oriedita find flat-foldable states by:
+Existing software like [ORIPA](https://github.com/oripa/oripa) and 
+[Orihime/Oriedita](https://github.com/oriedita/oriedita) find flat-foldable states by:
 
 1. constructing an overlap graph of cells, where each cell is a maximal regions
    of points in the folded image that overlap the same set of crease pattern
