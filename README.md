@@ -155,11 +155,13 @@ Existing software like ORIPA and Orihime/Oriedita find flat-foldable states by:
 2. finding an ordering of faces in each cell that avoids self-intersection of
    the paper.
 
-Flat-Folder takes a different approach for step (2). 
+Flat-Folder takes a different approach for step (2). In the following, we take
+$n$ to be the number of faces in the input crease pattern.
 
 1. First, it finds each pair of faces `[f, g]` that overlap in the folding and
    identifies the pair as a Boolean variable that can have one of two possible
-   assignments: either `f` is over `g` or `g` is over `f`.
+   assignments: either `f` is over `g` or `g` is over `f`. There are at most
+   $O(n^2)$ variables, which are computed by Flat-Folder in $O(n^4)$ time.
 
 2. Next, it computes all constraints on those variables that must be satisfied
    to avoid self-intersection. There are four types of constraints:
@@ -174,7 +176,7 @@ Flat-Folder takes a different approach for step (2).
         - `[f1, g1]`, `[f1, f2]`, `[f1, g2]`, `[f2, g1]`, `[f2, g2]`, `[g1, g2]`
         - Out of the $2^6 = 64$ possible assignments of these variables, only 
           16 of them are valid (avoid intersection).
-        - There are at most $O(|E|^2)$ taco-taco constraints.
+        - There are at most $O(n^2)$ taco-taco constraints.
 
     - **Taco-Tortilla:** A taco-tortilla constraint occurs when a folded edge `e` of 
       the crease pattern adjacent to faces `[f1, f2]` properly intersects the 
@@ -187,7 +189,7 @@ Flat-Folder takes a different approach for step (2).
         - `[f1, f2]`, `[f1, f3]`, `[f2, f3]`
         - Out of the $2^3 = 8$ possible assignments of these variables, only
           4 of them are valid (avoid intersection).
-        - There are at most $O(|E|(|F| + |E|))$ taco-taco constraints.
+        - There are at most $O(n^2)$ taco-taco constraints.
 
     - **Tortilla-Tortilla:** A tortilla-tortilla constraint occurs when two crease 
       edges `[e1, e2]` (has assignment `F`) of the crease pattern properly 
@@ -200,7 +202,7 @@ Flat-Folder takes a different approach for step (2).
         - `[f1, f2]`, `[g1, g2]`
         - Out of the $2^2 = 4$ possible assignments of these variables, only
           2 of them are valid (avoid intersection).
-        - There are at most $O(|E|^2)$ taco-taco constraints.
+        - There are at most $O(n^2)$ taco-taco constraints.
 
     - **Transitivity:** A transitivity constraint occurs when three faces 
       `[f1, f2, f2]` all mutually overlap the same cell of in the overlap graph. 
@@ -209,25 +211,26 @@ Flat-Folder takes a different approach for step (2).
         - `[f1, f2]`, `[f1, f3]`, `[f2, f3]`
         - Out of the $2^3 = 8$ possible assignments of these variables, only
           6 of them are valid (avoid intersection).
-        - There are at most $O(|F|^3)$ taco-taco constraints.
+        - There are at most $O(n^3)$ taco-taco constraints.
 
-    - The variables and constraints form a bipartite constraint graph with one
-      vertex for each variable and constraint, with an edge between a variable
-      and a constraint if the constraint is associated with the variable. This
-      graph has size $O(|F|^3)$.
+   The variables and constraints form a bipartite constraint graph with one
+   vertex for each variable and constraint, with an edge between a variable
+   and a constraint if the constraint is associated with the variable. This
+   graph has size $O(n^3)$ and is computed by Flat-Folder in $O(n^5)$ time.
 
 3. If the crease pattern is mountain/valley assigned, each edge assignments
    forces the assignment of one Boolean variable. Flat-Folder makes these
    assignments, and assigns any variables that can be infered from those
-   assignments according to the constraints.
+   assignments according to the constraints. This step takes $O(n^3)$ time.
 
 4. After removing any the variables that may have been assigned in the last step
    from the constraint graph, the graph may be disconnected into multiple
    unconnected components. If it is variables in one component cannot have any
    effect on variables in another component, so their assignments are independent.
+   This step takes $O(n^3)$ time.
 
 5. Lastly, Flat-Folder finds valid solutions for each connected component of
-   variables via a brute-force search. If each component has only a polynomial
-   number of solutions, solving each connected component independently can
-   implicitly represent an exponential number of folded states in polynomial
-   space.
+   variables via a brute-force search. This step can take exponental time
+   but if each component has only a polynomial number of solutions, solving each 
+   connected component independently can implicitly represent an exponential 
+   number of folded states in polynomial time. 
