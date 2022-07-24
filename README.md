@@ -21,15 +21,14 @@ both assigned and unassigned.
         - If you have examples files that you'd like me to add (and you have 
           the proper authorization of the creator), please 
           [email them to me](mailto:jasonku@me.com)!
-
     - The software will probably have trouble if points in the input file are
       not accurate to single-precision. When importing any file that does not
       already contain face information, Flat-Folder will look at all the lines
       imported and compute the length $L$ of the shortest one. Then:
-            - if any vertex of the input is closer than $\varepsilon = L/300$ 
-              to any other vertex, it will assume they are the same vertex; and 
-            - if any vertex of the input is closer than $\varepsilon$ to any 
-              line, it will assume the vertex is on the line.
+        - if any vertex of the input is closer than $\varepsilon = L/300$ 
+          to any other vertex, it will assume they are the same vertex; and 
+        - if any vertex of the input is closer than $\varepsilon$ to any 
+          line, it will assume the vertex is on the line.
     - For SVG format:
         - the import assumes each imported line is an unassigned fold
           (assignment `"U"`), unless its `"style"` attribute contains a
