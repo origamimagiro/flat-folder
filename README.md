@@ -31,8 +31,8 @@ flat-foldable crease patterns, both assigned and unassigned.
         - an x-ray view of the folded crease pattern.
     - Flat-Folder will draw a red circle behind any vertex of the imported 
       crease pattern that it thinks violates either Maekawa or
-      Kawasaki's theorems (the limit for Kawasaki is that the sum of even angles
-      minus $$\pi$$ is greater than `0.00001`).
+      Kawasaki's theorems (the limit for Kawasaki is that the (sum of even
+      angles) minus $\pi$ is greater than `0.00001`).
 
 3. Press "Fold" to find flat-foldable states of the crease pattern.
     - Flat-Folder will break up the layer order variables into components whose
