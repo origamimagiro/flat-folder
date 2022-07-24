@@ -65,32 +65,39 @@ both assigned and unassigned.
 5. After computing the overlap graph:
     - Flat-Folder will replace the x-ray view with the overlap graph.
 
-    ![after folded](./img/05.png)
+    ![after folded](./img/04.png)
 
     - Selecting the "Text" option will now also draw index labels for all the 
       cells, segments, and points in the overlap graph.
 
-    ![text after folded](./img/06.png)
+    ![text after folded](./img/05.png)
 
     - Clicking on a cell in the overlap graph will highlight:
         - the faces of the crease pattern that overlap the cell (yellow), and
         - the edges of the crease pattern that overlap the segments bounding
           the cell.
+
+    ![clicking a cell](./img/06.png)
+
     - Clicking on a face of the crease pattern will highlight:
         - the cells of the overlap graph that overlap the face (yellow),
         - the segments of the overlap graph that overlap the edges bounding
           the face, and
-        - the other faces of the crease pattern that overlap the selected
-          face in the folding (blue). 
-            - Each blue face corresponds to a faceOrder variable (the yellow
-              and blue faces overlap, so much be assigned an order).
-            - Clicking on one of the blue faces will highlight the
-              features of the corresponding faceOrder variable:
-                - its two faces (yellow),
-                - its taco-taco constraints (green),
-                - its taco-tortilla constraints (red),
-                - its tortilla-tortilla constraints (orange), and
-                - its transitivity constraints (blue).
+        - the other faces of the crease pattern that overlap the selected face
+          in the folding (blue). Each blue face corresponds to a faceOrder
+          variable (the yellow and blue faces overlap, so much be assigned an order).
+
+        ![clicking a face](./img/07.png)
+
+        - Clicking on one of the blue faces will highlight the
+          features of the corresponding faceOrder variable:
+            - its two faces (yellow),
+            - its taco-taco constraints (green),
+            - its taco-tortilla constraints (red),
+            - its tortilla-tortilla constraints (orange), and
+            - its transitivity constraints (blue).
+
+        ![clicking two overlapping faces](./img/08.png)
 
 6. After computing solutions for all components:
     - Flat-Folder will display how many valid flat-folded states were found.
