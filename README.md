@@ -9,6 +9,7 @@ both assigned and unassigned.
 1. Go to [Flat-Folder](https://origamimagiro.github.io/flat-folder/).
     - Tested to run in Chrome, Firefox, and Safari.
     - Chrome usually runs slightly faster than Firefox and much faster than Safari.
+    - You should see the following interface:
 
 ![inital interface](./img/01.png)
 
@@ -40,6 +41,15 @@ both assigned and unassigned.
         - For Kawasaki, it checks whether the ((sum of even angles) $- \pi$)
           is greater than `0.00001`.
 
+![after import](./img/02.png)
+
+    - Selecting the "Text" option will draw index labels for all the vertices,
+      edges, and faces in the crease pattern. Currently, there is no way in the 
+      interface to adjust the font size, so this is only useful for debugging
+      small inputs or by manipulating the text later in an output SVG.
+
+![showing text](./img/03.png)
+
 4. Press "Fold" to find flat-foldable states of the crease pattern.
     - Flat-Folder will break up the faceOrder variables into disconnected 
       components of variables whose set of solutions are independently 
@@ -51,8 +61,6 @@ both assigned and unassigned.
         - Alternatively, you can select a number from [1, 10, 100, 1000], which
           will correspond to the maximum number of solutions to find per
           component.
-    - Selecting the "Text" option will draw index labels for all the vertices,
-      edges, and faces in the crease pattern.
 
 5. After computing the overlap graph:
     - Flat-Folder will replace the x-ray view with the overlap graph.
