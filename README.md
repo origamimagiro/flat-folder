@@ -231,6 +231,6 @@ $n$ to be the number of faces in the input crease pattern.
 
 5. Lastly, Flat-Folder finds valid solutions for each connected component of
    variables via a brute-force search. This step can take exponental time
-   $O(2^{n^2})$ but if each component has only a polynomial number of solutions, 
+   $O(2^{(n^2)})$ but if each component has only a polynomial number of solutions, 
    solving each connected component independently can implicitly represent an 
    exponential number of folded states in polynomial time. 
