@@ -16,6 +16,8 @@ both assigned and unassigned.
 1. Press "Upload" to upload a crease pattern in FOLD, SVG, OPX, or CP file formats.
     - Various example files can be found in the
       [`./examples/` folder](https://github.com/origamimagiro/flat-folder/tree/main/examples).
+      You can download them by clicking on the green "Code" button at the top
+      of the main page of this repository and downloading as a ZIP.
     - The software will probably have trouble if points in the input file are
       not accurate to single-precision.
     - For SVG format:
