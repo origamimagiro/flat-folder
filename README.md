@@ -64,8 +64,14 @@ both assigned and unassigned.
 
 5. After computing the overlap graph:
     - Flat-Folder will replace the x-ray view with the overlap graph.
+
+    ![after folded](./img/05.png)
+
     - Selecting the "Text" option will now also draw index labels for all the 
       cells, segments, and points in the overlap graph.
+
+    ![text after folded](./img/06.png)
+
     - Clicking on a cell in the overlap graph will highlight:
         - the faces of the crease pattern that overlap the cell (yellow), and
         - the edges of the crease pattern that overlap the segments bounding
