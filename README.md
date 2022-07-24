@@ -169,7 +169,8 @@ Existing software like [ORIPA](https://github.com/oripa/oripa) and
 2. finding an ordering of faces in each cell that avoids self-intersection of
    the paper.
 
-Flat-Folder takes a different approach for step (2). In the following, we take
+Flat-Folder takes a different approach for step (2) that makes it easier to
+compress the set of output states. In the following, we take
 $n$ to be the number of faces in the input crease pattern.
 
 1. First, it finds each pair of faces `[f, g]` that overlap in the folding and
