@@ -409,12 +409,18 @@ const SOLVER = {    // STATE SOLVER
         for (const [i, a] of BA0.entries()) {
             NOTE.check(i);
             if (a != 0) {
-                const B = SOLVER.propagate(i, a, BI, BF, BT, BA);
-                if (B.length == 0) {
-                    return [];
+                if (BA[i] != 0) {
+                    if (BA[i] != a) {
+                        return [];
+                    }
                 } else {
-                    for (const b of B) {
-                        B0.push(b); 
+                    const B = SOLVER.propagate(i, a, BI, BF, BT, BA);
+                    if (B.length == 0) {
+                        return [];
+                    } else {
+                        for (const b of B) {
+                            B0.push(b); 
+                        }
                     }
                 }
             }
@@ -851,10 +857,10 @@ const X = {     // CONVERSION
         }
         return Array.from(ExF);
     },
-    CF_2_BF: (CF) => {
-        const BF_set = new Set();
-        NOTE.start_check("cell", CF);
-        for (const [i, F] of CF.entries()) {
+    CF_2_BF: (CF) => {                          // O(|C|t^2) <= O(|F|^4)
+        const BF_set = new Set();               // t is max faces in a cell
+        NOTE.start_check("cell", CF);           // t^2 = O(|B|) <= O(|F|^2)
+        for (const [i, F] of CF.entries()) {    // |C| = O(|F|^2)
             NOTE.check(i);
             for (const [j, f1] of F.entries()) {
                 for (let k = j + 1; k < F.length; k++) {
@@ -865,7 +871,7 @@ const X = {     // CONVERSION
         }
         const BF = Array.from(BF_set);
         BF.sort();
-        return BF;
+        return BF;                              // |BF| = O(|F|^2)
     },
     check_overlap: (p, BF_map) => {
         return (BF_map.has(M.encode_order_pair(p)) ? 1 : 0);
@@ -963,12 +969,12 @@ const X = {     // CONVERSION
         }
         return BT;
     },
-    FC_CF_BF_2_BT3: (FC, CF, BF) => {
-        const BT3 = [];
-        const FC_sets = FC.map(C => new Set(C));
-        const T = new Set();
-        NOTE.start_check("variable", BF);
-        for (const [i, k] of BF.entries()) {
+    FC_CF_BF_2_BT3: (FC, CF, BF) => {            // O(|B|kt) <= O(|F|^5)
+        const BT3 = [];                          // k is max cells in a face,
+        const FC_sets = FC.map(C => new Set(C)); // t is max faces in a cell
+        const T = new Set();                     // k = O(|C|) <= O(|F|^2)
+        NOTE.start_check("variable", BF);        // t = O(|F|)
+        for (const [i, k] of BF.entries()) {     // |B| = O(|F|^2)
             NOTE.check(i);
             const [f1, f2] = M.decode(k);
             const C = FC_sets[f1];
@@ -984,7 +990,7 @@ const X = {     // CONVERSION
             BT3.push(M.encode(T));
             T.clear();
         }
-        return BT3;
+        return BT3;                             // |BT3| = O(|B||F|) <= O(|F|^3)
     },
     EF_EA_Ff_BF_2_BA: (EF, EA, Ff, BF) => {
         const BI_map = new Map();
