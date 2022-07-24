@@ -87,7 +87,7 @@ both assigned and unassigned.
           in the folding (blue). Each blue face corresponds to a faceOrder
           variable (the yellow and blue faces overlap, so much be assigned an order).
 
-    ![clicking a face](./img/07.png)
+        ![clicking a face](./img/07.png)
 
         - Clicking on one of the blue faces will highlight the
           features of the corresponding faceOrder variable:
@@ -97,7 +97,7 @@ both assigned and unassigned.
             - its tortilla-tortilla constraints (orange), and
             - its transitivity constraints (blue).
 
-    ![clicking two overlapping faces](./img/08.png)
+        ![clicking two overlapping faces](./img/08.png)
 
 6. After computing solutions for all components:
     - Flat-Folder will display how many valid flat-folded states were found.
@@ -116,7 +116,7 @@ both assigned and unassigned.
         - The "all" option draws every component found on the overlap graph in a
           randomly assigned color.
 
-    ![clicking all components](./img/10.png)
+        ![clicking all components](./img/10.png)
 
         - There is one numeric option (zero-indexed) for each component found.
           Selecting a component will:
@@ -125,12 +125,12 @@ both assigned and unassigned.
             - add a numeric input to enter which state to select for that
               component. 
 
-    ![clicking a component](./img/11.png)
+        ![clicking a component](./img/11.png)
 
         - Changing this number will redraw the flat-folded state based on the
           change.
 
-    ![changing a component](./img/12.png)
+        ![changing a component](./img/12.png)
 
     - You can change states of each component until you reach a desired state.
 
