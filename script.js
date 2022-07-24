@@ -170,7 +170,7 @@ const MAIN = {
         NOTE.count(n, "folded states");
         NOTE.lap();
         const num_states = document.getElementById("num_states");
-        num_states.textContent = `(Found ${n} states)`;
+        num_states.textContent = `(Found ${n} state${(n == 1) ? "" : "s"})`;
         const GI = GB.map(() => 0);
         NOTE.time("Computing state");
         const edges = SOLVER.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
