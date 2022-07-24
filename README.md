@@ -13,7 +13,7 @@ both assigned and unassigned.
 
 ![inital interface](./img/01.png)
 
-2. Press "Upload" to upload a crease pattern in FOLD, SVG, OPX, or CP file formats.
+1. Press "Upload" to upload a crease pattern in FOLD, SVG, OPX, or CP file formats.
     - The software will probably have trouble if points in the input file are
       not accurate to single-precision.
     - For SVG format:
@@ -33,7 +33,7 @@ both assigned and unassigned.
               from the provided edges)
                 - on import, will reorder faces to be increasing by area
 
-3. Once uploaded, Flat-Folder will draw:
+1. Once uploaded, Flat-Folder will draw:
     - the crease pattern on left of the display,
     - an x-ray view of the folded crease pattern in the middle of the display, and
     - a red circle behind any vertex of the imported crease pattern that
@@ -43,14 +43,14 @@ both assigned and unassigned.
 
 ![after import](./img/02.png)
 
-    - Selecting the "Text" option will draw index labels for all the vertices,
-      edges, and faces in the crease pattern. Currently, there is no way in the 
-      interface to adjust the font size, so this is only useful for debugging
-      small inputs or by manipulating the text later in an output SVG.
+1. Selecting the "Text" option will draw index labels for all the vertices,
+   edges, and faces in the crease pattern. Currently, there is no way in the 
+   interface to adjust the font size, so this is only useful for debugging
+   small inputs or by manipulating the text later in an output SVG.
 
 ![showing text](./img/03.png)
 
-4. Press "Fold" to find flat-foldable states of the crease pattern.
+1. Press "Fold" to find flat-foldable states of the crease pattern.
     - Flat-Folder will break up the faceOrder variables into disconnected 
       components of variables whose set of solutions are independently 
       assignable from each other.
