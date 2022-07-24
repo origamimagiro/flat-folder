@@ -156,3 +156,55 @@ Existing software like ORIPA and Orihime/Oriedita find flat-foldable states by:
    the paper.
 
 Flat-Folder takes a different approach for step (2). 
+
+1. First, it finds each pair of faces `[f, g]` that overlap in the folding and
+   identifies the pair as a Boolean variable that can have one of two possible
+   assignments: either `f` is over `g` or `g` is over `f`.
+
+2. Next, it computes all constraints on those variables that must be satisfied
+   to avoid self-intersection. There are four types of constraints:
+
+    - **Taco-Taco:** A taco-taco constraint occurs when two folded edges `[e1, e2]` 
+      of the crease pattern properly overlap along a segment `s` of the overlap
+      graph, and of the two faces `[f1, g1]` adjacent to edge `e1` and the two 
+      faces `[f2, g2]` adjacent to edge `e2`, all of them lie on the same side 
+      of segment `s` in the folding. There are six variables associated with 
+      such a constraint:
+
+        - `[f1, g1]`, `[f1, f2]`, `[f1, g2]`, `[f2, g1]`, `[f2, g2]`, `[g1, g2]`
+        - Out of the $2^6 = 64$ possible assignments of these variables, only 
+          16 of them are valid (avoid intersection).
+
+    - **Taco-Tortilla:** A taco-tortilla constraint occurs when a folded edge `e` of 
+      the crease pattern adjacent to faces `[f1, f2]` properly intersects the 
+      interior of a third face `f3` along some segment `s` in the overlap graph. 
+      Alternatively, `e` properly overlaps a crease edge `e2` that is not folded 
+      in the folding (has assignment `F`), and we let `f3` be the face adjacent 
+      to `e2` that lies on the same side of `s` in the folding as `f1` and `f2`. 
+      There are are three variables associated with such a constraint:
+
+        - `[f1, f2]`, `[f1, f3]`, `[f2, f3]`
+        - Out of the $2^3 = 8$ possible assignments of these variables, only
+          4 of them are valid (avoid intersection).
+
+    - **Tortilla-Tortilla:** A tortilla-tortilla constraint occurs when two crease 
+      edges `[e1, e2]` (has assignment `F`) of the crease pattern properly 
+      overlap along a segment `s` of the overlap graph, and of the two faces 
+      `[f1, g1]` adjacent to edge `e1` and the two faces `[f2, g2]` adjacent to 
+      edge `e2`, `f1` and `f2` lie on one side of `s`, and `g1` and `g2` lie on
+      the other side of `s`. There are two variables associated with such a 
+      constraint:
+
+        - `[f1, f2]`, `[g1, g2]`
+        - Out of the $2^2 = 4$ possible assignments of these variables, only
+          2 of them are valid (avoid intersection).
+
+    - **Transitivity:** A transitivity constraint occurs when three faces 
+      `[f1, f2, f2]` all mutually overlap the same cell of in the overlap graph. 
+      There are are three variables associated with such a constraint:
+
+        - `[f1, f2]`, `[f1, f3]`, `[f2, f3]`
+        - Out of the $2^3 = 8$ possible assignments of these variables, only
+          6 of them are valid (avoid intersection).
+
+
