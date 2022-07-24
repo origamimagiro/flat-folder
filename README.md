@@ -87,7 +87,7 @@ both assigned and unassigned.
           in the folding (blue). Each blue face corresponds to a faceOrder
           variable (the yellow and blue faces overlap, so much be assigned an order).
 
-        ![clicking a face](./img/07.png)
+    ![clicking a face](./img/07.png)
 
         - Clicking on one of the blue faces will highlight the
           features of the corresponding faceOrder variable:
@@ -97,25 +97,44 @@ both assigned and unassigned.
             - its tortilla-tortilla constraints (orange), and
             - its transitivity constraints (blue).
 
-        ![clicking two overlapping faces](./img/08.png)
+    ![clicking two overlapping faces](./img/08.png)
 
 6. After computing solutions for all components:
     - Flat-Folder will display how many valid flat-folded states were found.
     - If any states were found, Flat-Folder will draw a rendering of the first 
       one on the right of the display.
+
+    ![after folded](./img/04.png)
+
     - Selecting the "Flip" option will redraw the folded state as seen from 
       the other side.
+
+    ![clicking flip](./img/09.png)
+
     - A "Component" dropdown menu is added to aid in selecting other states.
         - The "none" option hides all display of component information.
         - The "all" option draws every component found on the overlap graph in a
           randomly assigned color.
+
+    ![clicking all components](./img/10.png)
+
         - There is one numeric option (zero-indexed) for each component found.
           Selecting a component will:
             - draw that component on the overlap graph,
             - display the number of states found for that component, and
             - add a numeric input to enter which state to select for that
-              component. Changing this number will redraw the flat-folded state
-              based on the change.
+              component. 
+
+    ![clicking a component](./img/11.png)
+
+        - Changing this number will redraw the flat-folded state based on the
+          change.
+
+    ![changing a component](./img/12.png)
+
+    - You can change states of each component until you reach a desired state.
+
+    ![changing to a desired state](./img/13.png)
 
 7. Press "Export" to generate export links to various outputs.
     - Clicking "cp" downloads the crease pattern in FOLD format.
@@ -123,6 +142,8 @@ both assigned and unassigned.
     - Clicking "img" downloads a snapshot of the current display in SVG format.
     - Clicking "log" downloads a text file of all console output since the most
       recent file was imported.
+
+    ![export](./img/14.png)
 
 ## Algorithm
 
