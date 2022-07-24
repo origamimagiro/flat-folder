@@ -1356,14 +1356,14 @@ const GUI = {   // INTERFACE
         SVG.clear("export");
         const {V, VK, EV, EA, FV} = FOLD;
         const svg = SVG.clear("flat");
+        const F = FV.map(f => M.expand(f, V));
+        SVG.draw_polygons(svg, F, {id: "flat_f", fill: GUI.COLORS.face.bottom});
+        SVG.append("g", svg, {id: "flat_shrunk"});
         const K = [];
         for (const [i, k] of VK.entries()) {
             if (k > 0.00001) { K.push(V[i]); }
         }
         SVG.draw_points(svg, K, {id: "flat_check", fill: "red", r: 10});
-        const F = FV.map(f => M.expand(f, V));
-        SVG.draw_polygons(svg, F, {id: "flat_f", fill: GUI.COLORS.face.bottom});
-        SVG.append("g", svg, {id: "flat_shrunk"});
         const lines = EV.map(l => M.expand(l, V));
         const colors = EA.map(a => GUI.COLORS.edge[a]);
         const creases = [];
