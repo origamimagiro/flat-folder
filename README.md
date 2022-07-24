@@ -174,6 +174,7 @@ Flat-Folder takes a different approach for step (2).
         - `[f1, g1]`, `[f1, f2]`, `[f1, g2]`, `[f2, g1]`, `[f2, g2]`, `[g1, g2]`
         - Out of the $2^6 = 64$ possible assignments of these variables, only 
           16 of them are valid (avoid intersection).
+        - There are at most $O(|E|^2)$ taco-taco constraints.
 
     - **Taco-Tortilla:** A taco-tortilla constraint occurs when a folded edge `e` of 
       the crease pattern adjacent to faces `[f1, f2]` properly intersects the 
@@ -186,6 +187,7 @@ Flat-Folder takes a different approach for step (2).
         - `[f1, f2]`, `[f1, f3]`, `[f2, f3]`
         - Out of the $2^3 = 8$ possible assignments of these variables, only
           4 of them are valid (avoid intersection).
+        - There are at most $O(|E|(|F| + |E|))$ taco-taco constraints.
 
     - **Tortilla-Tortilla:** A tortilla-tortilla constraint occurs when two crease 
       edges `[e1, e2]` (has assignment `F`) of the crease pattern properly 
@@ -198,6 +200,7 @@ Flat-Folder takes a different approach for step (2).
         - `[f1, f2]`, `[g1, g2]`
         - Out of the $2^2 = 4$ possible assignments of these variables, only
           2 of them are valid (avoid intersection).
+        - There are at most $O(|E|^2)$ taco-taco constraints.
 
     - **Transitivity:** A transitivity constraint occurs when three faces 
       `[f1, f2, f2]` all mutually overlap the same cell of in the overlap graph. 
@@ -206,5 +209,25 @@ Flat-Folder takes a different approach for step (2).
         - `[f1, f2]`, `[f1, f3]`, `[f2, f3]`
         - Out of the $2^3 = 8$ possible assignments of these variables, only
           6 of them are valid (avoid intersection).
+        - There are at most $O(|F|^3)$ taco-taco constraints.
 
+    - The variables and constraints form a bipartite constraint graph with one
+      vertex for each variable and constraint, with an edge between a variable
+      and a constraint if the constraint is associated with the variable. This
+      graph has size $O(|F|^3)$.
 
+3. If the crease pattern is mountain/valley assigned, each edge assignments
+   forces the assignment of one Boolean variable. Flat-Folder makes these
+   assignments, and assigns any variables that can be infered from those
+   assignments according to the constraints.
+
+4. After removing any the variables that may have been assigned in the last step
+   from the constraint graph, the graph may be disconnected into multiple
+   unconnected components. If it is variables in one component cannot have any
+   effect on variables in another component, so their assignments are independent.
+
+5. Lastly, Flat-Folder finds valid solutions for each connected component of
+   variables via a brute-force search. If each component has only a polynomial
+   number of solutions, solving each connected component independently can
+   implicitly represent an exponential number of folded states in polynomial
+   space.
