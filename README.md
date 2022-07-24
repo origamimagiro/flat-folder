@@ -1,13 +1,16 @@
 # Flat-Folder: A Crease Pattern Solver
 
-Flat-Folder is some code to compute and analyze valid flat-foldable states of
-flat-foldable crease patterns, both assigned and unassigned. 
+Flat-Folder is software written by [Jason S. Ku](http://jasonku.mit.edu/) to
+compute and analyze valid flat-foldable states of flat-foldable crease patterns,
+both assigned and unassigned. 
 
 ## How to use
 
 1. Go to [Flat-Folder](https://origamimagiro.github.io/flat-folder/).
     - Tested to run in Chrome, Firefox, and Safari.
     - Chrome usually runs slightly faster than Firefox and much faster than Safari.
+
+![inital interface](./img/01.png)
 
 2. Press "Upload" to upload a crease pattern in FOLD, SVG, OPX, or CP file formats.
     - The software will probably have trouble if points in the input file are
@@ -76,12 +79,12 @@ flat-foldable crease patterns, both assigned and unassigned.
                 - its transitivity constraints (blue).
 
 6. After computing solutions for all components:
-    - Flat-Folder will draw a rendering of the flat-folded state on the right of 
-      the display.
+    - Flat-Folder will display how many valid flat-folded states were found.
+    - If any states were found, Flat-Folder will draw a rendering of the first 
+      one on the right of the display.
     - Selecting the "Flip" option will redraw the folded state as seen from 
       the other side.
-    - A "Component" dropdown menu is added, along with a listing of the number
-      of components and valid flat-folded states found by Flat-Folder.
+    - A "Component" dropdown menu is added to aid in selecting other states.
         - The "none" option hides all display of component information.
         - The "all" option draws every component found on the overlap graph in a
           randomly assigned color.

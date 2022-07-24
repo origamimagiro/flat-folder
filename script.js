@@ -170,7 +170,7 @@ const MAIN = {
         NOTE.count(n, "folded states");
         NOTE.lap();
         const num_states = document.getElementById("num_states");
-        num_states.textContent = `Found ${GB.length} components & ${n} states`;
+        num_states.textContent = `(Found ${n} states)`;
         const GI = GB.map(() => 0);
         NOTE.time("Computing state");
         const edges = SOLVER.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
@@ -1470,7 +1470,7 @@ const GUI = {   // INTERFACE
             state_label.innerHTML = `${n} State${(n == 1) ? "" : "s"}`;
             state_select.setAttribute("min", 1);
             state_select.setAttribute("max", n);
-            state_select.value = 1;
+            state_select.value = GI[c] + 1;
             state_select.onchange = (e) => {
                 NOTE.start("Computing new state");
                 const j = e.target.value;
