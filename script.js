@@ -170,7 +170,7 @@ const MAIN = {
         NOTE.count(n, "folded states");
         NOTE.lap();
         const num_states = document.getElementById("num_states");
-        num_states.textContent = `# States Found: ${n}`;
+        num_states.textContent = `Found ${GB.length} components & ${n} states`;
         const GI = GB.map(() => 0);
         NOTE.time("Computing state");
         const edges = SOLVER.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
@@ -1464,25 +1464,23 @@ const GUI = {   // INTERFACE
             C.push(c);
             const n = GA[c].length;
             comp_select.style.background = GUI.COLORS.rand[c % GUI.COLORS.rand.length];
-            if (n > 1) {
-                document.getElementById("state_config").style.display = "inline"; 
-                const state_label = document.getElementById("state_label");
-                const state_select = document.getElementById("state_select");
-                state_label.innerHTML = `${n} States`;
-                state_select.setAttribute("min", 1);
-                state_select.setAttribute("max", n);
-                state_select.value = 1;
-                state_select.onchange = (e) => {
-                    NOTE.start("Computing new state");
-                    const j = e.target.value;
-                    GI[c] = +j - 1;
-                    const edges = SOLVER.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
-                    FOLD.FO = SOLVER.edges_Ff_2_FO(edges, FOLD.Ff);
-                    CELL.CD = SOLVER.CF_edges_flip_2_CD(CELL.CF, edges);
-                    GUI.update_fold(FOLD, CELL);
-                    NOTE.end();
-                };
-            }
+            document.getElementById("state_config").style.display = "inline"; 
+            const state_label = document.getElementById("state_label");
+            const state_select = document.getElementById("state_select");
+            state_label.innerHTML = `${n} State${(n == 1) ? "" : "s"}`;
+            state_select.setAttribute("min", 1);
+            state_select.setAttribute("max", n);
+            state_select.value = 1;
+            state_select.onchange = (e) => {
+                NOTE.start("Computing new state");
+                const j = e.target.value;
+                GI[c] = +j - 1;
+                const edges = SOLVER.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
+                FOLD.FO = SOLVER.edges_Ff_2_FO(edges, FOLD.Ff);
+                CELL.CD = SOLVER.CF_edges_flip_2_CD(CELL.CF, edges);
+                GUI.update_fold(FOLD, CELL);
+                NOTE.end();
+            };
         }
         const {Vf, FV} = FOLD;
         const g = SVG.clear("component_notes");
