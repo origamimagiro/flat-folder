@@ -11,7 +11,7 @@ both assigned and unassigned.
     - Chrome usually runs slightly faster than Firefox and much faster than Safari.
     - You should see the following interface:
 
-![inital interface](./img/01.png)
+    ![inital interface](./img/01.png)
 
 1. Press "Upload" to upload a crease pattern in FOLD, SVG, OPX, or CP file formats.
     - The software will probably have trouble if points in the input file are
@@ -41,14 +41,14 @@ both assigned and unassigned.
         - For Kawasaki, it checks whether the ((sum of even angles) $- \pi$)
           is greater than `0.00001`.
 
-![after import](./img/02.png)
+    ![after import](./img/02.png)
 
-1. Selecting the "Text" option will draw index labels for all the vertices,
-   edges, and faces in the crease pattern. Currently, there is no way in the 
-   interface to adjust the font size, so this is only useful for debugging
-   small inputs or by manipulating the text later in an output SVG.
+    - Selecting the "Text" option will draw index labels for all the vertices,
+      edges, and faces in the crease pattern. Currently, there is no way in the
+      interface to adjust the font size, so this is only useful for debugging 
+      small inputs or by manipulating the text later in an output SVG.
 
-![showing text](./img/03.png)
+    ![showing text](./img/03.png)
 
 1. Press "Fold" to find flat-foldable states of the crease pattern.
     - Flat-Folder will break up the faceOrder variables into disconnected 
