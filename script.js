@@ -1043,7 +1043,7 @@ const IO = {    // INPUT-OUTPUT
             file_spec: 1.1,
             file_creator: "flat-folder",
             file_title: `${name}_cp`,
-            file_class: "singleModel",
+            file_classes: ["singleModel"],
             vertices_coords:  V,
             edges_vertices:   EV,
             edges_assignment: EA,
