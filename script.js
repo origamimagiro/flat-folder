@@ -398,7 +398,7 @@ const SOLVER = {    // STATE SOLVER
         //          |   array of valid assignments:  (max length lim)
         //          |     array for each variable in group: an assignment
         //          | returns [] if no solutions found
-        const BA = BA0.map(a => a);
+        const BA = BA0.map(a => 0);
         const BI = new Map();
         for (const [i, F] of BF.entries()) {
             BI.set(F, i);
@@ -1789,11 +1789,9 @@ const TIME = {  // TIME
         TIME.est_lap = TIME.est_start;
         TIME.est_lim = lim;
     },
+    lap_est: () => (TIME.est_lap = Date.now()),
     remaining: (i) => {
-        const stop = Date.now();
-        const time = stop - TIME.est_lap;
-        TIME.est_lap = stop;
-        return TIME.str((TIME.est_lap - TIME.est_start)*(TIME.est_lim/i - 1));
+        return TIME.str((Date.now() - TIME.est_start)*(TIME.est_lim/i - 1));
     },
     str: (time) => {
         if (time < 1000) {
@@ -1833,6 +1831,7 @@ const NOTE = {  // ANNOTATION
             } else {
                 NOTE.log(`    On ${NOTE.check_label} ${i} of unknown`);
             }
+            TIME.lap_est();
         }
     },
     annotate: (A, label) => {
