@@ -763,7 +763,7 @@ const X = {     // CONVERSION
                     queue.push([f, vj, vi, len, new_s]);
                     seen.add(f);
                     let prev = len;
-                    for (let i = queue.length - 1; i > 0; --i) {
+                    for (let i = queue.length - 1; i > next; --i) {
                         const curr = queue[i - 1][3];
                         if (curr < prev) {
                             [queue[i], queue[i - 1]] = [queue[i - 1], queue[i]];
