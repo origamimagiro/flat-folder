@@ -216,7 +216,7 @@ const SOLVER = {    // STATE SOLVER
     infer: (T, BI, BA) => {
         // In:   T | constraint of form [type, F]
         //      BI | map from variable keys to indices
-        //      BA | map from variable keys to assignments
+        //      BA | array of variable assignments
         // Out:  I | false if BA conflicts with T, else array of pairs [i, a]
         //         | where a is assignment inferred for variable at index i
         const [type,] = T;
@@ -240,10 +240,10 @@ const SOLVER = {    // STATE SOLVER
     propagate: (bi, a, BI, BF, BT, BA) => {
         // In:  bi | variable index to be assigned
         //       a | proposed assignment
+        //      BI | map from variable keys to indices
         //      BF | array of variable keys
         //      BT | array of variable constraints
-        //      BI | map from variable keys to indices
-        //      BA | map from variable keys to assignments
+        //      BA | array of variable assignments
         // Out:  B | array of variable indices assigned after assigning a to i
         //         | if assigning i to a impossible, returns empty array
         const B = [bi];
