@@ -779,7 +779,7 @@ const X = {     // CONVERSION
             }
         }
         for (const p of Vf) { if (p == undefined) { debugger; } }
-        return [Vf,Ff];
+        return [Vf, Ff];
     },
     EV_FV_2_EF: (EV, FV) => {
         const EV_map = new Map();
