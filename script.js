@@ -62,9 +62,9 @@ const MAIN = {
         NOTE.annotate(EA, "edges_assignments");
         NOTE.annotate(EF, "edges_faces");
         NOTE.annotate(FV, "faces_vertices");
-        const Vf = M.normalize_points(X.V_VF_EV_EA_2_Vf(V, FV, EV, EA));
+        const [Pf, Ff] = X. V_VF_EV_EA_2_Vf_Ff(V, FV, EV, EA);
+        const Vf = M.normalize_points(Pf);
         NOTE.annotate(Vf, "vertices_coords_folded");
-        const Ff = X.V_FV_2_Ff(Vf, FV);
         NOTE.annotate(Ff, "faces_flip");
         NOTE.lap();
         const FOLD = {V, Vf, VK, EV, EA, EF, FV, Ff};
@@ -717,7 +717,7 @@ const X = {     // CONVERSION
         }
         return VK;
     },
-    V_VF_EV_EA_2_Vf: (V, FV, EV, EA) => {
+    V_VF_EV_EA_2_Vf_Ff: (V, FV, EV, EA) => {
         const EA_map = new Map();
         for (const [i, vs] of EV.entries()) {
             EA_map.set(M.encode_order_pair(vs), EA[i]);
@@ -736,13 +736,15 @@ const X = {     // CONVERSION
         for (const i of [v1, v2]) {
             Vf[i] = V[i];
         }            // [face, edge, len, parity]
+        const Ff = new Array(FV.length);
         const queue = [[0, v1, v2, Infinity, true]];    
         let next = 0;
         while (next < queue.length) {                   // Prim's algorithm to
             const [fi, i1, i2, l, s] = queue[next];     // traverse face graph
-            next += 1;                                  // over spanning tree
-            const F = FV[fi];                           // crossing edges of 
-            const x = M.unit(M.sub(V[i2], V[i1]));      // maximum length
+            Ff[fi] = !s;                                // over spanning tree
+            next += 1;                                  // crossing edges of 
+            const F = FV[fi];                           // maximum length
+            const x = M.unit(M.sub(V[i2], V[i1]));
             const y = M.perp(x);
             const xf = M.unit(M.sub(Vf[i2], Vf[i1]));
             const yf = M.perp(xf);
@@ -777,7 +779,7 @@ const X = {     // CONVERSION
             }
         }
         for (const p of Vf) { if (p == undefined) { debugger; } }
-        return Vf;
+        return [Vf,Ff];
     },
     EV_FV_2_EF: (EV, FV) => {
         const EV_map = new Map();
@@ -801,9 +803,6 @@ const X = {     // CONVERSION
             }
         }
         return EF;
-    },
-    V_FV_2_Ff: (V, FV) => {
-        return FV.map(F => (M.orientation(M.expand(F, V)) < 0));
     },
     V_FV_P_CP_2_CF_FC: (V, FV, P, CP) => {
         const centers = CP.map(f => M.interior_point(M.expand(f, P)));
@@ -1958,16 +1957,6 @@ const M = {     // MATH
         const diff = is_tall ? y_diff : x_diff;
         const off = M.sub([0.5, 0.5], M.div([x_diff, y_diff], 2*diff));
         return P.map(p => M.add(M.div(M.sub(p, [x_min, y_min]), diff), off));
-    },
-    orientation: (P) => {
-        const n = P.length;
-        let [p1, p2] = [P[n - 2], P[n - 1]];
-        for (const p3 of P) {
-            const o = Math.sign(M.area2(p1, p2, p3));
-            if (o != 0) { return o; }
-            [p1, p2] = [p2, p3];
-        }
-        return 0; 
     },
     interior_point: (P) => {
         const n = P.length;
