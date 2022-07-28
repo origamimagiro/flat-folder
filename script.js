@@ -738,11 +738,11 @@ const X = {     // CONVERSION
         }            // [face, edge, len, parity]
         const queue = [[0, v1, v2, Infinity, true]];    
         let next = 0;
-        while (next < queue.length) {   // BFS across face graph
-            const [fi, i1, i2, l, s] = queue[next];
-            next += 1;
-            const F = FV[fi];
-            const x = M.unit(M.sub(V[i2], V[i1]));
+        while (next < queue.length) {                   // Prim's algorithm to
+            const [fi, i1, i2, l, s] = queue[next];     // traverse face graph
+            next += 1;                                  // over spanning tree
+            const F = FV[fi];                           // crossing edges of 
+            const x = M.unit(M.sub(V[i2], V[i1]));      // maximum length
             const y = M.perp(x);
             const xf = M.unit(M.sub(Vf[i2], Vf[i1]));
             const yf = M.perp(xf);
