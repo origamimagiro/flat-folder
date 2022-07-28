@@ -764,8 +764,8 @@ const X = {     // CONVERSION
                     seen.add(f);
                     let prev = len;
                     for (let i = queue.length - 1; i > next; --i) {
-                        const curr = queue[i - 1][3];
-                        if (curr < prev) {
+                        const curr = queue[i - 1][3];   // O(n^2) but could be
+                        if (curr < prev) {              // O(n log n)
                             [queue[i], queue[i - 1]] = [queue[i - 1], queue[i]];
                         } else {
                             break;
