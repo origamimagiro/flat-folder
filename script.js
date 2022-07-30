@@ -805,7 +805,6 @@ const X = {     // CONVERSION
         return EF;
     },
     V_FV_P_CP_2_CF_FC: (V, FV, P, CP) => {
-        console.log(CP);
         const centers = CP.map(f => M.interior_point(M.expand(f, P)));
         const CF = CP.map(() => []);
         NOTE.start_check("face", FV);
@@ -1975,7 +1974,7 @@ const M = {     // MATH
                 continue;
             }
             let found = true;
-            for (const p of P) {    // check whether convex ear contained in P
+            for (const p of P) {    // check if triangle contains another vertex
                 if ((p != p1) && (p != p2) && (p != p3) && 
                     ((M.area2(p1, p2, p) >= 0) &&
                      (M.area2(p2, p3, p) >= 0) &&
