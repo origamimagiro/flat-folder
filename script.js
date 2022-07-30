@@ -805,6 +805,7 @@ const X = {     // CONVERSION
         return EF;
     },
     V_FV_P_CP_2_CF_FC: (V, FV, P, CP) => {
+        console.log(CP);
         const centers = CP.map(f => M.interior_point(M.expand(f, P)));
         const CF = CP.map(() => []);
         NOTE.start_check("face", FV);
@@ -1333,19 +1334,19 @@ const GUI = {   // INTERFACE
                 text: true, id: "f_text", opacity: 0.2});
             const line_centers = EV.map(l => M.centroid(M.expand(l, V)));
             const colors = EA.map(a => GUI.COLORS.edge[a]);
-            SVG.draw_points(flat_text, line_centers, {text: true, 
-                id: "e_text", stroke: colors, stroke_width: GUI.WIDTH});
+            SVG.draw_points(flat_text, line_centers, {
+                text: true, id: "e_text", fill: colors});
             SVG.draw_points(flat_text, V, {
                 text: true, id: "v_text", fill: "green"});
             if (CELL != undefined) {
                 const {P, SP, CP} = CELL;
                 const cell_text = document.getElementById("cell_text");
-                const cell_centers = CP.map(f => M.centroid(M.expand(f, P)));
+                const cell_centers = CP.map(f => M.interior_point(M.expand(f, P)));
                 const seg_centers = SP.map(l => M.centroid(M.expand(l, P)));
                 SVG.draw_points(cell_text, cell_centers, {
                     text: true, id: "c_text"});
-                SVG.draw_points(cell_text, seg_centers, {text: true,
-                    id: "s_text", stroke: "black", stroke_width: GUI.WIDTH});
+                SVG.draw_points(cell_text, seg_centers, {
+                    text: true, id: "s_text"});
                 SVG.draw_points(cell_text, P, {
                     text: true, id: "p_text", fill: "green"});
             }
@@ -1958,32 +1959,42 @@ const M = {     // MATH
         const off = M.sub([0.5, 0.5], M.div([x_diff, y_diff], 2*diff));
         return P.map(p => M.add(M.div(M.sub(p, [x_min, y_min]), diff), off));
     },
-    interior_point: (P) => {
+    interior_point: (P) => {    // currently O(n^2), could be O(n log n)
+        // In:  P | array of 2D points that define a simple polygon with the
+        //        | inside of the polygon on the left of the boundary tour
+        // Out: x | centroid of P's largest ear, i.e., triangle formed by three
+        //        | consecutive points of P that lies entirely in P, two of
+        //        | which exist by the two ears theorem.
         const n = P.length;
-        let best_triangle;
+        let largest_ear;
         let max_area = -Infinity;
         let [p1, p2] = [P[n - 2], P[n - 1]];
         for (const p3 of P) {
+            const a = M.area2(p1, p2, p3);
+            if (a <= 0) {           // reflex vertex cannot be an ear
+                continue;
+            }
             let found = true;
-            for (const p of P) {
+            for (const p of P) {    // check whether convex ear contained in P
                 if ((p != p1) && (p != p2) && (p != p3) && 
-                    M.convex_contains_point(P, p)
+                    ((M.area2(p1, p2, p) >= 0) &&
+                     (M.area2(p2, p3, p) >= 0) &&
+                     (M.area2(p3, p1, p) >= 0))
                 ) {
                     found = false;
                     break;
                 }
             }
-            if (found) {
-                const a = M.area2(p1, p2, p3);
+            if (found) {            // convex ear is contained in P
                 if (max_area < a) {
                     max_area = a;
-                    best_triangle = [p1, p2, p3];
+                    largest_ear = [p1, p2, p3];
                 }
             }
             [p1, p2] = [p2, p3];
         }
-        if (best_triangle == undefined) { debugger; }
-        return M.centroid(best_triangle);
+        if (largest_ear == undefined) { debugger; }
+        return M.centroid(largest_ear);
     },
     convex_contains_point: (P, q) => {
         let p0 = P[P.length - 1]; 
