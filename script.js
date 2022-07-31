@@ -171,12 +171,12 @@ const MAIN = {
         NOTE.lap();
         const num_states = document.getElementById("num_states");
         num_states.textContent = `(Found ${n} state${(n == 1) ? "" : "s"})`;
-        const GI = GB.map(() => 0);
-        NOTE.time("Computing state");
-        const edges = SOLVER.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
-        FOLD.FO = SOLVER.edges_Ff_2_FO(edges, Ff);
-        CELL.CD = SOLVER.CF_edges_flip_2_CD(CF, edges);
         if (n > 0) {
+            const GI = GB.map(() => 0);
+            NOTE.time("Computing state");
+            const edges = SOLVER.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
+            FOLD.FO = SOLVER.edges_Ff_2_FO(edges, Ff);
+            CELL.CD = SOLVER.CF_edges_flip_2_CD(CF, edges);
             document.getElementById("state_controls").style.display = "inline"; 
             document.getElementById("flip").onchange = (e) => {
                 NOTE.start("Flipping model");
@@ -203,9 +203,9 @@ const MAIN = {
             };
             NOTE.time("Drawing fold");
             GUI.update_fold(FOLD, CELL);
+            NOTE.time("Drawing component");
+            GUI.update_component(FOLD, CELL, BF, GB, GA, GI);
         }
-        NOTE.time("Drawing component");
-        GUI.update_component(FOLD, CELL, BF, GB, GA, GI);
         NOTE.lap();
         stop = Date.now();
         NOTE.end();
@@ -314,9 +314,7 @@ const SOLVER = {    // STATE SOLVER
             }
         }
         GB.sort((A, B) => A.length - B.length);
-        GB.reverse();
-        GB.push(B0);
-        GB.reverse();
+        GB.unshift(B0);
         return GB;
     },
     unpack_cons: (C, type, f1, f2) => {
