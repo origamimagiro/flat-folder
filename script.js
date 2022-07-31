@@ -92,7 +92,7 @@ const MAIN = {
     },
     compute_cells: (FOLD) => {
         NOTE.start("*** Computing cell graph ***");
-        const {V, Vf, EV, FV, Ff} = FOLD;
+        const {V, Vf, EV, EF, FV, Ff} = FOLD;
         const L = EV.map((P) => M.expand(P, Vf));
         const eps = M.min_line_length(L) / M.EPS;
         NOTE.time(`Using eps ${eps} from min line length ${eps*M.EPS}`);
@@ -110,7 +110,7 @@ const MAIN = {
         NOTE.annotate(SC, "segments_cells");
         NOTE.lap();
         NOTE.time("Making face-cell maps");
-        const [CF, FC] = X.V_FV_P_CP_2_CF_FC(Vf, FV, P, CP);
+        const [CF, FC] = X.EF_FV_SP_SE_CP_SC_2_CF_FC(EF, FV, SP, SE, CP, SC);
         NOTE.count(CF, "face-cell adjacencies");
         NOTE.lap();
         const CELL = {P, SP, SE, CP, SC, CF, FC};
@@ -804,22 +804,64 @@ const X = {     // CONVERSION
         }
         return EF;
     },
-    V_FV_P_CP_2_CF_FC: (V, FV, P, CP) => {
-        const centers = CP.map(f => M.interior_point(M.expand(f, P)));
-        const CF = CP.map(() => []);
-        NOTE.start_check("face", FV);
-        const FC = FV.map((f, i) => {
-            NOTE.check(i);
-            const F = M.expand(f, V);
-            const Cs = [];
-            for (const [j, Fs] of CF.entries()) {
-                if (M.convex_contains_point(F, centers[j])) {
-                    Fs.push(i);
-                    Cs.push(j);
-                }
+    EF_FV_SP_SE_CP_SC_2_CF_FC: (EF, FV, SP, SE, CP, SC) => {
+        const SF_map = new Map();
+        for (const [i, vs] of SP.entries()) {
+            const Fs = [];
+            for (const ei of SE[i]) {
+                Fs.push(...EF[ei]);
             }
-            return Cs;
-        });
+            SF_map.set(M.encode_order_pair(vs), Fs);
+        }
+        const SC_map = new Map();
+        for (const [i, C] of CP.entries()) {
+            let v1 = C[C.length - 1];
+            for (const v2 of C) {
+                SC_map.set(M.encode([v2, v1]), i);
+                v1 = v2;
+            }
+        }
+        const CF = CP.map((c) => undefined);
+        const seen = new Set();
+        const queue = [];
+        for (const [i, Cs] of SC.entries()) {    // Look for a segment on the border
+            if (Cs.length == 1) {                // of the overlap graph to start BFS
+                const ci = Cs[0];
+                CF[ci] = SF_map.get(M.encode_order_pair(SP[i]));
+                queue.push(ci);
+                seen.add(ci);
+                break;
+            }
+        }
+        let next = 0;
+        while (next < queue.length) {       // BFS on cells in the overlap graph
+            const ci = queue[next];
+            next++;
+            const C = CP[ci];
+            let v1 = C[C.length - 1];
+            for (const v2 of C) {
+                const c = SC_map.get(M.encode([v1, v2]));
+                if ((c != undefined) && !seen.has(c)) {
+                    queue.push(c);
+                    seen.add(c);
+                    const Fs = new Set(CF[ci]);
+                    for (const f of SF_map.get(M.encode_order_pair([v1, v2]))) {
+                        if (!Fs.delete(f)) {
+                            Fs.add(f);
+                        }
+                    }
+                    CF[c] = Array.from(Fs);
+                }
+                v1 = v2;
+            }
+        }
+        const FC = FV.map((f) => []);
+        for (let ci = 0; ci < CF.length; ci++) {
+            CF[ci].sort((a, b) => a - b);
+            for (const f of CF[ci]) {
+                FC[f].push(ci);
+            }
+        }
         return [CF, FC];
     },
     SE_2_ExE: (SE) => {
@@ -1994,17 +2036,6 @@ const M = {     // MATH
         }
         if (largest_ear == undefined) { debugger; }
         return M.centroid(largest_ear);
-    },
-    convex_contains_point: (P, q) => {
-        let p0 = P[P.length - 1]; 
-        const first = (M.area2(p0, P[0], q) <= 0);
-        for (const p1 of P) {                           
-            if ((M.area2(p0, p1, q) <= 0) != first) {
-                return false;
-            } 
-            p0 = p1;
-        }
-        return true;
     },
     on_segment: (a, b, c, eps) => {
         // assumes a, b, c all pairwise separated by more than eps
