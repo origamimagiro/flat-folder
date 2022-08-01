@@ -1489,7 +1489,8 @@ const GUI = {   // INTERFACE
                 return [p1, p2];
             });
             const stroke = GUI.COLORS.rand[comp % GUI.COLORS.rand.length];
-            SVG.draw_segments(g, lines, {id: "cell_comp", stroke});
+            SVG.draw_segments(g, lines, {id: "cell_comp", 
+                "stroke": stroke, "stroke_width": 2});
         }
     },
     update_cell_face_listeners: (FOLD, CELL, BF, BT) => {
