@@ -1512,8 +1512,11 @@ const GUI = {   // INTERFACE
             state_select.value = GI[c] + 1;
             state_select.onchange = (e) => {
                 NOTE.start("Computing new state");
-                const j = e.target.value;
-                GI[c] = +j - 1;
+                let j = +e.target.value;
+                if (j < 1) { j = 1; }
+                if (j > n) { j = n; }
+                state_select.value = j;
+                GI[c] = j - 1;
                 const edges = SOLVER.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
                 FOLD.FO = SOLVER.edges_Ff_2_FO(edges, FOLD.Ff);
                 CELL.CD = SOLVER.CF_edges_flip_2_CD(CELL.CF, edges);
