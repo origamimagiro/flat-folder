@@ -807,7 +807,9 @@ const X = {     // CONVERSION
         for (const [i, vs] of SP.entries()) {
             const Fs = [];
             for (const ei of SE[i]) {
-                Fs.push(...EF[ei]);
+                for (const f of EF[ei]) {
+                    Fs.push(f);
+                }
             }
             SF_map.set(M.encode_order_pair(vs), Fs);
         }
@@ -819,12 +821,12 @@ const X = {     // CONVERSION
                 v1 = v2;
             }
         }
-        const CF = CP.map((c) => undefined);
+        const CF = CP.map(() => undefined);
         const seen = new Set();
         const queue = [];
-        for (const [i, Cs] of SC.entries()) {    // Look for a segment on the border
-            if (Cs.length == 1) {                // of the overlap graph to start BFS
-                const ci = Cs[0];
+        for (const [i, Cs] of SC.entries()) {   // Look for a segment on the
+            if (Cs.length == 1) {               // border of the overlap graph
+                const ci = Cs[0];               // to start BFS
                 CF[ci] = SF_map.get(M.encode_order_pair(SP[i]));
                 queue.push(ci);
                 seen.add(ci);
@@ -832,7 +834,7 @@ const X = {     // CONVERSION
             }
         }
         let next = 0;
-        while (next < queue.length) {       // BFS on cells in the overlap graph
+        while (next < queue.length) {   // BFS on cells in the overlap graph
             const ci = queue[next];
             next++;
             const C = CP[ci];
@@ -843,8 +845,10 @@ const X = {     // CONVERSION
                     queue.push(c);
                     seen.add(c);
                     const Fs = new Set(CF[ci]);
-                    for (const f of SF_map.get(M.encode_order_pair([v1, v2]))) {
-                        if (!Fs.delete(f)) {
+                    const k = M.encode_order_pair([v1, v2]);
+                    for (const f of SF_map.get(k)) {
+                        const removed = Fs.delete(f);
+                        if (!removed) {
                             Fs.add(f);
                         }
                     }
@@ -853,7 +857,7 @@ const X = {     // CONVERSION
                 v1 = v2;
             }
         }
-        const FC = FV.map((f) => []);
+        const FC = FV.map(() => []);
         for (let ci = 0; ci < CF.length; ci++) {
             CF[ci].sort((a, b) => a - b);
             for (const f of CF[ci]) {
