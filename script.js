@@ -1913,6 +1913,8 @@ const NOTE = {  // ANNOTATION
 
 const M = {     // MATH
     EPS: 300,
+    FLOAT_EPS: 10**(-16),
+    near_zero: (a) => Math.abs(a) < M.FLOAT_EPS,
     encode: (A) => {
         const B = [];
         for (const a of A) {
@@ -2078,19 +2080,19 @@ const M = {     // MATH
             a[0] * (d[1] - c[1]) + b[0] * (c[1] - d[1]) +
             d[0] * (b[1] - a[1]) + c[0] * (a[1] - b[1])
         );
-        if (denom == 0) { return; }
+        if (M.near_zero(denom)) { return; }
         const s_num = (
             a[0] * (d[1] - c[1]) + 
             c[0] * (a[1] - d[1]) + 
             d[0] * (c[1] - a[1])
         );
-        if (s_num == 0 || s_num == denom) { return; }
+        if (M.near_zero(s_num) || M.near_zero(s_num - denom)) { return; }
         const t_num = -(
             a[0] * (c[1] - b[1]) + 
             b[0] * (a[1] - c[1]) + 
             c[0] * (b[1] - a[1])
         );
-        if (t_num == 0 || t_num == denom) { return; }
+        if (M.near_zero(t_num) || M.near_zero(t_num - denom)) { return; }
         const s = s_num / denom;
         const t = t_num / denom;
         if ((s < 0) || (1 < s) || (t < 0) || (1 < t)) { return; }
