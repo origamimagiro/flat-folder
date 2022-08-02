@@ -2061,7 +2061,7 @@ const M = {     // MATH
         return area;
     },
     intersect: ([a, b], [c, d], eps) => {
-        // Transcribed from Computational Geometry in C [O'Rourke]
+        // Adapted from Computational Geometry in C [O'Rourke]
         // Returns a proper intersection point of segments [a, b] and [c, d]
         // or undefined if no proper intersection point exists
         if (M.close(a, c, eps) || M.close(a, d, eps) || 
@@ -2075,17 +2075,21 @@ const M = {     // MATH
             d[0] * (b[1] - a[1]) + c[0] * (a[1] - b[1])
         );
         if (denom == 0) { return; }
-        const s = (
+        const s_num = (
             a[0] * (d[1] - c[1]) + 
             c[0] * (a[1] - d[1]) + 
             d[0] * (c[1] - a[1])
-        ) / denom;
-        const t = -(
+        );
+        if (s_num == 0 || s_num == denom) { return; }
+        const t_num = -(
             a[0] * (c[1] - b[1]) + 
             b[0] * (a[1] - c[1]) + 
             c[0] * (b[1] - a[1])
-        ) / denom;
-        if ((s <= 0) || (1 <= s) || (t <= 0) || (1 <= t)) { return; }
+        );
+        if (t_num == 0 || t_num == denom) { return; }
+        const s = s_num / denom;
+        const t = t_num / denom;
+        if ((s < 0) || (1 < s) || (t < 0) || (1 < t)) { return; }
         const p = [
             a[0] + s * (b[0] - a[0]), 
             a[1] + s * (b[1] - a[1])
