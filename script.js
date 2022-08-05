@@ -472,7 +472,7 @@ const SOLVER = {    // STATE SOLVER
             return S;
         });
     },
-    EF_SE_SC_CD_2_SD: (EF, SE, SC, CD) => {
+    EF_SE_SC_CF_CD_2_SD: (EF, SE, SC, CF, CD) => {
         const FE_map = new Map();
         for (const [i, F] of EF.entries()) {
             if (F.length == 2) {
@@ -483,7 +483,10 @@ const SOLVER = {    // STATE SOLVER
         NOTE.start_check("segment", SC);
         return SC.map((C, i) => {
             NOTE.check(i);
-            if (C.length == 2) {
+            if ((C.length == 2) &&
+                (CF[C[0]].length > 0) &&
+                (CF[C[1]].length > 0)
+            ) {
                 const [f1, f2] = C.map(c => CD[c]);
                 if (f1 == f2) {
                     return "N";
@@ -821,7 +824,7 @@ const X = {     // CONVERSION
                 v1 = v2;
             }
         }
-        const CF = CP.map(() => undefined);
+        const CF = CP.map(() => []);
         const seen = new Set();
         const queue = [];
         for (const [i, Cs] of SC.entries()) {   // Look for a segment on the
@@ -1469,16 +1472,19 @@ const GUI = {   // INTERFACE
     update_fold: (FOLD, CELL) => {
         SVG.clear("export");
         const {EF, Ff} = FOLD;
-        const {P, SP, SE, CP, SC, CD} = CELL;
+        const {P, SP, SE, CP, SC, CF, CD} = CELL;
         const svg = SVG.clear("fold");
         const flip = document.getElementById("flip").checked;
         const tops = CD.map(S => flip ? S[0] : S[S.length - 1]);
-        const SD = SOLVER.EF_SE_SC_CD_2_SD(EF, SE, SC, tops);
+        const SD = SOLVER.EF_SE_SC_CF_CD_2_SD(EF, SE, SC, CF, tops);
         const m = [0.5, 0.5];
         const Q = P.map(p => (flip ? M.add(M.refX(M.sub(p, m)), m) : p));
         const cells = CP.map(V => M.expand(V, Q));
-        const colors = tops.map(d => (Ff[d] != flip) ? 
-            GUI.COLORS.face.top : GUI.COLORS.face.bottom);
+        const colors = tops.map(d => {
+            if (d == undefined) { return undefined; }
+            if (Ff[d] != flip)  { return GUI.COLORS.face.top; }
+            else                { return GUI.COLORS.face.bottom; }
+        });
         SVG.draw_polygons(svg, cells, {
             id: "fold_c", fill: colors, stroke: colors});
         const [creases, segments] = [[], []];
@@ -1795,6 +1801,7 @@ const SVG = {   // DRAWING
             NOTE.check(i);
             const F = ps.map(p => M.mul(p, SVG.SCALE));
             const color = SVG.get_val(options.fill, i, "black");
+            if (color == undefined) { continue; }
             const V = F.map(v => v.join(",")).join(" ");
             const p = SVG.append("polygon", g, {points: V, fill: color});
             if (options.stroke != undefined) {
