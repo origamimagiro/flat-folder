@@ -1971,7 +1971,7 @@ const NOTE = {  // ANNOTATION
 };
 
 const M = {     // MATH
-    EPS: 1000,
+    EPS: 300,
     FLOAT_EPS: 10**(-16),
     near_zero: (a) => Math.abs(a) < M.FLOAT_EPS,
     encode: (A) => {
