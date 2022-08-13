@@ -1199,6 +1199,26 @@ const IO = {    // INPUT-OUTPUT
             const color = IO.SVG_style_2_color(sty);
             lines.push([[x1, y1], [x2, y2], color]);
         }
+        const svg_polys = Array.from(dom.getElementsByTagName("polyline"));
+        for (const svg_poly of svg_polys) {
+            const sty = svg_poly.getAttribute("style");
+            if (sty == undefined) { continue; }
+            const color = IO.SVG_style_2_color(sty);
+            const P = svg_poly.getAttribute("points").split(" ");
+            let v1;
+            for (const p of P) {
+                if (p == "") { continue; }
+                const coords = p.split(",");
+                console.assert(coords.length == 2);
+                if (v1 == undefined) {
+                    v1 = coords.map(c => +c);
+                } else {
+                    const v2 = coords.map(c => +c);
+                    lines.push([v1, v2, color]);
+                    v1 = v2;
+                }
+            }
+        }
         const svg_paths = Array.from(dom.getElementsByTagName("path"));
         for (const svg_path of svg_paths) {
             const sty = svg_path.getAttribute("style");
@@ -1437,8 +1457,9 @@ const GUI = {   // INTERFACE
         SVG.draw_polygons(svg, F, {id: "flat_f", fill: GUI.COLORS.face.bottom});
         SVG.append("g", svg, {id: "flat_shrunk"});
         const K = [];
+        const eps = 1/M.EPS;
         for (const [i, k] of VK.entries()) {
-            if (k > 0.00001) { K.push(V[i]); }
+            if (k > eps) { K.push(V[i]); }
         }
         SVG.draw_points(svg, K, {id: "flat_check", fill: "red", r: 10});
         const lines = EV.map(l => M.expand(l, V));
@@ -1950,7 +1971,7 @@ const NOTE = {  // ANNOTATION
 };
 
 const M = {     // MATH
-    EPS: 300,
+    EPS: 1000,
     FLOAT_EPS: 10**(-16),
     near_zero: (a) => Math.abs(a) < M.FLOAT_EPS,
     encode: (A) => {
