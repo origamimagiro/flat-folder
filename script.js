@@ -1509,8 +1509,12 @@ const GUI = {   // INTERFACE
             Math.ceil((2 + l)*120)}, 100%, 50%)`);
     },
     CF_2_Cbw: (CF) => {
-        return GUI.CF_2_Clayer(CF).map(l => `hsl(0, 0%, ${
-            Math.ceil((1 - l*0.8)*100)}%)`);
+        return GUI.CF_2_Clayer(CF).map(l => {
+            if (l == 0) {
+                return "hsla(0, 0%, 0%, 0.0)";
+            }
+            return `hsl(0, 0%, ${Math.ceil((1 - l*0.8)*100)}%)`;
+        });
     },
     CF_2_Clayer: (CF) => {
         let max_layers = 0;
