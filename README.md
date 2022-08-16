@@ -4,6 +4,9 @@ Flat-Folder is software written by [Jason S. Ku](http://jasonku.mit.edu/) to
 compute and analyze valid flat-foldable states of flat-foldable crease patterns,
 both assigned and unassigned. 
 
+Follow Flat-Folder on [Instagram](https://www.instagram.com/flat_folder/) 
+or [Twitter](https://twitter.com/_flatfolder_).
+
 ## How to use
 
 1. Go to [Flat-Folder](https://origamimagiro.github.io/flat-folder/).
