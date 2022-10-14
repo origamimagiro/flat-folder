@@ -16,7 +16,7 @@ or [Twitter](https://twitter.com/_flatfolder_).
 
     ![inital interface](./img/01.jpg)
 
-1. Press "Upload" to upload a crease pattern in FOLD, SVG, OPX, or CP file formats.
+1. Press "Choose File" to upload a crease pattern in FOLD, SVG, OPX, or CP file formats.
     - Various example files can be found in the
       [`./examples/` folder](https://github.com/origamimagiro/flat-folder/tree/main/examples).
         - You can download them by 
@@ -251,4 +251,4 @@ $n$ to be the number of faces in the input crease pattern.
    variables via a brute-force search. This step can take exponental time
    $2^{O(n^2)}$ but if each component has only a polynomial number of solutions, 
    solving each connected component independently can implicitly represent an 
-   exponential number of folded states in polynomial time. 
+   exponential number of folded states in polynomial space. 
