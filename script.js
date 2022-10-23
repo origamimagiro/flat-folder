@@ -1,4 +1,4 @@
-window.onload = () => { MAIN.startup(); }   // entry point
+window.onload = () => { MAIN.startup(); };  // entry point
 
 const MAIN = {
     startup: () => {
@@ -1152,7 +1152,7 @@ const IO = {    // INPUT-OUTPUT
         return lines;
     },
     CP_2_L: (doc) => {
-        const map = ["", "F", "M", "V"];
+        const map = ["", "F", "M", "V", "F"];
         const L = doc.split("\n").map(line => {
             line = line.trim();
             const [a, x1, y1, x2, y2] = line.split(" ").map(t => t.trim());
