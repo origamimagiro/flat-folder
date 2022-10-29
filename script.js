@@ -459,7 +459,7 @@ const SOLVER = {    // STATE SOLVER
     edges_Ff_2_FO: (edges, Ff) => {
         return edges.map((k) => {
             const [f1, f2] = M.decode(k);
-            return [f1, f2, (Ff[f2] ? 1 : -1)];
+            return [f1, f2, (Ff[f2] ? -1 : 1)];
         });
     },
     CF_edges_flip_2_CD: (CF, edges) => {
@@ -1808,7 +1808,7 @@ const SVG = {   // DRAWING
     },
     draw_label: (svg, [x, y], color, i) => {
         const t = SVG.append("text", svg, {
-            x: x, y: y, "fill": color, "font-size": "15pt"});
+            "fill": color, "font-size": "15pt", "transform": `translate(${x} ${y}) scale(1 -1)`});
         t.innerHTML = i;
         return t;
     },
