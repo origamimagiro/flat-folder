@@ -1049,7 +1049,7 @@ const X = {     // CONVERSION
                 const k = M.encode_order_pair(EF[i]);
                 const [f1, f2] = M.decode(k);
                 const o = ((!Ff[f1] && (a == "M")) ||
-                            (Ff[f1] && (a == "V"))) ? 1 : 2;
+                            (Ff[f1] && (a == "V"))) ? 2 : 1;
                 BA[BI_map.get(k)] = o;
             }
         }
@@ -1398,8 +1398,8 @@ const GUI = {   // INTERFACE
         edge: {
             U: "black",
             F: "lightgray",
-            M: "red",
-            V: "blue",
+            M: "blue",  // crease pattern is
+            V: "red",   // rendered white-side up
             B: "black",
         },
         face: {
