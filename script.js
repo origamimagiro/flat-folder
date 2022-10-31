@@ -406,14 +406,17 @@ const SOLVER = {    // STATE SOLVER
         NOTE.start_check("crease", BA0);
         for (const [i, a] of BA0.entries()) {
             NOTE.check(i);
+            const conflict = `  - Conflict assigning variable ${M.decode(BF[i])}`;
             if (a != 0) {
                 if (BA[i] != 0) {
                     if (BA[i] != a) {
+                        NOTE.log(conflict);
                         return [];
                     }
                 } else {
                     const B = SOLVER.propagate(i, a, BI, BF, BT, BA);
                     if (B.length == 0) {
+                        NOTE.log(conflict);
                         return [];
                     } else {
                         for (const b of B) {
