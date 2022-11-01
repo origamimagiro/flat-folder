@@ -41,6 +41,10 @@ const MAIN = {
                 file_reader.readAsText(e.target.files[0]);
             }
         };
+        document.getElementById("side").onclick = (e) => {
+            const side = ((e.target.value == "+") ? "-" : "+");
+            e.target.setAttribute("value", side);
+        };
         NOTE.time("Computing constraint implication maps");
         CON.build();
         NOTE.end();
@@ -53,10 +57,9 @@ const MAIN = {
         const parts = file_name.split(".");
         const type = parts[parts.length - 1].toLowerCase();
         NOTE.time(`Importing from file ${file_name}`);
-        const [P, VV, EV, EA, EF, FV] = IO.doc_type_2_V_VV_EV_EA_EF_FV(doc, type);
-        if (P == undefined) { return; }
-        const VK = X.V_VV_EV_EA_2_VK(P, VV, EV, EA);
-        const V = M.normalize_points(P);
+        const [V, VV, EV, EA, EF, FV] = IO.doc_type_2_V_VV_EV_EA_EF_FV(doc, type);
+        if (V == undefined) { return; }
+        const VK = X.V_VV_EV_EA_2_VK(V, VV, EV, EA);
         NOTE.annotate(V, "vertices_coords");
         NOTE.annotate(EV, "edges_vertices");
         NOTE.annotate(EA, "edges_assignments");
@@ -1302,8 +1305,33 @@ const IO = {    // INPUT-OUTPUT
             [V, EV, EL] = X.L_2_V_EV_EL(L, eps);
             EA = EL.map(l => L[l[0]][2]); 
         }
+        V = M.normalize_points(V);
+        const flip_EA = (EA) => {
+            return EA.map((a) => (a == "M") ? "V" : ((a == "V") ? "M" : a));
+        };
+        const flip_Y = (V) => V.map(([x, y]) => [x, -y + 1]);
+        const reverse_FV = (FV) => {
+            for (const F of FV) {
+                F.reverse();
+            }
+        };
         if (FV == undefined) {
+            if (document.getElementById("side").value == "+") {
+                EA = flip_EA(EA);
+            } else {
+                V = flip_Y(V);
+            }
             [VV, FV] = X.V_EV_2_VV_FV(V, EV);
+        } else {
+            if (M.polygon_area2(M.expand(FV[0], V)) < 0) {
+                EA = flip_EA(EA);
+                reverse_FV(FV);
+            }
+            if (document.getElementById("side").value == "-") {
+                EA = flip_EA(EA);
+                reverse_FV(FV);
+                V = flip_Y(V);
+            }
         }
         const EF = X.EV_FV_2_EF(EV, FV);
         for (const [i, F] of EF.entries()) {    // boundary edge assignment
