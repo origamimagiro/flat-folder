@@ -439,6 +439,7 @@ const SOLVER = {    // STATE SOLVER
         for (const [i, B] of GB.entries()) {
             if (i == 0) { continue; }
             NOTE.time(`Solving component ${i} with size ${B.length}`);
+            NOTE.time(`     ${B.map(i => `(${M.decode(BF[i])})`)}`);
             const A = SOLVER.guess_vars(B, BI, BF, BT, BA, lim);
             NOTE.count(A.length, "assignments");
             if (A.length == 0) {
