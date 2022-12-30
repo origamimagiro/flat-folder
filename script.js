@@ -168,7 +168,9 @@ const MAIN = {
         const val = document.getElementById("limit_select").value;
         const lim = (val == "all") ? Infinity : +val;
         const [GB, GA] = SOLVER.solve(BF, BT, BA0, lim);
-        const n = (GA == undefined) ? 0 : GA.reduce((s, A) => s*A.length, 1);
+        const n = (GA == undefined) ? 0 : GA.reduce((s, A) => {
+            return s*BigInt(A.length);
+        }, BigInt(1));
         NOTE.time("Solve completed");
         NOTE.count(n, "folded states");
         NOTE.lap();
