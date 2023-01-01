@@ -18,7 +18,8 @@ or [Twitter](https://twitter.com/_flatfolder_).
 
 1. Press "Choose File" to upload a crease pattern in FOLD, SVG, OPX, or CP file formats.
     - Various example files can be found in the
-      [`./examples/` folder](https://github.com/origamimagiro/flat-folder/tree/main/examples).
+      [`./examples/`](https://github.com/origamimagiro/flat-folder/tree/main/examples) and
+      [`./insta/`](https://github.com/origamimagiro/flat-folder/tree/main/insta) folders.
         - You can download them by 
           [clicking here](https://github.com/origamimagiro/flat-folder/archive/refs/heads/main.zip). 
         - If you have examples files that you'd like me to add (and you have 
