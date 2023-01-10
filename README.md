@@ -18,8 +18,7 @@ or [Twitter](https://twitter.com/_flatfolder_).
 
 1. Press "Choose File" to upload a crease pattern in FOLD, SVG, OPX, or CP file formats.
     - Various example files can be found in the
-      [`./examples/`](https://github.com/origamimagiro/flat-folder/tree/main/examples) and
-      [`./instagram/`](https://github.com/origamimagiro/flat-folder/tree/main/instagram) folders.
+      [`./examples/`](https://github.com/origamimagiro/flat-folder/tree/main/examples) folder.
         - You can download them by 
           [clicking here](https://github.com/origamimagiro/flat-folder/archive/refs/heads/main.zip). 
         - If you have examples files that you'd like me to add (and you have 
@@ -58,14 +57,14 @@ or [Twitter](https://twitter.com/_flatfolder_).
         - For Kawasaki, it checks whether the ((sum of even angles) $- \pi$)
           is greater than `0.00001`.
 
-    ![after import](https://raw.githubusercontent.com/origamimagiro/flat-folder/main/img/02.jpg)
+    ![after import](./img/02.jpg)
 
     - Selecting the "Text" option will draw index labels for all the vertices,
       edges, and faces in the crease pattern. Currently, there is no way in the
       interface to adjust the font size, so this is only useful for debugging 
       small inputs or by manipulating the text later in an output SVG.
 
-    ![showing text](https://raw.githubusercontent.com/origamimagiro/flat-folder/main/img/03.jpg)
+    ![showing text](./img/03.jpg)
 
 1. Press "Fold" to find flat-foldable states of the crease pattern.
     - Flat-Folder will break up the faceOrder variables into disconnected 
@@ -82,19 +81,19 @@ or [Twitter](https://twitter.com/_flatfolder_).
 5. After computing the overlap graph:
     - Flat-Folder will replace the x-ray view with the overlap graph.
 
-    ![after folded](https://raw.githubusercontent.com/origamimagiro/flat-folder/main/img/04.jpg)
+    ![after folded](./img/04.jpg)
 
     - Selecting the "Text" option will now also draw index labels for all the 
       cells, segments, and points in the overlap graph.
 
-    ![text after folded](https://raw.githubusercontent.com/origamimagiro/flat-folder/main/img/05.jpg)
+    ![text after folded](./img/05.jpg)
 
     - Clicking on a cell in the overlap graph will highlight:
         - the faces of the crease pattern that overlap the cell (yellow), and
         - the edges of the crease pattern that overlap the segments bounding
           the cell.
 
-    ![clicking a cell](https://raw.githubusercontent.com/origamimagiro/flat-folder/main/img/06.jpg)
+    ![clicking a cell](./img/06.jpg)
 
     - Clicking on a face of the crease pattern will highlight:
         - the cells of the overlap graph that overlap the face (yellow),
@@ -104,7 +103,7 @@ or [Twitter](https://twitter.com/_flatfolder_).
           in the folding (blue). Each blue face corresponds to a faceOrder
           variable (the yellow and blue faces overlap, so much be assigned an order).
 
-        ![clicking a face](https://raw.githubusercontent.com/origamimagiro/flat-folder/main/img/07.jpg)
+        ![clicking a face](./img/07.jpg)
 
         - Clicking on one of the blue faces will highlight the
           features of the corresponding faceOrder variable:
@@ -114,26 +113,26 @@ or [Twitter](https://twitter.com/_flatfolder_).
             - its tortilla-tortilla constraints (orange), and
             - its transitivity constraints (blue).
 
-        ![clicking two overlapping faces](https://raw.githubusercontent.com/origamimagiro/flat-folder/main/img/08.jpg)
+        ![clicking two overlapping faces](./img/08.jpg)
 
 6. After computing solutions for all components:
     - Flat-Folder will display how many valid flat-folded states were found.
     - If any states were found, Flat-Folder will draw a rendering of the first 
       one on the right of the display.
 
-    ![after folded](https://raw.githubusercontent.com/origamimagiro/flat-folder/main/img/04.jpg)
+    ![after folded](./img/04.jpg)
 
     - Selecting the "Flip" option will redraw the folded state as seen from 
       the other side.
 
-    ![clicking flip](https://raw.githubusercontent.com/origamimagiro/flat-folder/main/img/09.jpg)
+    ![clicking flip](./img/09.jpg)
 
     - A "Component" dropdown menu is added to aid in selecting other states.
         - The "none" option hides all display of component information.
         - The "all" option draws every component found on the overlap graph in a
           randomly assigned color.
 
-        ![clicking all components](https://raw.githubusercontent.com/origamimagiro/flat-folder/main/img/10.jpg)
+        ![clicking all components](./img/10.jpg)
 
         - There is one numeric option (zero-indexed) for each component found.
           Selecting a component will:
@@ -142,16 +141,16 @@ or [Twitter](https://twitter.com/_flatfolder_).
             - add a numeric input to enter which state to select for that
               component. 
 
-        ![clicking a component](https://raw.githubusercontent.com/origamimagiro/flat-folder/main/img/11.jpg)
+        ![clicking a component](./img/11.jpg)
 
         - Changing this number will redraw the flat-folded state based on the
           change.
 
-        ![changing a component](https://raw.githubusercontent.com/origamimagiro/flat-folder/main/img/12.jpg)
+        ![changing a component](./img/12.jpg)
 
     - You can change states of each component until you reach a desired state.
 
-    ![changing to a desired state](https://raw.githubusercontent.com/origamimagiro/flat-folder/main/img/13.jpg)
+    ![changing to a desired state](./img/13.jpg)
 
 7. Press "Export" to generate export links to various outputs.
     - Clicking "cp" downloads the crease pattern in FOLD format.
@@ -160,7 +159,7 @@ or [Twitter](https://twitter.com/_flatfolder_).
     - Clicking "log" downloads a text file of all console output since the most
       recent file was imported.
 
-    ![export](https://raw.githubusercontent.com/origamimagiro/flat-folder/main/img/14.jpg)
+    ![export](./img/14.jpg)
 
 ## Algorithm
 
