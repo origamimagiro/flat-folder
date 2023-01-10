@@ -14,7 +14,7 @@ or [Twitter](https://twitter.com/_flatfolder_).
     - Chrome usually runs slightly faster than Firefox and much faster than Safari.
     - You should see the following interface:
 
-    ![inital interface](./img/01.jpg)
+    ![inital interface](https://github.com/origamimagiro/flat-folder/blob/main/img/01.jpg?raw=true)
 
 1. Press "Choose File" to upload a crease pattern in FOLD, SVG, OPX, or CP file formats.
     - Various example files can be found in the
