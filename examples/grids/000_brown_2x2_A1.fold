@@ -1,0 +1,59 @@
+{
+  "file_spec": 1.1,
+  "file_creator": "flat-folder",
+  "file_author": "Daniel BRWON",
+  "file_title": "2x2 A1",
+  "file_classes": [
+    "singleModel"
+  ],
+  "vertices_coords": [
+    [
+      0,
+      0
+    ],
+    [
+      0,
+      1
+    ],
+    [
+      1,
+      0
+    ],
+    [
+      1,
+      1
+    ]
+  ],
+  "edges_vertices": [
+    [
+      0,
+      2
+    ],
+    [
+      2,
+      3
+    ],
+    [
+      1,
+      3
+    ],
+    [
+      0,
+      1
+    ]
+  ],
+  "edges_assignment": [
+    "B",
+    "B",
+    "B",
+    "B"
+  ],
+  "faces_vertices": [
+    [
+      0,
+      2,
+      3,
+      1
+    ]
+  ]
+}
