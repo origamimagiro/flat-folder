@@ -223,7 +223,7 @@ $n$ to be the number of faces in the input crease pattern.
         - There are at most $O(n^2)$ taco-taco constraints.
 
     - **Transitivity:** A transitivity constraint occurs when three faces 
-      `[f1, f2, f2]` all mutually overlap the same cell of in the overlap graph. 
+      `[f1, f2, f3]` all mutually overlap the same cell of in the overlap graph. 
       There are are three variables associated with such a constraint:
 
         - `[f1, f2]`, `[f1, f3]`, `[f2, f3]`
