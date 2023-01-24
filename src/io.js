@@ -87,8 +87,9 @@ export const IO = {    // INPUT-OUTPUT
         return L;
     },
     SVGstyle_2_A: (sty) => {
-        const pairs = sty.split(";");
         let a = "U";
+        if (!sty) { return a; }
+        const pairs = sty.split(";");
         for (const pair of pairs) {
             const parts = pair.split(":");
             if (parts.length == 2) {

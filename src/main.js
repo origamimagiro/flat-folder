@@ -74,7 +74,7 @@ const MAIN = {
         NOTE.annotate(EA, "edges_assignments");
         NOTE.annotate(EF, "edges_faces");
         NOTE.annotate(FV, "faces_vertices");
-        const [Pf, Ff] = X. V_FV_EV_EA_2_Vf_Ff(V, FV, EV, EA);
+        const [Pf, Ff] = X.V_FV_EV_EA_2_Vf_Ff(V, FV, EV, EA);
         const Vf = M.normalize_points(Pf);
         NOTE.annotate(Vf, "vertices_coords_folded");
         NOTE.annotate(Ff, "faces_flip");
