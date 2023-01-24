@@ -218,7 +218,7 @@ export const X = {     // CONVERSION
         }
         return VK;
     },
-    V_VF_EV_EA_2_Vf_Ff: (V, FV, EV, EA) => {
+    V_FV_EV_EA_2_Vf_Ff: (V, FV, EV, EA) => {
         const EA_map = new Map();
         for (const [i, vs] of EV.entries()) {
             EA_map.set(M.encode_order_pair(vs), EA[i]);
@@ -538,22 +538,22 @@ export const X = {     // CONVERSION
         }
         return BT3;                             // |BT3| = O(|B||F|) <= O(|F|^3)
     },
-    EF_EA_Ff_BF_2_BA: (EF, EA, Ff, BF) => {
+    EF_EA_Ff_BF_2_BA0: (EF, EA, Ff, BF) => {
         const BI_map = new Map();
         for (const [i, k] of BF.entries()) {
             BI_map.set(k, i);
         }
-        const BA = BF.map(() => 0);
+        const BA0 = BF.map(() => 0);
         for (const [i, a] of EA.entries()) {
             if ((a == "M") || (a == "V")) {
                 const k = M.encode_order_pair(EF[i]);
                 const [f1, f2] = M.decode(k);
                 const o = ((!Ff[f1] && (a == "M")) ||
                             (Ff[f1] && (a == "V"))) ? 2 : 1;
-                BA[BI_map.get(k)] = o;
+                BA0[BI_map.get(k)] = o;
             }
         }
-        return BA;
+        return BA0;
     },
     T_2_pairs: ([type, F]) => {
         let pairs, A, B, C, D;

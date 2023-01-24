@@ -86,9 +86,9 @@ export const IO = {    // INPUT-OUTPUT
         }
         return L;
     },
-    SVG_style_2_color: (sty) => {
+    SVGstyle_2_A: (sty) => {
         const pairs = sty.split(";");
-        let color = "U";
+        let a = "U";
         for (const pair of pairs) {
             const parts = pair.split(":");
             if (parts.length == 2) {
@@ -96,17 +96,17 @@ export const IO = {    // INPUT-OUTPUT
                 const  val = parts[1].trim();
                 if (attr == "stroke") {
                     if (val == "red" || val == "#FF0000") {
-                        color = "M";
+                        a = "M";
                     } else if (val == "blue" || val == "#0000FF") {
-                        color = "V";
+                        a = "V";
                     } else if (val == "gray" || val == "#808080") {
-                        color = "F";
+                        a = "F";
                     }
                     break;
                 }
             }
         }
-        return color;
+        return a;
     },
     SVG_2_L: (doc) => {
         const parser = new DOMParser();
@@ -119,14 +119,14 @@ export const IO = {    // INPUT-OUTPUT
             const x2 = +svg_line.getAttribute("x2");
             const y2 = +svg_line.getAttribute("y2");
             const sty = svg_line.getAttribute("style");
-            const color = IO.SVG_style_2_color(sty);
-            lines.push([[x1, y1], [x2, y2], color]);
+            const a = IO.SVGstyle_2_A(sty);
+            lines.push([[x1, y1], [x2, y2], a]);
         }
         const svg_polys = Array.from(dom.getElementsByTagName("polyline"));
         for (const svg_poly of svg_polys) {
             const sty = svg_poly.getAttribute("style");
             if (sty == undefined) { continue; }
-            const color = IO.SVG_style_2_color(sty);
+            const a = IO.SVGstyle_2_A(sty);
             const P = svg_poly.getAttribute("points").split(" ");
             let v1;
             for (const p of P) {
@@ -137,7 +137,7 @@ export const IO = {    // INPUT-OUTPUT
                     v1 = coords.map(c => +c);
                 } else {
                     const v2 = coords.map(c => +c);
-                    lines.push([v1, v2, color]);
+                    lines.push([v1, v2, a]);
                     v1 = v2;
                 }
             }
@@ -145,14 +145,14 @@ export const IO = {    // INPUT-OUTPUT
         const svg_paths = Array.from(dom.getElementsByTagName("path"));
         for (const svg_path of svg_paths) {
             const sty = svg_path.getAttribute("style");
-            const color = IO.SVG_style_2_color(sty);
+            const a = IO.SVGstyle_2_A(sty);
             const P = svg_path.getAttribute("d").split(" ");
             let start, v1;
             for (const p of P) {
                 const coords = p.split(",");
                 if (coords.length != 2) {
                     if (p.toUpperCase() == "Z") {
-                        lines.push([v1, start, color]);
+                        lines.push([v1, start, a]);
                         break;
                     }
                     continue;
@@ -162,7 +162,7 @@ export const IO = {    // INPUT-OUTPUT
                     start = v1;
                 } else {
                     const v2 = coords.map(c => +c);
-                    lines.push([v1, v2, color]);
+                    lines.push([v1, v2, a]);
                     v1 = v2;
                 }
             }

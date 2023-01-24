@@ -74,7 +74,7 @@ const MAIN = {
         NOTE.annotate(EA, "edges_assignments");
         NOTE.annotate(EF, "edges_faces");
         NOTE.annotate(FV, "faces_vertices");
-        const [Pf, Ff] = X. V_VF_EV_EA_2_Vf_Ff(V, FV, EV, EA);
+        const [Pf, Ff] = X. V_FV_EV_EA_2_Vf_Ff(V, FV, EV, EA);
         const Vf = M.normalize_points(Pf);
         NOTE.annotate(Vf, "vertices_coords_folded");
         NOTE.annotate(Ff, "faces_flip");
@@ -173,7 +173,7 @@ const MAIN = {
         const {V, Vf, EV, EA, EF, FV, Ff} = FOLD;
         const {P, SP, SE, CP, SC, CF, FC} = CELL;
         NOTE.time("*** Computing states ***");
-        const BA0 = X.EF_EA_Ff_BF_2_BA(EF, EA, Ff, BF);
+        const BA0 = X.EF_EA_Ff_BF_2_BA0(EF, EA, Ff, BF);
         const val = document.getElementById("limit_select").value;
         const lim = (val == "all") ? Infinity : +val;
         const [GB, GA] = SOLVER.solve(BF, BT, BA0, lim);

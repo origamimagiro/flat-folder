@@ -1,0 +1,155 @@
+Flat-Folder Naming Conventions and Code Style
+Jason S. Ku
+
+Flat-Folder borrows heavily on the data format and naming styles of the FOLD
+format. In particular, in FOLD format, all non-constant data are stored in
+relatively flat arrays (usually only one or two levels deep), with the naming
+convention:
+
+object_property
+
+where the length of the array corresponds to the number of a particular kind of
+"object", where "property" indicates the type of data stored in each bucket of
+the array. For example,
+
+faces_vertices
+
+corresponds to an array of size equal to the number of faces, where
+faces_vertices[i] corresponds to an array corresponding to the vertex list of
+face i. See the FOLD format specification for a complete description of such
+properties:
+
+https://github.com/edemaine/fold/blob/main/doc/spec.md
+
+ABBREVIATIONS
+
+For brevity, Flat-Folder abbreviates such names in the following way:
+
+object_property -> XY
+
+where X and Y are some capital letter abbreviation for the names "object" and 
+"property" respectively. 
+
+Here is a list of the abbreviations used in Flat-Folder:
+
+Input
+
+L | lines       - line segments defined in an input file
+
+Crease Pattern
+
+V | vertices    - vertices of the unfolded crease pattern
+E | edges       - edges of the unfolded crease pattern
+F | faces       - faces of the unfolded crease pattern
+A | assignment  - M/V assignment of an edge
+K | kawasaki    - deviation of vertex from zero alternating angle sum
+f | folded      - for vertex, its folded coordinate
+  | flip        - for face, indication of whether it is face-up or face-down
+
+Overlap Graph
+
+P | points      - distinct vertices of the folded state
+S | segments    - distinct edges of the folded state
+C | cells       - distinct faces of the folded state
+
+Constraint Graph
+
+B | variables   - Boolean variables
+T | constraints - 4 types of constraints
+    T0 |        - taco-taco
+    T1 |        - taco-tortilla
+    T2 |        - tortilla-tortilla
+    T3 |        - transitivity 
+
+Solver
+
+G  | group      - isolated connected component of constraint graph
+I  | index      - valid assignment index
+FO | faceOrder  - layer order between a pair of overlapping faces
+
+Renderer
+
+D | stack       - for cell, stacking order of faces within cell
+  | top         - for edge, top-most visible edge
+
+ABBREVIATED PAIRS
+
+Here is a list of abbreviated pairs in Flat-Folder:
+
+(coords is the default property when none is given)
+V  | for each vertex:   pair of coordinates
+VV | for each vertex:   array of adjacent vertex indices
+EV | for each edge:     pair of endpoint vertex indices
+   |                    overlapping the edge
+EA | for each edge:     M/V assignment
+EF | for each edge:     pair of adjacent face indices
+EL | for each edge:     array of line indices for lines
+FV | for each face:     array of adjacent vertex indices
+
+Pf | for each vertex:   pair of coordinates, folded position
+Vf | for each vertex:   pair of coordinates, normalized folded position
+Ff | for each face:     indication of whether it is face-up or face-down
+
+P  | for each point:    pair of coordinates                 (like V)
+SP | for each segment:  pair of endpoint point indices      (like EV)
+SE | for each segment:  array of overlapping edge indices   (like EL)
+CP | for each cell:     array of adjacent point indices     (like FV)
+SC | for each segment:  pair of adjacent cell indices       (like EF)
+CF | for each cell:     array of overlapping faces
+FC | for each face:     array of overlapping cells
+
+ExE | for each edge:    array of properly overlapping edge indices
+ExF | for each edge:    array of properly overlapping face indices
+BF  | for each var:     pair of properly overlapping face indices    (like FxF)
+BT3 | for each var:     array of face indices that properly overlap var
+BT0 | for each var:     array of length-4 face index arrays, taco-taco
+BT1 | for each var:     array of length-3 face index arrays, taco-tortilla
+BT2 | for each var:     array of length-4 face index arrays, tortilla-tortilla
+BT  | for each var:     length-4 array of arrays [T0, T1, T2, T3]
+
+BA0 | for each var:     initial assignment
+GB  | for each group:   array of variable indices in the group
+GA  | for each group:   array of valid assignment arrays for variables in group
+GI  | for each group:   an index of a chosen valid assignment
+
+FO | for each var:      triple representing layer order (via FOLD spec)
+CD | for each cell:     stacking order of faces overlapping cell (sorted CF)
+SD | for each segment:  pair representing index and assignment of top-most edge
+
+FUNCTIONS
+
+In multiple places in Flat-Folder (for example, extensively in the IO and X
+libraries), we use the following naming convention for functions:
+
+I1_I2_Ik_2_O1_O2_Ot
+
+corresponding to a function that takes in k input arguments I1, I2, ..., Ik and
+returns t outputs O1, O2, ..., Ot. While it would be convenient to pass all the
+inputs and outputs through an object, this naming makes explicit what properties
+are used and produced by the functions. Examples of such functions are:
+
+           Inputs_2_Outputs
+IO
+
+              OPX_2_L
+               CP_2_L
+              SVG_2_L
+             FOLD_2_V_EV_EA_VV_FV
+         doc_type_2_V_VV_EV_EA_EF_FV
+         SVGstyle_2_A
+
+X
+                L_2_V_EV_EL
+             V_EV_2_VV_FV
+             V_FV_2_VV
+       V_VV_EV_EA_2_VK
+       V_FV_EV_EA_2_Vf_Ff
+            EV_FV_2_EF
+EF_FV_SP_SE_CP_SC_2_CF_FC
+               SE_2_ExE
+         SE_CF_SC_2_ExF
+               CF_2_BF
+BF_EF_ExE_ExF_BT3_2_BT0_BT1_BT2
+         FC_CF_BF_2_BT3
+      EF_EA_Ff_BF_2_BA0
+                T_2_pairs
