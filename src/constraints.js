@@ -1,9 +1,44 @@
 export const CON = {      // CONSTRAINTS
+    // Format for constraint state for face pair [A,B] is:
+    //      '0' if no order has been assigned
+    //      '1' if A is assigned over B
+    //      '2' if B is assigned over A
     types: [0, 1, 2, 3],
     taco_taco: 0,
     taco_tortilla: 1,
     tortilla_tortilla: 2,
     transitivity: 3,
+    T_2_pairs: ([type, F]) => {
+        let pairs, A, B, C, D;
+        switch (type) {
+            case CON.taco_taco: {
+                 // Faces A, B, C, D that all overlap, with A-B and C-D adjacent
+                 // via edges that properly intersect.
+                [A, B, C, D] = F;
+                pairs = [[A,B],[C,D],[C,B],[A,D],[A,C],[B,D]];
+                break;
+            } case CON.taco_tortilla: {
+                // Faces A, B, C that all overlap with A-B adjacent via an edge
+                // that properly intersects C.
+                [A, B, C] = F;
+                pairs = [[A,B],[A,C],[C,B]];
+                break;
+            } case CON.tortilla_tortilla: {
+                // Faces A, B, C, D with A-B and C-D adjacent via edges that
+                // properly intersect, where only pairs A,C and B,D overlap.
+                [A, B, C, D] = F;
+                pairs = [[A,C],[B,D]];
+                break;
+            } case CON.transitivity: {
+                // Faces A, B, C that all overlap, where C properly intersects
+                // the overlap between A and B.
+                [A, B, C] = F;
+                pairs = [[A,B],[B,C],[C,A]];
+                break;
+            }
+        }
+        return pairs;
+    },
     valid: [
         ["111112", "111121", "111222", "112111",    // 0: taco-taco
          "121112", "121222", "122111", "122212", 

@@ -11,7 +11,7 @@ export const SOLVER = {    // STATE SOLVER
         // Out:  I | false if BA conflicts with T, else array of pairs [i, a]
         //         | where a is assignment inferred for variable at index i
         const [type,] = T;
-        const pairs = X.T_2_pairs(T);
+        const pairs = CON.T_2_pairs(T);
         const tuple = pairs.map(([x, y]) => {
             const a = BA[BI.get(M.encode_order_pair([x, y]))];
             if (a == undefined) { debugger; }
@@ -87,7 +87,7 @@ export const SOLVER = {    // STATE SOLVER
                     const [f1, f2] = M.decode(BF[bi_]);
                     for (const type of CON.types) {
                         for (const F of SOLVER.unpack_cons(C, type, f1, f2)) {
-                            const vars = X.T_2_pairs([type, F]).map(
+                            const vars = CON.T_2_pairs([type, F]).map(
                                 (p) => M.encode_order_pair(p));
                             for (const k__ of vars) {
                                 const bi__ = BI.get(k__);

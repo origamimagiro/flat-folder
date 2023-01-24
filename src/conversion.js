@@ -425,7 +425,7 @@ export const X = {     // CONVERSION
     add_constraint: (T, BF_map, BT) => {
         if (T != undefined) {
             const [type, F] = T;
-            const pairs = X.T_2_pairs(T);
+            const pairs = CON.T_2_pairs(T);
             for (const p of pairs) {
                 const i = BF_map.get(M.encode_order_pair(p));
                 if (i == undefined) { debugger; }
@@ -554,28 +554,5 @@ export const X = {     // CONVERSION
             }
         }
         return BA0;
-    },
-    T_2_pairs: ([type, F]) => {
-        let pairs, A, B, C, D;
-        switch (type) {
-            case CON.taco_taco: {
-                [A, C, B, D] = F;
-                pairs = [[A,C],[B,D],[B,C],[A,D],[A,B],[C,D]];
-                break;
-            } case CON.taco_tortilla: {
-                [A, C, B] = F;
-                pairs = [[A,C],[A,B],[B,C]];
-                break;
-            } case CON.transitivity: {
-                [A, B, C] = F;
-                pairs = [[A,B],[B,C],[C,A]];
-                break;
-            } case CON.tortilla_tortilla: {
-                [A, B, C, D] = F;
-                pairs = [[A,C],[B,D]];
-                break;
-            }
-        }
-        return pairs;
     },
 };
