@@ -15,7 +15,7 @@ export const X = {     // CONVERSION
             const [[x2, y2],] = L[j];
             return (Math.abs(x1 - x2) < eps) ? (y1 - y2) : (x1 - x2);
         });
-        const P = [];
+        const P = [];   // point with corresponding edge index [[x, y], i]
         let crossings = [];
         NOTE.start_check("line", L);
         for (const [i, idx] of I.entries()) {    // find line-line intersections
@@ -25,8 +25,6 @@ export const X = {     // CONVERSION
             P.push([b, idx]);
             for (const [k, X] of crossings.entries()) {
                 const [[c, d], j] = X;
-                const [x1, y1] = a;
-                const [x2, y2] = d;
                 if ((d[0] + eps) < a[0]) {
                     crossings[k] = undefined;
                 } else {
