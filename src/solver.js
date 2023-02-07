@@ -270,7 +270,12 @@ export const SOLVER = {    // STATE SOLVER
         const FE_map = new Map();
         for (const [i, F] of EF.entries()) {
             if (F.length == 2) {
-                FE_map.set(M.encode_order_pair(F), i);
+                const k = M.encode_order_pair(F);
+                if (FE_map.has(k)) {
+                    FE_map.get(k).push(i);
+                } else {
+                    FE_map.set(k, [i]);
+                }
             }
         }
         const SE_map = SE.map(E => new Set(E));
@@ -286,9 +291,13 @@ export const SOLVER = {    // STATE SOLVER
                     return "N";
                 }
                 const k = M.encode_order_pair([f1, f2]);
-                const e = FE_map.get(k);
-                if ((e != undefined) && SE_map[i].has(e)) {
-                    return "C";
+                const E = FE_map.get(k);
+                if (E != undefined) {
+                    for (const e of E) {
+                        if (SE_map[i].has(e)) {
+                            return "C";
+                        }
+                    }
                 }
             }
             return "B";
