@@ -280,7 +280,7 @@ export const X = {     // CONVERSION
         for (const p of Vf) { if (p == undefined) { debugger; } }
         return [Vf, Ff];
     },
-    EV_FV_2_EF: (EV, FV) => {
+    EV_FV_2_EF_FE: (EV, FV) => {
         const EV_map = new Map();
         for (const [i, V] of EV.entries()) {
             EV_map.set(M.encode(V), i);
@@ -301,7 +301,20 @@ export const X = {     // CONVERSION
                 EF[i] = [F[c]];
             }
         }
-        return EF;
+        const FE = FV.map((V) => {
+            const E = [];
+            let v1 = V[0];
+            for (let i = 1; i < V.length; ++i) {
+                const v2 = V[i];
+                const k = M.encode_order_pair([v1, v2]);
+                E.push(EV_map.get(k));
+                v1 = v2;
+            }
+            const k = M.encode_order_pair([v1, V[0]]);
+            E.push(EV_map.get(k));
+            return E;
+        });
+        return [EF, FE];
     },
     EF_FV_SP_SE_CP_SC_2_CF_FC: (EF, FV, SP, SE, CP, SC) => {
         const SF_map = new Map();

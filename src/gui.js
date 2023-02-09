@@ -221,8 +221,8 @@ export const GUI = {   // INTERFACE
         }
     },
     update_cell_face_listeners: (FOLD, CELL, BF, BT) => {
-        const {V, EV, FV} = FOLD;
-        const {P, SP, CP, CF, FC, SE} = CELL;
+        const {V, EV, FV, FE} = FOLD;
+        const {P, SP, CP, CS, CF, FC, SE} = CELL;
         const ES_map = new Map();
         for (const [i, E] of SE.entries()) {
             for (const e of E) {
@@ -231,7 +231,7 @@ export const GUI = {   // INTERFACE
                 if (A == undefined) {
                     ES_map.set(k, [i]);
                 } else {
-                    A.push(i)
+                    A.push(i);
                 }
             }
         }
@@ -258,64 +258,88 @@ export const GUI = {   // INTERFACE
             NOTE.check(i);
             const face = document.getElementById(`flat_f${i}`);
             face.onclick = () => {
+                NOTE.time(`Clicked face ${i}`);
                 const color = face.getAttribute("fill");
                 GUI.clear_notes(CF, FC, true);
                 if (active.length == 1) {
-                    if (color == GUI.COLORS.B) {
-                        active.push(i);
-                        const [f1, f2] = active;
-                        const T = BT[FB_map.get(M.encode_order_pair([f1, f2]))];
-                        for (const j of [3, 1]) {
-                            const Tj = (j == 1) ? T[j] : M.decode(T[j]);
-                            for (const F of Tj) {
-                                const f3 = (j == 1) ? F[2] : F;
-                                const el = document.getElementById(`flat_f${f3}`);
-                                el.setAttribute("fill", GUI.COLORS.TF[j]);
-                            }
-                        }
-                        const L = [new Set(), new Set(), new Set()];
-                        for (const j of [0, 1, 2]) {
-                            for (const [a, b, c, d] of T[j]) {
-                                L[j].add(M.encode([a, b]));
-                                if (j != 1) {
-                                    L[j].add(M.encode_order_pair([c, d]));
-                                }
-                            }
-                        }
-                        for (const j of [0, 1, 2]) {
-                            L[j] = Array.from(L[j]).map(
-                                k => M.decode(k).map(x => FM[x]));
-                        }
-                        for (const j of [1, 2, 0]) {
-                            SVG.draw_segments(flat_notes, L[j], {
-                                id: "flat_cons",
-                                stroke: GUI.COLORS.TE[j], stroke_width: 5});
-                        }
-                        for (const f of [f1, f2]) {
-                            for (const c of FC[f]) {
-                                const el = document.getElementById(`cell_c${c}`);
-                                el.setAttribute("fill", GUI.COLORS.active);
-                            }
-                        }
-                        const C1 = new Set(FC[f1]);
-                        for (const c of FC[f2]) {
-                            if (C1.has(c)) {
-                                const el = document.getElementById(`cell_c${c}`);
-                                el.setAttribute("fill", GUI.COLORS.TF[3]);
-                            }
-                        }
-                        for (const f of active) {
-                            const el = document.getElementById(`flat_f${f}`);
-                            el.setAttribute("fill", GUI.COLORS.active);
-                            
-                        }
-                    } else {
+                    if (color != GUI.COLORS.B) {
                         active.pop();
+                        NOTE.log("   - Clearing selection");
+                        NOTE.log("");
+                        return;
+                    }
+                    active.push(i);
+                    const [f1, f2] = active;
+                    const ti = FB_map.get(M.encode_order_pair([f1, f2]));
+                    const T = BT[ti];
+                    const SL = [];
+                    for (const j of [0, 1, 2]) {
+                        const Ti = T[j];
+                        SL.push(Ti.map((t) => `[${t.join(",")}]`));
+                    }
+                    SL.push(Array.from(T[3]).map(x => M.decode(x)));
+                    NOTE.log(`   - variable ${ti} between faces [${f1},${f2}]`);
+                    NOTE.log(`   - taco-taco: [${SL[0]}]`);
+                    NOTE.log(`   - taco-tortilla: [${SL[1]}]`);
+                    NOTE.log(`   - tortilla-tortilla: [${SL[2]}]`);
+                    NOTE.log(`   - transitivity: [${SL[3]}]`);
+                    NOTE.log("");
+                    for (const j of [3, 1]) {
+                        const Tj = (j == 1) ? T[j] : M.decode(T[j]);
+                        for (const F of Tj) {
+                            const f3 = (j == 1) ? F[2] : F;
+                            const el = document.getElementById(`flat_f${f3}`);
+                            el.setAttribute("fill", GUI.COLORS.TF[j]);
+                        }
+                    }
+                    const L = [new Set(), new Set(), new Set()];
+                    for (const j of [0, 1, 2]) {
+                        for (const [a, b, c, d] of T[j]) {
+                            L[j].add(M.encode([a, b]));
+                            if (j != 1) {
+                                L[j].add(M.encode_order_pair([c, d]));
+                            }
+                        }
+                    }
+                    for (const j of [0, 1, 2]) {
+                        L[j] = Array.from(L[j]).map(
+                            k => M.decode(k).map(x => FM[x])
+                        );
+                    }
+                    for (const j of [1, 2, 0]) {
+                        SVG.draw_segments(flat_notes, L[j], {
+                            id: "flat_cons",
+                            stroke: GUI.COLORS.TE[j], stroke_width: 5});
+                    }
+                    for (const f of [f1, f2]) {
+                        for (const c of FC[f]) {
+                            const el = document.getElementById(`cell_c${c}`);
+                            el.setAttribute("fill", GUI.COLORS.active);
+                        }
+                    }
+                    const C1 = new Set(FC[f1]);
+                    for (const c of FC[f2]) {
+                        if (C1.has(c)) {
+                            const el = document.getElementById(`cell_c${c}`);
+                            el.setAttribute("fill", GUI.COLORS.TF[3]);
+                        }
+                    }
+                    for (const f of active) {
+                        const el = document.getElementById(`flat_f${f}`);
+                        el.setAttribute("fill", GUI.COLORS.active);
                     }
                 } else {
                     while (active.length > 0) { active.pop(); }
-                    if (color != GUI.COLORS.face.bottom) { return; }
+                    if (color != GUI.COLORS.face.bottom) {
+                        NOTE.log("   - Clearing selection");
+                        NOTE.log("");
+                        return;
+                    }
                     active.push(i);
+                    NOTE.log(`   - bounded by vertices [${FV[i]}]`);
+                    NOTE.log(`   - bounded by edges [${FE[i]}]`);
+                    NOTE.log(`   - overlaps cells [${FC[i]}]`);
+                    NOTE.log("");
                     for (const f of FB[i]) {
                         const el = document.getElementById(`flat_f${f}`);
                         el.setAttribute("fill", GUI.COLORS.B);
@@ -345,29 +369,37 @@ export const GUI = {   // INTERFACE
         for (const [i, F] of CF.entries()) {
             const cell = document.getElementById(`cell_c${i}`);
             cell.onclick = () => {
+                NOTE.time(`Clicked cell ${i}`);
                 const active = (cell.getAttribute("fill") == GUI.COLORS.active);
                 GUI.clear_notes(CF, FC, !active);
-                if (!active) {
-                    GUI.add_active(cell, F, "flat_f");
-                    const L = [];
-                    const Lcolors = [];
-                    const Scolors = [];
-                    const S = CP[i].map((p1, j) => {
-                        const p2 = CP[i][(j + 1) % CP[i].length];
-                        const k = M.encode_order_pair([p1, p2]);
-                        const color = GUI.COLORS.rand[j % GUI.COLORS.rand.length];
-                        for (const e of SE_map.get(k)) {
-                            L.push(EV[e].map(p => V[p]));
-                            Lcolors.push(color);
-                        }
-                        Scolors.push(color);
-                        return [p1, p2].map(p => P[p]);
-                    });
-                    SVG.draw_segments(flat_notes, L, {
-                        id: "flat_c_bounds", stroke: Lcolors, stroke_width: 5});
-                    SVG.draw_segments(cell_notes, S, {
-                        id: "cell_c_bounds", stroke: Scolors, stroke_width: 5});
+                if (active) {
+                    NOTE.log("   - Clearing selection");
+                    NOTE.log("");
+                    return;
                 }
+                NOTE.log(`   - bounded by points [${CP[i]}]`);
+                NOTE.log(`   - bounded by segments [${CS[i]}]`);
+                NOTE.log(`   - overlaps faces [${CF[i]}]`);
+                NOTE.log("");
+                GUI.add_active(cell, F, "flat_f");
+                const L = [];
+                const Lcolors = [];
+                const Scolors = [];
+                const S = CP[i].map((p1, j) => {
+                    const p2 = CP[i][(j + 1) % CP[i].length];
+                    const k = M.encode_order_pair([p1, p2]);
+                    const color = GUI.COLORS.rand[j % GUI.COLORS.rand.length];
+                    for (const e of SE_map.get(k)) {
+                        L.push(EV[e].map(p => V[p]));
+                        Lcolors.push(color);
+                    }
+                    Scolors.push(color);
+                    return [p1, p2].map(p => P[p]);
+                });
+                SVG.draw_segments(flat_notes, L, {
+                    id: "flat_c_bounds", stroke: Lcolors, stroke_width: 5});
+                SVG.draw_segments(cell_notes, S, {
+                    id: "cell_c_bounds", stroke: Scolors, stroke_width: 5});
             };
         }
     },

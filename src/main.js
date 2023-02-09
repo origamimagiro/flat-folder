@@ -66,7 +66,8 @@ const MAIN = {
         const parts = file_name.split(".");
         const type = parts[parts.length - 1].toLowerCase();
         NOTE.time(`Importing from file ${file_name}`);
-        const [V, VV, EV, EA, EF, FV] = IO.doc_type_2_V_VV_EV_EA_EF_FV(doc, type);
+        const [V, VV, EV, EA, EF, FV, FE] =
+            IO.doc_type_2_V_VV_EV_EA_EF_FV_FE(doc, type);
         if (V == undefined) { return; }
         const VK = X.V_VV_EV_EA_2_VK(V, VV, EV, EA);
         NOTE.annotate(V, "vertices_coords");
@@ -74,12 +75,13 @@ const MAIN = {
         NOTE.annotate(EA, "edges_assignments");
         NOTE.annotate(EF, "edges_faces");
         NOTE.annotate(FV, "faces_vertices");
+        NOTE.annotate(FE, "faces_edges");
         const [Pf, Ff] = X.V_FV_EV_EA_2_Vf_Ff(V, FV, EV, EA);
         const Vf = M.normalize_points(Pf);
         NOTE.annotate(Vf, "vertices_coords_folded");
         NOTE.annotate(Ff, "faces_flip");
         NOTE.lap();
-        const FOLD = {V, Vf, VK, EV, EA, EF, FV, Ff};
+        const FOLD = {V, Vf, VK, EV, EA, EF, FV, FE, Ff};
         NOTE.time("Drawing flat");
         GUI.update_flat(FOLD);
         NOTE.time("Drawing cell");
@@ -104,7 +106,7 @@ const MAIN = {
     },
     compute_cells: (FOLD) => {
         NOTE.start("*** Computing cell graph ***");
-        const {V, Vf, EV, EF, FV, Ff} = FOLD;
+        const {V, Vf, EV, EF, FE, FV, Ff} = FOLD;
         const L = EV.map((P) => M.expand(P, Vf));
         const eps = M.min_line_length(L) / M.EPS;
         NOTE.time(`Using eps ${eps} from min line length ${eps*M.EPS}`);
@@ -112,20 +114,22 @@ const MAIN = {
         const [P, SP, SE] = X.L_2_V_EV_EL(L, eps);
         NOTE.annotate(P, "points_coords");
         NOTE.annotate(SP, "segments_points");
+        NOTE.annotate(SE, "segments_edges");
         NOTE.lap();
         NOTE.time("Constructing cells from segments");
         const [,CP] = X.V_EV_2_VV_FV(P, SP);
         NOTE.annotate(CP, "cells_points");
         NOTE.lap();
         NOTE.time("Computing segments_cells");
-        const SC = X.EV_FV_2_EF(SP, CP);
+        const [SC, CS] = X.EV_FV_2_EF_FE(SP, CP);
         NOTE.annotate(SC, "segments_cells");
+        NOTE.annotate(CS, "cells_segments");
         NOTE.lap();
         NOTE.time("Making face-cell maps");
         const [CF, FC] = X.EF_FV_SP_SE_CP_SC_2_CF_FC(EF, FV, SP, SE, CP, SC);
         NOTE.count(CF, "face-cell adjacencies");
         NOTE.lap();
-        const CELL = {P, SP, SE, CP, SC, CF, FC};
+        const CELL = {P, SP, SE, CP, CS, SC, CF, FC};
         NOTE.time("Updating cell");
         GUI.update_cell(FOLD, CELL);
         NOTE.lap();
@@ -137,8 +141,8 @@ const MAIN = {
         window.setTimeout(MAIN.compute_constraints, 0, FOLD, CELL);
     },
     compute_constraints: (FOLD, CELL) => {
-        const {V, Vf, EV, EA, EF, FV, Ff} = FOLD;
-        const {P, SP, SE, CP, SC, CF, FC} = CELL;
+        const {V, Vf, EV, EA, EF, FV, FE, Ff} = FOLD;
+        const {P, SP, SE, CP, CS, SC, CF, FC} = CELL;
         NOTE.time("*** Computing constraints ***");
         NOTE.time("Computing edge-edge overlaps");
         const ExE = X.SE_2_ExE(SE);
@@ -170,8 +174,8 @@ const MAIN = {
         window.setTimeout(MAIN.compute_states, 0, FOLD, CELL, BF, BT);
     },
     compute_states: (FOLD, CELL, BF, BT) => {
-        const {V, Vf, EV, EA, EF, FV, Ff} = FOLD;
-        const {P, SP, SE, CP, SC, CF, FC} = CELL;
+        const {V, Vf, EV, EA, EF, FE, FV, Ff} = FOLD;
+        const {P, SP, SE, CP, CS, SC, CF, FC} = CELL;
         NOTE.time("*** Computing states ***");
         const BA0 = X.EF_EA_Ff_BF_2_BA0(EF, EA, Ff, BF);
         const val = document.getElementById("limit_select").value;

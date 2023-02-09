@@ -200,7 +200,7 @@ export const IO = {    // INPUT-OUTPUT
         }
         return [V, EV, EA, VV, FV];
     },
-    doc_type_2_V_VV_EV_EA_EF_FV: (doc, type) => {
+    doc_type_2_V_VV_EV_EA_EF_FV_FE: (doc, type) => {
         let V, VV, EV, EA, FV;
         if (type == "fold") {
             [V, EV, EA, VV, FV] = IO.FOLD_2_V_EV_EA_VV_FV(doc);
@@ -251,12 +251,12 @@ export const IO = {    // INPUT-OUTPUT
                 V = flip_Y(V);
             }
         }
-        const EF = X.EV_FV_2_EF(EV, FV);
+        const [EF, FE] = X.EV_FV_2_EF_FE(EV, FV);
         for (const [i, F] of EF.entries()) {    // boundary edge assignment
             if (F.length == 1) {
                 EA[i] = "B";
             }
         }
-        return [V, VV, EV, EA, EF, FV];
+        return [V, VV, EV, EA, EF, FV, FE];
     },
 };
