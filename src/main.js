@@ -138,12 +138,12 @@ const MAIN = {
             GUI.update_text(FOLD, CELL);
             NOTE.end();
         };
+        NOTE.time("*** Computing constraints ***");
         window.setTimeout(MAIN.compute_constraints, 0, FOLD, CELL);
     },
     compute_constraints: (FOLD, CELL) => {
         const {V, Vf, EV, EA, EF, FV, FE, Ff} = FOLD;
         const {P, SP, SE, CP, CS, SC, CF, FC} = CELL;
-        NOTE.time("*** Computing constraints ***");
         NOTE.time("Computing edge-edge overlaps");
         const ExE = X.SE_2_ExE(SE);
         NOTE.count(ExE, "edge-edge adjacencies");
@@ -171,12 +171,12 @@ const MAIN = {
         NOTE.time("Updating cell-face listeners");
         GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
         NOTE.lap();
+        NOTE.time("*** Computing states ***");
         window.setTimeout(MAIN.compute_states, 0, FOLD, CELL, BF, BT);
     },
     compute_states: (FOLD, CELL, BF, BT) => {
         const {V, Vf, EV, EA, EF, FE, FV, Ff} = FOLD;
         const {P, SP, SE, CP, CS, SC, CF, FC} = CELL;
-        NOTE.time("*** Computing states ***");
         const BA0 = X.EF_EA_Ff_BF_2_BA0(EF, EA, Ff, BF);
         const val = document.getElementById("limit_select").value;
         const lim = (val == "all") ? Infinity : +val;
