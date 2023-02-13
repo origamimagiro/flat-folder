@@ -109,7 +109,8 @@ const MAIN = {
         const {V, Vf, EV, EF, FE, FV, Ff} = FOLD;
         const L = EV.map((P) => M.expand(P, Vf));
         const eps = M.min_line_length(L) / M.EPS;
-        NOTE.time(`Using eps ${eps} from min line length ${eps*M.EPS}`);
+        NOTE.time(`Using eps ${eps} from min line length ${
+            eps*M.EPS} (factor ${M.EPS})`);
         NOTE.time("Constructing points and segments from edges");
         const [P, SP, SE] = X.L_2_V_EV_EL(L, eps);
         NOTE.annotate(P, "points_coords");
