@@ -453,6 +453,7 @@ export const X = {     // CONVERSION
         for (const [i, F] of BF.entries()) {
             BF_map.set(F, i);
         }
+        const T2 = [];
         NOTE.time("Computing from edge-edge intersections");
         NOTE.start_check("edge-edge intersection", ExE);
         for (const [i, k] of ExE.entries()) {
@@ -487,6 +488,12 @@ export const X = {     // CONVERSION
                 default: break;
             }
             X.add_constraint(cons, BF_map, BT);
+            if (cons) {
+                const [type, F] = cons;
+                if (type == CON.taco_tortilla) {
+                    T2.push(F);
+                }
+            }
         }
         NOTE.time("Computing from edge-face intersections");
         NOTE.start_check("edge-face intersection", ExF);
@@ -504,8 +511,15 @@ export const X = {     // CONVERSION
                 cons = [CON.tortilla_tortilla, [f1, f2, f3, f3]];
             }
             X.add_constraint(cons, BF_map, BT);
+            if (cons) {
+                const [type, F] = cons;
+                if (type == CON.taco_tortilla) {
+                    T2.push(F);
+                }
+            }
         }
-        NOTE.time("Cleaning transitivity constraints");
+        NOTE.time("Removing redundent transitivity constraints");
+        // removing directly implied
         const T3 = new Set();
         NOTE.start_check("variable", BF);
         for (const [i, k] of BF.entries()) {
@@ -513,7 +527,6 @@ export const X = {     // CONVERSION
             for (const f3 of M.decode(BT3[i])) {
                 T3.add(f3);
             }
-            const [f1, f2] = M.decode(k);
             for (const T of [BT0[i], BT1[i]]) {
                 for (const F of T) {
                     for (const f of F) {
@@ -523,6 +536,59 @@ export const X = {     // CONVERSION
             }
             BT3[i] = M.encode(T3);
             T3.clear();
+        }
+        // removing taco-tortilla extended implied
+        const FG = new Map();   // partition and construct connectivity graphs
+        for (const [A, B, C] of T2) {
+            if (!FG.has(C)) { FG.set(C, new Map()); }
+            const G = FG.get(C); 
+            if (!G.has(A)) { G.set(A, new Set()); }
+            if (!G.has(B)) { G.set(B, new Set()); }
+            G.get(A).add(B);
+            G.get(B).add(A);
+        }
+        const redundent = [];
+        for (const [C, G] of FG) {
+            const seen = new Set();
+            for (const [F, _] of G) {
+                if (!seen.has(F)) {
+                    seen.add(F);
+                    const component = [F];
+                    let i = 0; 
+                    while (i < component.length) {
+                        const F_ = component[i];
+                        const Adj = G.get(F_);
+                        for (const f of Adj) {
+                            if (!seen.has(f)) {
+                                seen.add(f);
+                                component.push(f);
+                            }
+                        }
+                        ++i;
+                    }
+                    for (i = 0; i < component.length - 1; ++i) {
+                        const A = component[i];
+                        for (let j = i + 1; j < component.length; ++j) {
+                            const B = component[j];
+                            redundent.push([A, B, C]);
+                        }
+                    }
+                }
+            }
+        } 
+        T3.clear();
+        for (const [A, B, C] of redundent) {
+            for (const [pair, third] of [[[A, B], C], [[B, C], A], [[A, C], B]]) {
+                const i = BF_map.get(M.encode_order_pair(pair));
+                if (i != undefined) {
+                    for (const f3 of M.decode(BT3[i])) {
+                        T3.add(f3);
+                    }
+                    T3.delete(third);
+                    BT3[i] = M.encode(T3);
+                    T3.clear();
+                }
+            }
         }
         return BT;
     },
