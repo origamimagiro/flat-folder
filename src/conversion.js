@@ -519,25 +519,20 @@ export const X = {     // CONVERSION
             }
         }
         NOTE.time("Removing redundent transitivity constraints");
-        // removing directly implied
-        const T3 = new Set();
+        for (let i = 0; i < BT3.length; ++i) { // Convert to sets
+            BT3[i] = new Set(M.decode(BT3[i]));
+        }
+        NOTE.time(" - implied by taco-taco ");
         NOTE.start_check("variable", BF);
         for (const [i, k] of BF.entries()) {
             NOTE.check(i);
-            for (const f3 of M.decode(BT3[i])) {
-                T3.add(f3);
-            }
-            for (const T of [BT0[i], BT1[i]]) {
-                for (const F of T) {
-                    for (const f of F) {
-                        T3.delete(f);
-                    }
+            for (const F of BT0[i]) {
+                for (const f of F) {
+                    BT3[i].delete(f);
                 }
             }
-            BT3[i] = M.encode(T3);
-            T3.clear();
         }
-        // removing taco-tortilla extended implied
+        NOTE.time(" - implied by taco-tortilla ");
         const FG = new Map();   // partition and construct connectivity graphs
         for (const [A, B, C] of T2) {
             if (!FG.has(C)) { FG.set(C, new Map()); }
@@ -547,12 +542,11 @@ export const X = {     // CONVERSION
             G.get(A).add(B);
             G.get(B).add(A);
         }
-        const redundent = [];
-        for (const [C, G] of FG) {
+        for (const [C, G] of FG) {  // Loop over each group in parition
             const seen = new Set();
             for (const [F, _] of G) {
                 if (!seen.has(F)) {
-                    seen.add(F);
+                    seen.add(F);    // BFS to discover new component
                     const component = [F];
                     let i = 0; 
                     while (i < component.length) {
@@ -565,30 +559,26 @@ export const X = {     // CONVERSION
                             }
                         }
                         ++i;
-                    }
+                    }   // Remove implied transitivity constraints in component
                     for (i = 0; i < component.length - 1; ++i) {
                         const A = component[i];
                         for (let j = i + 1; j < component.length; ++j) {
                             const B = component[j];
-                            redundent.push([A, B, C]);
+                            for (const [pair, third] of [
+                                [[A, B], C], [[B, C], A], [[C, A], B]
+                            ]) {
+                                const k = BF_map.get(M.encode_order_pair(pair));
+                                if (k != undefined) {
+                                    BT3[k].delete(third);
+                                }
+                            }
                         }
                     }
                 }
             }
         } 
-        T3.clear();
-        for (const [A, B, C] of redundent) {
-            for (const [pair, third] of [[[A, B], C], [[B, C], A], [[A, C], B]]) {
-                const i = BF_map.get(M.encode_order_pair(pair));
-                if (i != undefined) {
-                    for (const f3 of M.decode(BT3[i])) {
-                        T3.add(f3);
-                    }
-                    T3.delete(third);
-                    BT3[i] = M.encode(T3);
-                    T3.clear();
-                }
-            }
+        for (let i = 0; i < BT3.length; ++i) { // Convert back to encoded
+            BT3[i] = M.encode(Array.from(BT3[i]));
         }
         return BT;
     },
