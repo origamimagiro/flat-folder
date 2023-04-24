@@ -207,7 +207,7 @@ $n$ to be the number of faces in the input crease pattern.
         - `[f1, f2]`, `[f1, f3]`, `[f2, f3]`
         - Out of the $2^3 = 8$ possible assignments of these variables, only
           4 of them are valid (avoid intersection).
-        - There are at most $O(n^2)$ taco-taco constraints.
+        - There are at most $O(n^2)$ taco-tortilla constraints.
 
     - **Tortilla-Tortilla:** A tortilla-tortilla constraint occurs when two crease 
       edges `[e1, e2]` (has assignment `F`) of the crease pattern properly 
@@ -220,7 +220,7 @@ $n$ to be the number of faces in the input crease pattern.
         - `[f1, f2]`, `[g1, g2]`
         - Out of the $2^2 = 4$ possible assignments of these variables, only
           2 of them are valid (avoid intersection).
-        - There are at most $O(n^2)$ taco-taco constraints.
+        - There are at most $O(n^2)$ tortilla-tortilla constraints.
 
     - **Transitivity:** A transitivity constraint occurs when three faces 
       `[f1, f2, f3]` all mutually overlap the same cell of in the overlap graph. 
@@ -229,7 +229,7 @@ $n$ to be the number of faces in the input crease pattern.
         - `[f1, f2]`, `[f1, f3]`, `[f2, f3]`
         - Out of the $2^3 = 8$ possible assignments of these variables, only
           6 of them are valid (avoid intersection).
-        - There are at most $O(n^3)$ taco-taco constraints.
+        - There are at most $O(n^3)$ transitivity constraints.
 
    The variables and constraints form a bipartite constraint graph with one
    vertex for each variable and constraint, with an edge between a variable
