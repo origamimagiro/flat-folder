@@ -1,11 +1,9 @@
 import { M } from "./math.js";
 import { NOTE } from "./note.js";
-import { CON } from "./constraints.js";
 import { SVG } from "./svg.js";
 import { IO } from "./io.js";
-import { X } from "./conversion.js";
 import { GUI } from "./gui.js";
-import { SOLVER } from "./solver.js";
+import { SOLVER, X } from "./bridge.js";
 
 window.onload = () => { MAIN.startup(); };  // entry point
 
@@ -55,10 +53,9 @@ const MAIN = {
             e.target.setAttribute("value", side);
         };
         NOTE.time("Computing constraint implication maps");
-        CON.build();
         NOTE.end();
     },
-    process_file: (e) => {
+    process_file: async (e) => {
         NOTE.clear_log();
         NOTE.start("*** Starting File Import ***");
         const doc = e.target.result;
@@ -67,16 +64,16 @@ const MAIN = {
         const type = parts[parts.length - 1].toLowerCase();
         NOTE.time(`Importing from file ${file_name}`);
         const [V, VV, EV, EA, EF, FV, FE] =
-            IO.doc_type_2_V_VV_EV_EA_EF_FV_FE(doc, type);
+            await IO.doc_type_2_V_VV_EV_EA_EF_FV_FE(doc, type);
         if (V == undefined) { return; }
-        const VK = X.V_VV_EV_EA_2_VK(V, VV, EV, EA);
+        const VK = await X.V_VV_EV_EA_2_VK(V, VV, EV, EA);
         NOTE.annotate(V, "vertices_coords");
         NOTE.annotate(EV, "edges_vertices");
         NOTE.annotate(EA, "edges_assignments");
         NOTE.annotate(EF, "edges_faces");
         NOTE.annotate(FV, "faces_vertices");
         NOTE.annotate(FE, "faces_edges");
-        const [Pf, Ff] = X.V_FV_EV_EA_2_Vf_Ff(V, FV, EV, EA);
+        const [Pf, Ff] = await X.V_FV_EV_EA_2_Vf_Ff(V, FV, EV, EA);
         const Vf = M.normalize_points(Pf);
         NOTE.annotate(Vf, "vertices_coords_folded");
         NOTE.annotate(Ff, "faces_flip");
@@ -104,30 +101,30 @@ const MAIN = {
         NOTE.lap();
         NOTE.end();
     },
-    compute_cells: (FOLD) => {
+    compute_cells: async (FOLD) => {
         NOTE.start("*** Computing cell graph ***");
-        const {V, Vf, EV, EF, FE, FV, Ff} = FOLD;
+        const {Vf, EV, EA, EF, FV, Ff} = FOLD;
         const L = EV.map((P) => M.expand(P, Vf));
         const eps = M.min_line_length(L) / M.EPS;
         NOTE.time(`Using eps ${eps} from min line length ${
             eps*M.EPS} (factor ${M.EPS})`);
         NOTE.time("Constructing points and segments from edges");
-        const [P, SP, SE] = X.L_2_V_EV_EL(L, eps);
+        const [P, SP, SE] = await X.L_2_V_EV_EL(L, eps);
         NOTE.annotate(P, "points_coords");
         NOTE.annotate(SP, "segments_points");
         NOTE.annotate(SE, "segments_edges");
         NOTE.lap();
         NOTE.time("Constructing cells from segments");
-        const [,CP] = X.V_EV_2_VV_FV(P, SP);
+        const [,CP] = await X.V_EV_2_VV_FV(P, SP);
         NOTE.annotate(CP, "cells_points");
         NOTE.lap();
         NOTE.time("Computing segments_cells");
-        const [SC, CS] = X.EV_FV_2_EF_FE(SP, CP);
+        const [SC, CS] = await X.EV_FV_2_EF_FE(SP, CP);
         NOTE.annotate(SC, "segments_cells");
         NOTE.annotate(CS, "cells_segments");
         NOTE.lap();
         NOTE.time("Making face-cell maps");
-        const [CF, FC] = X.EF_FV_SP_SE_CP_SC_2_CF_FC(EF, FV, SP, SE, CP, SC);
+        const [CF, FC] = await X.EF_FV_SP_SE_CP_SC_2_CF_FC(EF, FV, SP, SE, CP, SC);
         NOTE.count(CF, "face-cell adjacencies");
         NOTE.lap();
         const CELL = {P, SP, SE, CP, CS, SC, CF, FC};
@@ -140,29 +137,25 @@ const MAIN = {
             NOTE.end();
         };
         NOTE.time("*** Computing constraints ***");
-        window.setTimeout(MAIN.compute_constraints, 0, FOLD, CELL);
-    },
-    compute_constraints: (FOLD, CELL) => {
-        const {V, Vf, EV, EA, EF, FV, FE, Ff} = FOLD;
-        const {P, SP, SE, CP, CS, SC, CF, FC} = CELL;
+
         NOTE.time("Computing edge-edge overlaps");
-        const ExE = X.SE_2_ExE(SE);
+        const ExE = await X.SE_2_ExE(SE);
         NOTE.count(ExE, "edge-edge adjacencies");
         NOTE.lap();
         NOTE.time("Computing edge-face overlaps");
-        const ExF = X.SE_CF_SC_2_ExF(SE, CF, SC);
+        const ExF = await X.SE_CF_SC_2_ExF(SE, CF, SC);
         NOTE.count(ExF, "edge-face adjacencies");
         NOTE.lap();
         NOTE.time("Computing variables");
-        const BF = X.CF_2_BF(CF);
+        const BF = await X.CF_2_BF(CF);
         NOTE.annotate(BF, "variables_faces");
         NOTE.lap();
         NOTE.time("Computing transitivity constraints");
-        const BT3 = X.FC_CF_BF_2_BT3(FC, CF, BF);
+        const BT3 = await X.FC_CF_BF_2_BT3(FC, CF, BF);
         NOTE.count(BT3, "initial transitivity", 3);
         NOTE.lap();
         NOTE.time("Computing non-transitivity constraints");
-        const [BT0, BT1, BT2] = X.BF_EF_ExE_ExF_BT3_2_BT0_BT1_BT2(BF, EF, ExE, ExF, BT3);
+        const [BT0, BT1, BT2] = await X.BF_EF_ExE_ExF_BT3_2_BT0_BT1_BT2(BF, EF, ExE, ExF, BT3);
         NOTE.count(BT0, "taco-taco", 6);
         NOTE.count(BT1, "taco-tortilla", 3);
         NOTE.count(BT2, "tortilla-tortilla", 2);
@@ -173,15 +166,11 @@ const MAIN = {
         GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
         NOTE.lap();
         NOTE.time("*** Computing states ***");
-        window.setTimeout(MAIN.compute_states, 0, FOLD, CELL, BF, BT);
-    },
-    compute_states: (FOLD, CELL, BF, BT) => {
-        const {V, Vf, EV, EA, EF, FE, FV, Ff} = FOLD;
-        const {P, SP, SE, CP, CS, SC, CF, FC} = CELL;
-        const BA0 = X.EF_EA_Ff_BF_2_BA0(EF, EA, Ff, BF);
+
+        const BA0 = await X.EF_EA_Ff_BF_2_BA0(EF, EA, Ff, BF);
         const val = document.getElementById("limit_select").value;
         const lim = (val == "all") ? Infinity : +val;
-        const [GB, GA] = SOLVER.solve(BF, BT, BA0, lim);
+        const [GB, GA] = await SOLVER.solve(BF, BT, BA0, lim);
         const n = (GA == undefined) ? 0 : GA.reduce((s, A) => {
             return s*BigInt(A.length);
         }, BigInt(1));
@@ -193,13 +182,13 @@ const MAIN = {
         if (n > 0) {
             const GI = GB.map(() => 0);
             NOTE.time("Computing state");
-            const edges = SOLVER.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
-            FOLD.FO = SOLVER.edges_Ff_2_FO(edges, Ff);
-            CELL.CD = SOLVER.CF_edges_flip_2_CD(CF, edges);
+            const edges = await SOLVER.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
+            FOLD.FO = await SOLVER.edges_Ff_2_FO(edges, Ff);
+            CELL.CD = await SOLVER.CF_edges_flip_2_CD(CF, edges);
             document.getElementById("state_controls").style.display = "inline"; 
-            document.getElementById("flip").onchange = (e) => {
+            document.getElementById("flip").onchange = async (e) => {
                 NOTE.start("Flipping model");
-                GUI.update_fold(FOLD, CELL);
+                await GUI.update_fold(FOLD, CELL);
                 NOTE.end();
             };
             const comp_select = SVG.clear("component_select");
@@ -221,7 +210,7 @@ const MAIN = {
                 NOTE.end();
             };
             NOTE.time("Drawing fold");
-            GUI.update_fold(FOLD, CELL);
+            await GUI.update_fold(FOLD, CELL);
             NOTE.time("Drawing component");
             GUI.update_component(FOLD, CELL, BF, GB, GA, GI);
         }

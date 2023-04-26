@@ -1,6 +1,6 @@
 import { M } from "./math.js";
 import { NOTE } from "./note.js";
-import { SOLVER } from "./solver.js";
+import { SOLVER } from "./bridge.js";
 import { SVG } from "./svg.js";
 
 export const GUI = {   // INTERFACE
@@ -141,14 +141,14 @@ export const GUI = {   // INTERFACE
         }
         return CF.map(F => F.length/max_layers);
     },
-    update_fold: (FOLD, CELL) => {
+    update_fold: async (FOLD, CELL) => {
         SVG.clear("export");
         const {EF, Ff} = FOLD;
         const {P, SP, SE, CP, SC, CF, CD} = CELL;
         const svg = SVG.clear("fold");
         const flip = document.getElementById("flip").checked;
         const tops = CD.map(S => flip ? S[0] : S[S.length - 1]);
-        const SD = SOLVER.EF_SE_SC_CF_CD_2_SD(EF, SE, SC, CF, tops);
+        const SD = await SOLVER.EF_SE_SC_CF_CD_2_SD(EF, SE, SC, CF, tops);
         const m = [0.5, 0.5];
         const Q = P.map(p => (flip ? M.add(M.refX(M.sub(p, m)), m) : p));
         const cells = CP.map(V => M.expand(V, Q));
@@ -192,17 +192,17 @@ export const GUI = {   // INTERFACE
             state_select.setAttribute("min", 1);
             state_select.setAttribute("max", n);
             state_select.value = GI[c] + 1;
-            state_select.onchange = (e) => {
+            state_select.onchange = async (e) => {
                 NOTE.start("Computing new state");
                 let j = +e.target.value;
                 if (j < 1) { j = 1; }
                 if (j > n) { j = n; }
                 state_select.value = j;
                 GI[c] = j - 1;
-                const edges = SOLVER.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
-                FOLD.FO = SOLVER.edges_Ff_2_FO(edges, FOLD.Ff);
-                CELL.CD = SOLVER.CF_edges_flip_2_CD(CELL.CF, edges);
-                GUI.update_fold(FOLD, CELL);
+                const edges = await SOLVER.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
+                FOLD.FO = await SOLVER.edges_Ff_2_FO(edges, FOLD.Ff);
+                CELL.CD = await SOLVER.CF_edges_flip_2_CD(CELL.CF, edges);
+                await GUI.update_fold(FOLD, CELL);
                 NOTE.end();
             };
         }

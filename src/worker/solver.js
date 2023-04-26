@@ -1,7 +1,6 @@
-import { M } from "./math.js";
-import { NOTE } from "./note.js";
+import { M } from "../math.js";
 import { CON } from "./constraints.js";
-import { X } from "./conversion.js";
+import { NOTE } from "./note.js";
 
 export const SOLVER = {    // STATE SOLVER
     infer: (T, BI, BA) => {

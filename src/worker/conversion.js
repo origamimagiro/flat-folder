@@ -1,4 +1,4 @@
-import { M } from "./math.js";
+import { M } from "../math.js";
 import { CON } from "./constraints.js";
 import { NOTE } from "./note.js";
 
