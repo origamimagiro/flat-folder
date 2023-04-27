@@ -2,8 +2,8 @@ import { NOTE } from "./note.js";
 
 let worker;
 function create_worker() {
-	if(worker) worker.terminate();
-	worker = new Worker("src/worker/worker.js", { type: "module" });
+    if(worker) worker.terminate();
+    worker = new Worker("src/worker/worker.js", { type: "module" });
 }
 create_worker();
 
@@ -19,11 +19,11 @@ const handler = {
         target[name] = target[name] || function(...args) {
             return new Promise((resolve, reject) => {
                 const channel = new MessageChannel();
-				rejects.add(reject);
+                rejects.add(reject);
                 channel.port1.onmessage = event => {
-					rejects.delete(reject);
-					resolve(event.data);
-				};
+                    rejects.delete(reject);
+                    resolve(event.data);
+                };
                 worker.postMessage({ action: target._, name, args }, [channel.port2]);
             });
         };
@@ -32,12 +32,12 @@ const handler = {
 };
 
 export function abort() {
-	// Reject all pending Promises
-	for(const reject of rejects) reject();
-	rejects.clear();
-	
-	// Simply kill the previous worker, releasing all memory
-	create_worker();
+    // Reject all pending Promises
+    for(const reject of rejects) reject();
+    rejects.clear();
+    
+    // Simply kill the previous worker, releasing all memory
+    create_worker();
 }
 
 // Proxy objects

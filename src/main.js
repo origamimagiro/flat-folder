@@ -100,14 +100,14 @@ const MAIN = {
                 MAIN.toggle_controls(false);
                 await MAIN.compute_cells(FOLD);
             } catch(e) {
-				// Folding stopped
-				NOTE.time("Folding stopped.");
-				NOTE.end();
-			} finally {
+                // Folding stopped
+                NOTE.time("Folding stopped.");
+                NOTE.end();
+            } finally {
                 MAIN.toggle_controls(true);
             }
         };
-		document.getElementById("stop_button").onclick = abort;
+        document.getElementById("stop_button").onclick = abort;
         NOTE.lap();
         NOTE.end();
     },
@@ -116,7 +116,7 @@ const MAIN = {
             .querySelectorAll("input:not(#stop_button),select")
             .forEach(e => e.disabled = !enabled);
         document.getElementById("fold_button").style.display = enabled ? "inline" : "none";
-		document.getElementById("stop_button").style.display = enabled ? "none" : "inline";
+        document.getElementById("stop_button").style.display = enabled ? "none" : "inline";
     },
     compute_cells: async (FOLD) => {
         NOTE.start("*** Computing cell graph ***");
