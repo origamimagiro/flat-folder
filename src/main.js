@@ -3,7 +3,7 @@ import { NOTE } from "./note.js";
 import { SVG } from "./svg.js";
 import { IO } from "./io.js";
 import { GUI } from "./gui.js";
-import { SOLVER, X } from "./bridge.js";
+import { SOLVER, X, abort } from "./bridge.js";
 
 window.onload = () => { MAIN.startup(); };  // entry point
 
@@ -95,11 +95,28 @@ const MAIN = {
             GUI.update_text(FOLD);
             NOTE.end();
         };
-        document.getElementById("fold_button").onclick = () => {
-            MAIN.compute_cells(FOLD);
+        document.getElementById("fold_button").onclick = async () => {
+            try {
+                MAIN.toggle_controls(false);
+                await MAIN.compute_cells(FOLD);
+            } catch(e) {
+				// Folding stopped
+				NOTE.time("Folding stopped.");
+				NOTE.end();
+			} finally {
+                MAIN.toggle_controls(true);
+            }
         };
+		document.getElementById("stop_button").onclick = abort;
         NOTE.lap();
         NOTE.end();
+    },
+    toggle_controls: (enabled) => {
+        document.getElementById("fold_controls")
+            .querySelectorAll("input:not(#stop_button),select")
+            .forEach(e => e.disabled = !enabled);
+        document.getElementById("fold_button").style.display = enabled ? "inline" : "none";
+		document.getElementById("stop_button").style.display = enabled ? "none" : "inline";
     },
     compute_cells: async (FOLD) => {
         NOTE.start("*** Computing cell graph ***");
