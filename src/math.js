@@ -141,7 +141,7 @@ export const M = {     // MATH
         let area = 0;
         let p1 = P[P.length - 1];
         for (const p2 of P) {
-            area += (p1[0] + p2[0])*(p2[1] - p1[1]);
+            area += p1[0]*p2[1]-p2[0]*p1[1];
             p1 = p2;
         }
         return area;
