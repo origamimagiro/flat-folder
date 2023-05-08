@@ -1,5 +1,6 @@
 export const NOTE = {  // ANNOTATION
-    console: document.getElementById("console"),
+    console: ((typeof document == "undefined")
+        ? undefined : document.getElementById("console")),
     start: (label) => {
         TIME.start_main()
         if (label != undefined) {
@@ -43,15 +44,23 @@ export const NOTE = {  // ANNOTATION
         NOTE.log(`   - Found ${n} ${label}`);
     },
     log: (str) => {
-        console.log(str);
-        NOTE.lines.push(str);
-        NOTE.console.value += str + '\n';
-        NOTE.scroll();
+        if (NOTE.console) {
+            console.log(str);
+            NOTE.lines.push(str);
+            NOTE.console.value += str + '\n';
+            NOTE.scroll();
+        }
     },
-    scroll: () => NOTE.console.scrollTop = NOTE.console.scrollHeight,
+    scroll: () => {
+        if (NOTE.console) {
+            NOTE.console.scrollTop = NOTE.console.scrollHeight;
+        }
+    },
     clear_log: () => {
         NOTE.lines = [];
-        NOTE.console.value = "";
+        if (NOTE.console) {
+            NOTE.console.value = "";
+        }
     },
     count_subarrays: (A) => {
         let n = 0;
