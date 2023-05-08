@@ -44,9 +44,9 @@ export const NOTE = {  // ANNOTATION
         NOTE.log(`   - Found ${n} ${label}`);
     },
     log: (str) => {
-        console.log(str);
-        NOTE.lines.push(str);
         if (NOTE.console) {
+            console.log(str);
+            NOTE.lines.push(str);
             NOTE.console.value += str + '\n';
             NOTE.scroll();
         }
