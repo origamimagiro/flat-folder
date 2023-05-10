@@ -1,4 +1,6 @@
 export const NOTE = {  // ANNOTATION
+    show: true,
+    lines: [],
     console: ((typeof document == "undefined")
         ? undefined : document.getElementById("console")),
     start: (label) => {
@@ -44,11 +46,13 @@ export const NOTE = {  // ANNOTATION
         NOTE.log(`   - Found ${n} ${label}`);
     },
     log: (str) => {
-        if (NOTE.console) {
+        if (NOTE.show) {
             console.log(str);
             NOTE.lines.push(str);
-            NOTE.console.value += str + '\n';
-            NOTE.scroll();
+            if (NOTE.console) {
+                NOTE.console.value += str + '\n';
+                NOTE.scroll();
+            }
         }
     },
     scroll: () => {
