@@ -1,7 +1,7 @@
 import { M } from "./math.js";
 import { NOTE } from "./note.js";
 import { SVG } from "./svg.js";
-import { X } from "./conversion.js";
+import { X } from "./bridge.js";
 
 export const IO = {    // INPUT-OUTPUT
     write: (FOLD) => {
@@ -170,7 +170,7 @@ export const IO = {    // INPUT-OUTPUT
         }
         return lines;
     },
-    FOLD_2_V_EV_EA_VV_FV: (doc) => {
+    FOLD_2_V_EV_EA_VV_FV: async (doc) => {
         let V, EV, EA, VV, FV;
         const ex = JSON.parse(doc);
         if ("vertices_coords" in ex) {
@@ -196,14 +196,14 @@ export const IO = {    // INPUT-OUTPUT
         if ("faces_vertices" in ex) {
             FV = ex["faces_vertices"]; 
             M.sort_faces(FV, V);
-            VV = X.V_FV_2_VV(V, FV);
+            VV = await X.V_FV_2_VV(V, FV);
         }
         return [V, EV, EA, VV, FV];
     },
-    doc_type_2_V_VV_EV_EA_EF_FV_FE: (doc, type) => {
+    doc_type_2_V_VV_EV_EA_EF_FV_FE: async (doc, type) => {
         let V, VV, EV, EA, FV;
         if (type == "fold") {
-            [V, EV, EA, VV, FV] = IO.FOLD_2_V_EV_EA_VV_FV(doc);
+            [V, EV, EA, VV, FV] = await IO.FOLD_2_V_EV_EA_VV_FV(doc);
             if (V == undefined) { return []; }
         } else {
             let L, EL;
@@ -220,7 +220,7 @@ export const IO = {    // INPUT-OUTPUT
             const eps = M.min_line_length(L) / M.EPS;
             NOTE.time(`Using eps ${eps} from min line length ${eps*M.EPS}`);
             NOTE.time("Constructing FOLD from lines");
-            [V, EV, EL] = X.L_2_V_EV_EL(L, eps);
+            [V, EV, EL] = await X.L_2_V_EV_EL(L, eps);
             EA = EL.map(l => L[l[0]][2]); 
         }
         V = M.normalize_points(V);
@@ -239,7 +239,7 @@ export const IO = {    // INPUT-OUTPUT
             } else {
                 V = flip_Y(V);
             }
-            [VV, FV] = X.V_EV_2_VV_FV(V, EV);
+            [VV, FV] = await X.V_EV_2_VV_FV(V, EV);
         } else {
             if (M.polygon_area2(M.expand(FV[0], V)) < 0) {
                 EA = flip_EA(EA);
@@ -251,7 +251,7 @@ export const IO = {    // INPUT-OUTPUT
                 V = flip_Y(V);
             }
         }
-        const [EF, FE] = X.EV_FV_2_EF_FE(EV, FV);
+        const [EF, FE] = await X.EV_FV_2_EF_FE(EV, FV);
         for (const [i, F] of EF.entries()) {    // boundary edge assignment
             if (F.length == 1) {
                 EA[i] = "B";
