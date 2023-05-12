@@ -200,7 +200,7 @@ export const X = {     // CONVERSION
             if (boundary || (adj.length == 0)) {
                 VK.push(0);
             } else if (
-                ((count_U == 0) && (Math.abs(count_M - count_V) != 2)) || 
+                ((count_U == 0) && (Math.abs(count_M - count_V) != 2)) ||
                 (adj.length % 2 != 0)
             ) {                       // violates Maekawa
                 VK.push(1);           // far from zero

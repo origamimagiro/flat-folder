@@ -2,9 +2,9 @@
 
 Flat-Folder is software written by [Jason S. Ku](http://jasonku.mit.edu/) to
 compute and analyze valid flat-foldable states of flat-foldable crease patterns,
-both assigned and unassigned. 
+both assigned and unassigned.
 
-Follow Flat-Folder on [Instagram](https://www.instagram.com/flat_folder/) 
+Follow Flat-Folder on [Instagram](https://www.instagram.com/flat_folder/)
 or [Twitter](https://twitter.com/_flatfolder_).
 
 ## How to use
@@ -19,31 +19,31 @@ or [Twitter](https://twitter.com/_flatfolder_).
 1. Press "Choose File" to upload a crease pattern in FOLD, SVG, OPX, or CP file formats.
     - Various example files can be found in the
       [`./examples/`](https://github.com/origamimagiro/flat-folder/tree/main/examples) folder.
-        - You can download them by 
-          [clicking here](https://github.com/origamimagiro/flat-folder/archive/refs/heads/main.zip). 
-        - If you have examples files that you'd like me to add (and you have 
-          the proper authorization of the creator), please 
+        - You can download them by
+          [clicking here](https://github.com/origamimagiro/flat-folder/archive/refs/heads/main.zip).
+        - If you have examples files that you'd like me to add (and you have
+          the proper authorization of the creator), please
           [email them to me](mailto:jasonku@me.com)!
     - The software will probably have trouble if points in the input file are
       not accurate to single-precision. When importing any file that does not
       already contain face information, Flat-Folder will look at all the lines
       imported and compute the length $L$ of the shortest one. Then:
-        - if any vertex of the input is closer than $\varepsilon = L/300$ 
-          to any other vertex, it will assume they are the same vertex; and 
-        - if any vertex of the input is closer than $\varepsilon$ to any 
+        - if any vertex of the input is closer than $\varepsilon = L/300$
+          to any other vertex, it will assume they are the same vertex; and
+        - if any vertex of the input is closer than $\varepsilon$ to any
           line, it will assume the vertex is on the line.
     - For SVG format:
         - the import assumes each imported line is an unassigned fold
           (assignment `"U"`), unless its `"style"` attribute contains a
-          `"stroke"` whose value is one of `["red", "blue", "gray"]` 
+          `"stroke"` whose value is one of `["red", "blue", "gray"]`
           corresponding to `["M", "V", "F"]` assignments respectively;
-        - will also accept values `["#FF0000", "#0000FF", "#808080"]`. 
-    - For FOLD format: 
+        - will also accept values `["#FF0000", "#0000FF", "#808080"]`.
+    - For FOLD format:
         - Import requires two properties:
             - `vertices_coords`
             - `edges_vertices`
-        - Import can also import two optional properties: 
-            - `edges_assignment` (if missing, will assume all edges are 
+        - Import can also import two optional properties:
+            - `edges_assignment` (if missing, will assume all edges are
               unassigned `"U"`)
             - `faces_vertices` (if missing, will construct its own set of faces
               from the provided edges)
@@ -61,14 +61,14 @@ or [Twitter](https://twitter.com/_flatfolder_).
 
     - Selecting the "Text" option will draw index labels for all the vertices,
       edges, and faces in the crease pattern. Currently, there is no way in the
-      interface to adjust the font size, so this is only useful for debugging 
+      interface to adjust the font size, so this is only useful for debugging
       small inputs or by manipulating the text later in an output SVG.
 
     ![showing text](./img/03.jpg)
 
 1. Press "Fold" to find flat-foldable states of the crease pattern.
-    - Flat-Folder will break up the faceOrder variables into disconnected 
-      components of variables whose set of solutions are independently 
+    - Flat-Folder will break up the faceOrder variables into disconnected
+      components of variables whose set of solutions are independently
       assignable from each other.
     - You can limit the number of solutions to find per component by setting the
       "Limit" option:
@@ -83,7 +83,7 @@ or [Twitter](https://twitter.com/_flatfolder_).
 
     ![after folded](./img/04.jpg)
 
-    - Selecting the "Text" option will now also draw index labels for all the 
+    - Selecting the "Text" option will now also draw index labels for all the
       cells, segments, and points in the overlap graph.
 
     ![text after folded](./img/05.jpg)
@@ -117,12 +117,12 @@ or [Twitter](https://twitter.com/_flatfolder_).
 
 6. After computing solutions for all components:
     - Flat-Folder will display how many valid flat-folded states were found.
-    - If any states were found, Flat-Folder will draw a rendering of the first 
+    - If any states were found, Flat-Folder will draw a rendering of the first
       one on the right of the display.
 
     ![after folded](./img/04.jpg)
 
-    - Selecting the "Flip" option will redraw the folded state as seen from 
+    - Selecting the "Flip" option will redraw the folded state as seen from
       the other side.
 
     ![clicking flip](./img/09.jpg)
@@ -139,7 +139,7 @@ or [Twitter](https://twitter.com/_flatfolder_).
             - draw that component on the overlap graph,
             - display the number of states found for that component, and
             - add a numeric input to enter which state to select for that
-              component. 
+              component.
 
         ![clicking a component](./img/11.jpg)
 
@@ -163,7 +163,7 @@ or [Twitter](https://twitter.com/_flatfolder_).
 
 ## Algorithm
 
-Existing software like [ORIPA](https://github.com/oripa/oripa) and 
+Existing software like [ORIPA](https://github.com/oripa/oripa) and
 [Orihime/Oriedita](https://github.com/oriedita/oriedita) find flat-foldable states by:
 
 1. constructing an overlap graph of cells, where each cell is a maximal regions
@@ -184,24 +184,24 @@ $n$ to be the number of faces in the input crease pattern.
 2. Next, it computes all constraints on those variables that must be satisfied
    to avoid self-intersection. There are four types of constraints:
 
-    - **Taco-Taco:** A taco-taco constraint occurs when two folded edges `[e1, e2]` 
+    - **Taco-Taco:** A taco-taco constraint occurs when two folded edges `[e1, e2]`
       of the crease pattern properly overlap along a segment `s` of the overlap
-      graph, and of the two faces `[f1, g1]` adjacent to edge `e1` and the two 
-      faces `[f2, g2]` adjacent to edge `e2`, all of them lie on the same side 
-      of segment `s` in the folding. There are six variables associated with 
+      graph, and of the two faces `[f1, g1]` adjacent to edge `e1` and the two
+      faces `[f2, g2]` adjacent to edge `e2`, all of them lie on the same side
+      of segment `s` in the folding. There are six variables associated with
       such a constraint:
 
         - `[f1, g1]`, `[f1, f2]`, `[f1, g2]`, `[f2, g1]`, `[f2, g2]`, `[g1, g2]`
-        - Out of the $2^6 = 64$ possible assignments of these variables, only 
+        - Out of the $2^6 = 64$ possible assignments of these variables, only
           16 of them are valid (avoid intersection).
         - There are at most $O(n^2)$ taco-taco constraints.
 
-    - **Taco-Tortilla:** A taco-tortilla constraint occurs when a folded edge `e` of 
-      the crease pattern adjacent to faces `[f1, f2]` properly intersects the 
-      interior of a third face `f3` along some segment `s` in the overlap graph. 
-      Alternatively, `e` properly overlaps a crease edge `e2` that is not folded 
-      in the folding (has assignment `F`), and we let `f3` be the face adjacent 
-      to `e2` that lies on the same side of `s` in the folding as `f1` and `f2`. 
+    - **Taco-Tortilla:** A taco-tortilla constraint occurs when a folded edge `e` of
+      the crease pattern adjacent to faces `[f1, f2]` properly intersects the
+      interior of a third face `f3` along some segment `s` in the overlap graph.
+      Alternatively, `e` properly overlaps a crease edge `e2` that is not folded
+      in the folding (has assignment `F`), and we let `f3` be the face adjacent
+      to `e2` that lies on the same side of `s` in the folding as `f1` and `f2`.
       There are three variables associated with such a constraint:
 
         - `[f1, f2]`, `[f1, f3]`, `[f2, f3]`
@@ -209,12 +209,12 @@ $n$ to be the number of faces in the input crease pattern.
           4 of them are valid (avoid intersection).
         - There are at most $O(n^2)$ taco-tortilla constraints.
 
-    - **Tortilla-Tortilla:** A tortilla-tortilla constraint occurs when two crease 
-      edges `[e1, e2]` (has assignment `F`) of the crease pattern properly 
-      overlap along a segment `s` of the overlap graph, and of the two faces 
-      `[f1, g1]` adjacent to edge `e1` and the two faces `[f2, g2]` adjacent to 
+    - **Tortilla-Tortilla:** A tortilla-tortilla constraint occurs when two crease
+      edges `[e1, e2]` (has assignment `F`) of the crease pattern properly
+      overlap along a segment `s` of the overlap graph, and of the two faces
+      `[f1, g1]` adjacent to edge `e1` and the two faces `[f2, g2]` adjacent to
       edge `e2`, `f1` and `f2` lie on one side of `s`, and `g1` and `g2` lie on
-      the other side of `s`. There are two variables associated with such a 
+      the other side of `s`. There are two variables associated with such a
       constraint:
 
         - `[f1, f2]`, `[g1, g2]`
@@ -222,8 +222,8 @@ $n$ to be the number of faces in the input crease pattern.
           2 of them are valid (avoid intersection).
         - There are at most $O(n^2)$ tortilla-tortilla constraints.
 
-    - **Transitivity:** A transitivity constraint occurs when three faces 
-      `[f1, f2, f3]` all mutually overlap the same cell of in the overlap graph. 
+    - **Transitivity:** A transitivity constraint occurs when three faces
+      `[f1, f2, f3]` all mutually overlap the same cell of in the overlap graph.
       There are three variables associated with such a constraint:
 
         - `[f1, f2]`, `[f1, f3]`, `[f2, f3]`
@@ -249,6 +249,6 @@ $n$ to be the number of faces in the input crease pattern.
 
 5. Lastly, Flat-Folder finds valid solutions for each connected component of
    variables via a brute-force search. This step can take exponental time
-   $2^{O(n^2)}$ but if each component has only a polynomial number of solutions, 
-   solving each connected component independently can implicitly represent an 
-   exponential number of folded states in polynomial space. 
+   $2^{O(n^2)}$ but if each component has only a polynomial number of solutions,
+   solving each connected component independently can implicitly represent an
+   exponential number of folded states in polynomial space.

@@ -22,8 +22,8 @@ export const GUI = {   // INTERFACE
             top: "gray",
             bottom: "white",
         },
-        rand: ["lime", "red", "blue", "green", "aqua", "orange", "pink", 
-            "purple", "brown", "darkviolet", "teal", "olivedrab", "fuchsia", 
+        rand: ["lime", "red", "blue", "green", "aqua", "orange", "pink",
+            "purple", "brown", "darkviolet", "teal", "olivedrab", "fuchsia",
             "deepskyblue", "orangered", "maroon", "yellow"],
     },
     update_text: (FOLD, CELL) => {
@@ -90,10 +90,10 @@ export const GUI = {   // INTERFACE
             }
         }
         SVG.draw_segments(svg, creases.map(i => lines[i]), {
-            id: "flat_e_flat", stroke: creases.map(i => colors[i]), 
+            id: "flat_e_flat", stroke: creases.map(i => colors[i]),
             stroke_width: GUI.WIDTH});
         SVG.draw_segments(svg, edges.map(i => lines[i]), {
-            id: "flat_e_folded", stroke: edges.map(i => colors[i]), 
+            id: "flat_e_folded", stroke: edges.map(i => colors[i]),
             stroke_width: GUI.WIDTH});
         SVG.append("g", svg, {id: "flat_text"});
         SVG.append("g", svg, {id: "flat_notes"});
@@ -173,19 +173,19 @@ export const GUI = {   // INTERFACE
         SVG.clear("export");
         const comp_select = document.getElementById("component_select");
         const c = comp_select.value;
-        document.getElementById("state_config").style.display = "none"; 
+        document.getElementById("state_config").style.display = "none";
         comp_select.style.background = "white";
         const C = [];
         if (c == "none") {
         } else if (c == "all") {
-            for (const [i, _] of GA.entries()) { 
+            for (const [i, _] of GA.entries()) {
                 C.push(i);
             }
         } else {
             C.push(c);
             const n = GA[c].length;
             comp_select.style.background = GUI.COLORS.rand[c % GUI.COLORS.rand.length];
-            document.getElementById("state_config").style.display = "inline"; 
+            document.getElementById("state_config").style.display = "inline";
             const state_label = document.getElementById("state_label");
             const state_select = document.getElementById("state_select");
             state_label.innerHTML = `${n} State${(n == 1) ? "" : "s"}`;
@@ -216,7 +216,7 @@ export const GUI = {   // INTERFACE
                 return [p1, p2];
             });
             const stroke = GUI.COLORS.rand[comp % GUI.COLORS.rand.length];
-            SVG.draw_segments(g, lines, {id: "cell_comp", 
+            SVG.draw_segments(g, lines, {id: "cell_comp",
                 "stroke": stroke, "stroke_width": 2});
         }
     },
@@ -245,7 +245,7 @@ export const GUI = {   // INTERFACE
             FB_map.set(F, i);
         }
         const FB = FC.map(() => []);
-        for (const k of BF) { 
+        for (const k of BF) {
             const [f1, f2] = M.decode(k);
             FB[f1].push(f2);
             FB[f2].push(f1);

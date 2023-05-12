@@ -5,8 +5,8 @@ export const SVG = {   // DRAWING
     NS: "http://www.w3.org/2000/svg",
     append: (type, par, attrs = {}) => {
         const el = document.createElementNS(SVG.NS, type);
-        for (const [k, v] of Object.entries(attrs)) { 
-            el.setAttribute(k, v); 
+        for (const [k, v] of Object.entries(attrs)) {
+            el.setAttribute(k, v);
         }
         par.appendChild(el);
         return el;

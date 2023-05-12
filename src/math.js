@@ -31,7 +31,7 @@ export const M = {     // MATH
     refY: ([x, y]) => [x, -y],
     distsq: (v1, v2) => M.magsq(M.sub(v2, v1)),
     dist: (v1, v2) => M.mag(M.sub(v2, v1)),
-    close: (v1, v2, eps) => ((Math.abs(v1[0] - v2[0]) < eps) && 
+    close: (v1, v2, eps) => ((Math.abs(v1[0] - v2[0]) < eps) &&
                              (Math.abs(v1[1] - v2[1]) < eps)),
     area2: ([x1, y1], [x2, y2], [x3, y3]) =>
         ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1)),
@@ -50,7 +50,7 @@ export const M = {     // MATH
     previous_in_list: (A, v) => {
         for (const [i, x] of A.entries()) {
             if (x == v) {
-                if (i == 0) { return A[A.length - 1]; } 
+                if (i == 0) { return A[A.length - 1]; }
                 else        { return A[i - 1]; }
             }
         }
@@ -105,7 +105,7 @@ export const M = {     // MATH
             }
             let found = true;
             for (const p of P) {    // check if triangle contains another vertex
-                if ((p != p1) && (p != p2) && (p != p3) && 
+                if ((p != p1) && (p != p2) && (p != p3) &&
                     ((M.area2(p1, p2, p) >= 0) &&
                      (M.area2(p2, p3, p) >= 0) &&
                      (M.area2(p3, p1, p) >= 0))
@@ -150,7 +150,7 @@ export const M = {     // MATH
         // Adapted from Computational Geometry in C [O'Rourke]
         // Returns a proper intersection point of segments [a, b] and [c, d]
         // or undefined if no proper intersection point exists
-        if (M.close(a, c, eps) || M.close(a, d, eps) || 
+        if (M.close(a, c, eps) || M.close(a, d, eps) ||
             M.close(b, c, eps) || M.close(b, d, eps) ||
             M.on_segment(a, b, c, eps) || M.on_segment(a, b, d, eps) ||
             M.on_segment(c, d, a, eps) || M.on_segment(c, d, b, eps)) {
@@ -162,14 +162,14 @@ export const M = {     // MATH
         );
         if (M.near_zero(denom)) { return; }
         const s_num = (
-            a[0] * (d[1] - c[1]) + 
-            c[0] * (a[1] - d[1]) + 
+            a[0] * (d[1] - c[1]) +
+            c[0] * (a[1] - d[1]) +
             d[0] * (c[1] - a[1])
         );
         if (M.near_zero(s_num) || M.near_zero(s_num - denom)) { return; }
         const t_num = -(
-            a[0] * (c[1] - b[1]) + 
-            b[0] * (a[1] - c[1]) + 
+            a[0] * (c[1] - b[1]) +
+            b[0] * (a[1] - c[1]) +
             c[0] * (b[1] - a[1])
         );
         if (M.near_zero(t_num) || M.near_zero(t_num - denom)) { return; }
@@ -177,10 +177,10 @@ export const M = {     // MATH
         const t = t_num / denom;
         if ((s < 0) || (1 < s) || (t < 0) || (1 < t)) { return; }
         const p = [
-            a[0] + s * (b[0] - a[0]), 
+            a[0] + s * (b[0] - a[0]),
             a[1] + s * (b[1] - a[1])
         ];
-        if (M.close(a, p, eps) || M.close(b, p, eps) || 
+        if (M.close(a, p, eps) || M.close(b, p, eps) ||
             M.close(c, p, eps) || M.close(d, p, eps)) {
             return;
         }
