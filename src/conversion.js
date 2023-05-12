@@ -28,7 +28,7 @@ export const X = {     // CONVERSION
                 if ((d[0] + eps) < a[0]) {
                     crossings[k] = undefined;
                 } else {
-                    const x = M.intersect([a, b], [c, d], eps);         
+                    const x = M.intersect([a, b], [c, d], eps);
                     if (x != undefined) {
                         P.push([x, idx]);
                         P.push([x, j]);
@@ -62,7 +62,7 @@ export const X = {     // CONVERSION
                 compressed_P.push(curr);
             }
         }
-        const V = compressed_P.map((ps) => ps[0][0]); 
+        const V = compressed_P.map((ps) => ps[0][0]);
         // 2) Constructing map from edges to overlapping lines
         const LP = L.map(() => new Set());
         for (const [i, cP] of compressed_P.entries()) {
@@ -104,8 +104,8 @@ export const X = {     // CONVERSION
     V_EV_2_VV_FV: (V, EV) => {
         const adj = V.map(() => []);
         for (const [pi, qi] of EV) {
-            adj[pi].push(qi); 
-            adj[qi].push(pi); 
+            adj[pi].push(qi);
+            adj[qi].push(pi);
         }
         const VV = [];
         for (const [i, v0] of V.entries()) {
@@ -200,7 +200,7 @@ export const X = {     // CONVERSION
             if (boundary || (adj.length == 0)) {
                 VK.push(0);
             } else if (
-                ((count_U == 0) && (Math.abs(count_M - count_V) != 2)) || 
+                ((count_U == 0) && (Math.abs(count_M - count_V) != 2)) ||
                 (adj.length % 2 != 0)
             ) {                       // violates Maekawa
                 VK.push(1);           // far from zero
@@ -236,12 +236,12 @@ export const X = {     // CONVERSION
             Vf[i] = V[i];
         }            // [face, edge, len, parity]
         const Ff = new Array(FV.length);
-        const queue = [[0, v1, v2, Infinity, true]];    
+        const queue = [[0, v1, v2, Infinity, true]];
         let next = 0;
         while (next < queue.length) {                   // Prim's algorithm to
             const [fi, i1, i2, l, s] = queue[next];     // traverse face graph
             Ff[fi] = !s;                                // over spanning tree
-            next += 1;                                  // crossing edges of 
+            next += 1;                                  // crossing edges of
             const F = FV[fi];                           // maximum length
             const x = M.unit(M.sub(V[i2], V[i1]));
             const y = M.perp(x);
@@ -295,7 +295,7 @@ export const X = {     // CONVERSION
             }
         }
         for (const [i, F] of EF.entries()) {
-            const c = (F[0] == undefined) ? 1 : 
+            const c = (F[0] == undefined) ? 1 :
                      ((F[1] == undefined) ? 0 : undefined);
             if (c != undefined) {
                 EF[i] = [F[c]];
@@ -386,10 +386,10 @@ export const X = {     // CONVERSION
             for (const [j, v1] of edges.entries()) {
                 for (let k = j + 1; k < edges.length; ++k) {
                     const v2 = edges[k];
-                    ExE.add(M.encode_order_pair([v1, v2])); 
+                    ExE.add(M.encode_order_pair([v1, v2]));
                 }
             }
-        } 
+        }
         return Array.from(ExE);
     },
     SE_CF_SC_2_ExF: (SE, CF, SC) => {
@@ -449,7 +449,7 @@ export const X = {     // CONVERSION
         const BT1 = BF.map(() => []); // taco-tortilla
         const BT2 = BF.map(() => []); // tortilla-tortilla
         const BT = [BT0, BT1, BT2];
-        const BF_map = new Map(); 
+        const BF_map = new Map();
         for (const [i, F] of BF.entries()) {
             BF_map.set(F, i);
         }
@@ -477,7 +477,7 @@ export const X = {     // CONVERSION
                 case 3: // 011
                     cons = [CON.taco_tortilla, [f3, f4, f1]]; break;
                 case 4: // 100  no overlap
-                    break;      
+                    break;
                 case 5: // 101
                     cons = [CON.taco_tortilla, [f1, f2, f4]]; break;
                 case 6: // 110
