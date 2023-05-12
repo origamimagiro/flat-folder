@@ -17,8 +17,8 @@ const MAIN = {
         const [b, s] = [50, SVG.SCALE];
         const main = document.getElementById("main");
         for (const [k, v] of Object.entries({
-            xmlns: SVG.NS, 
-            style: `background: ${GUI.COLORS.background}`, 
+            xmlns: SVG.NS,
+            style: `background: ${GUI.COLORS.background}`,
             viewBox: [0, 0, 3*s, s].join(" "),
         })) {
             main.setAttribute(k, v);

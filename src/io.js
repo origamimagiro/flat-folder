@@ -34,15 +34,15 @@ export const IO = {    // INPUT-OUTPUT
             type: "text/plain"});
         const ex = SVG.clear("export");
         for (const [type, ext] of [
-            ["cp", "fold"], 
-            ["state", "fold"], 
-            ["img", "svg"], 
+            ["cp", "fold"],
+            ["state", "fold"],
+            ["img", "svg"],
             ["log", "txt"]
         ]) {
             const link = document.createElement("a");
             const button = document.createElement("input");
-            ex.appendChild(link); 
-            link.appendChild(button); 
+            ex.appendChild(link);
+            link.appendChild(button);
             link.setAttribute("download", `${name}_${type}.${ext}`);
             link.setAttribute("href", window.URL.createObjectURL(data[type]));
             button.setAttribute("type", "button");
@@ -174,27 +174,27 @@ export const IO = {    // INPUT-OUTPUT
         let V, EV, EA, VV, FV;
         const ex = JSON.parse(doc);
         if ("vertices_coords" in ex) {
-            V = ex["vertices_coords"]; 
+            V = ex["vertices_coords"];
         } else {
             NOTE.time("FOLD file does not contain vertices_coords");
             return [];
         }
         if ("edges_vertices" in ex) {
             EV = ex["edges_vertices"].map(
-                ([v1, v2]) => (v1 < v2) ? [v1, v2] : [v2, v1]); 
+                ([v1, v2]) => (v1 < v2) ? [v1, v2] : [v2, v1]);
         } else {
             NOTE.time("FOLD file does not contain edges_vertices");
             return [];
         }
         if ("edges_assignment" in ex) {
-            EA = ex["edges_assignment"]; 
+            EA = ex["edges_assignment"];
         } else {
             NOTE.time("FOLD file does not contain edges_assignments");
             NOTe.time("   - assuming all unassigned");
             EA = EV.map(() => "U");
         }
         if ("faces_vertices" in ex) {
-            FV = ex["faces_vertices"]; 
+            FV = ex["faces_vertices"];
             M.sort_faces(FV, V);
             VV = X.V_FV_2_VV(V, FV);
         }
@@ -221,7 +221,7 @@ export const IO = {    // INPUT-OUTPUT
             NOTE.time(`Using eps ${eps} from min line length ${eps*M.EPS}`);
             NOTE.time("Constructing FOLD from lines");
             [V, EV, EL] = X.L_2_V_EV_EL(L, eps);
-            EA = EL.map(l => L[l[0]][2]); 
+            EA = EL.map(l => L[l[0]][2]);
         }
         V = M.normalize_points(V);
         const flip_EA = (EA) => {

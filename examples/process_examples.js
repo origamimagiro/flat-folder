@@ -24,13 +24,13 @@ const main = () => {
             }
         }
     }
-    const headers = ["dataset", "number", "author", "title", "vertices", 
-        "edges", "faces", "eps", "variables", "taco-taco", "taco-tortilla", 
-        "tortilla-tortilla", "transitivity", "reduced_trans", 
+    const headers = ["dataset", "number", "author", "title", "vertices",
+        "edges", "faces", "eps", "variables", "taco-taco", "taco-tortilla",
+        "tortilla-tortilla", "transitivity", "reduced_trans",
         "components", "limited", "states", "component_assignments"];
     const lines = [headers];
     for (const [dataset, file] of fold_files) {
-        const data = fs.readFileSync(`./${dataset}/${file}`); 
+        const data = fs.readFileSync(`./${dataset}/${file}`);
         const fold = JSON.parse(data);
         fold.file_name = file;
         fold.dataset = dataset;

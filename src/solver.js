@@ -56,7 +56,7 @@ export const SOLVER = {    // STATE SOLVER
                                 if (BA[j] != s) {
                                     I = false;
                                     break;
-                                } 
+                                }
                             }
                         }
                     }
@@ -120,15 +120,15 @@ export const SOLVER = {    // STATE SOLVER
         const A = [];
         const sol = G.map(() => 0);
         let idx = 0;
-        let backtracking = false;  
-        NOTE.start_check("state"); // at start of loop, idx is an index of G     
+        let backtracking = false;
+        NOTE.start_check("state"); // at start of loop, idx is an index of G
         while (true) {             // if backtracking, idx after the last guess
-            NOTE.check(A.length);  //            else, idx to guess next        
+            NOTE.check(A.length);  //            else, idx to guess next
             for (let i = 0; i < idx; ++i) { if (BA[G[i]] == 0) { debugger; } }
             if (backtracking) {
                 if (guesses.length == 0) {
                     break;
-                } 
+                }
                 const guess = guesses.pop();
                 const a = BA[guess[0]];
                 while (G[idx] != guess[0]) {
@@ -177,13 +177,13 @@ export const SOLVER = {    // STATE SOLVER
         return A;
     },
     solve: (BF, BT, BA0, lim) => {
-        // In:   BF | array for each variable: key 
+        // In:   BF | array for each variable: key
         //       BT | array for each variable: constraints
         //      BA0 | array for each variable: known assignment
         //      lim | upper limit on # solutions to return per group
-        // Out:  GB | array for each independent group: 
+        // Out:  GB | array for each independent group:
         //          |   array of variables in group
-        //       GA | array for each independent group: 
+        //       GA | array for each independent group:
         //          |   array of valid assignments:  (max length lim)
         //          |     array for each variable in group: an assignment
         //          | returns [] if no solutions found
@@ -211,7 +211,7 @@ export const SOLVER = {    // STATE SOLVER
                         return [];
                     } else {
                         for (const b of B) {
-                            B0.push(b); 
+                            B0.push(b);
                         }
                     }
                 }
