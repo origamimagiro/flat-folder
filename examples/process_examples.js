@@ -7,12 +7,11 @@ import { SOLVER } from "../src/solver.js";
 import { NOTE   } from "../src/note.js";
 import * as fs from 'fs';
 
-const lim = 10000;
-const start = Date.now();
-NOTE.clear_log();
-NOTE.start();
-
 const main = () => {
+    const lim = 10000;
+    const start = Date.now();
+    NOTE.clear_log();
+    NOTE.start();
     CON.build();
     const fold_files = [];
     for (const dataset of ["grids", "instagram"]) {
@@ -41,7 +40,7 @@ const main = () => {
             NOTE.time(`Processing file: ${fold.file_name} with eps = ${eps}`);
             NOTE.show = false;
             try {
-                const D = process_file(fold, eps);
+                const D = process_file(fold, eps, lim);
                 const L = [];
                 for (const field of headers) {
                     L.push(D[field]);
@@ -57,7 +56,7 @@ const main = () => {
     fs.writeFileSync("./data.csv", lines.join("\n"));
 }
 
-const process_file = (fold, EPS) => {
+const process_file = (fold, EPS, lim) => {
     M.EPS = EPS;
     const V  = fold.vertices_coords;
     const EV = fold.edges_vertices;
