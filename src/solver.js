@@ -10,8 +10,8 @@ export const SOLVER = {    // STATE SOLVER
         //      BA | array of variable assignments
         // Out:  I | false if BA conflicts with T, else array of pairs [i, a]
         //         | where a is assignment inferred for variable at index i
-        const [type,] = T;
-        const pairs = CON.T_2_pairs(T);
+        const [type, F] = T;
+        const pairs = CON.type_F_2_pairs(type, F);
         const tuple = pairs.map(([x, y]) => {
             const a = BA[BI.get(M.encode_order_pair([x, y]))];
             if (a == undefined) { debugger; }
@@ -19,8 +19,7 @@ export const SOLVER = {    // STATE SOLVER
         });
         const I = CON.implied[type].get(tuple.join(""));
         if (I == undefined) { debugger; }
-        if (I == 0) { return false; }   // assignment not possible
-        if (I == 1) { return [];    }   // possible, but nothing inferable
+        if (!Array.isArray(I)) { return I; } // I in [0, 1, 2]
         return I.map(([i, a]) => {      // flip infered orders as necessary
             const [x, y] = pairs[i];
             const bi = BI.get(M.encode_order_pair([x, y]));
@@ -47,7 +46,8 @@ export const SOLVER = {    // STATE SOLVER
             for (const type of CON.types) {
                 for (const F of SOLVER.unpack_cons(C, type, f1, f2)) {
                     const I = SOLVER.infer([type, F], BI, BA);
-                    if (I) {
+                    if (I == CON.state.dead) { continue; }
+                    if (Array.isArray(I)) {
                         for (const [j, s] of I) {
                             if (BA[j] == 0) {
                                 B.push(j);
@@ -59,8 +59,7 @@ export const SOLVER = {    // STATE SOLVER
                                 }
                             }
                         }
-                    }
-                    if (!I) {
+                    } else if (I == CON.state.conflict) {
                         for (const j of B) { // reset BA
                             BA[j] = 0;
                         }
@@ -87,7 +86,9 @@ export const SOLVER = {    // STATE SOLVER
                     const [f1, f2] = M.decode(BF[bi_]);
                     for (const type of CON.types) {
                         for (const F of SOLVER.unpack_cons(C, type, f1, f2)) {
-                            const vars = CON.T_2_pairs([type, F]).map(
+                            const I = SOLVER.infer([type, F], BI, BA);
+                            if (I == CON.state.dead) { continue; }
+                            const vars = CON.type_F_2_pairs(type, F).map(
                                 (p) => M.encode_order_pair(p));
                             for (const k__ of vars) {
                                 const bi__ = BI.get(k__);
@@ -109,7 +110,7 @@ export const SOLVER = {    // STATE SOLVER
         return GB;
     },
     unpack_cons: (C, type, f1, f2) => {
-        if (type == CON.transitivity) {
+        if (type == CON.T.transitivity) {
             return M.decode(C[type]).map(f3 => [f1, f2, f3]);
         } else {
             return C[type];
