@@ -4,21 +4,19 @@ import { CON } from "./constraints.js";
 import { X } from "./conversion.js";
 
 export const SOLVER = {    // STATE SOLVER
-    infer: (T, BI, BA) => {
-        // In:   T | constraint of form [type, F]
-        //      BI | map from variable keys to indices
-        //      BA | array of variable assignments
-        // Out:  I | false if BA conflicts with T, else array of pairs [i, a]
-        //         | where a is assignment inferred for variable at index i
-        const [type, F] = T;
+    infer: (type, F, BI, BA) => {
+        // In: type | constraint type
+        //        F | array of constraint face indices
+        //       BI | map from variable keys to indices
+        //       BA | array of variable assignments
+        // Out:   I | false if BA conflicts with T, else array of pairs [i, a]
+        //          | where a is assignment inferred for variable at index i
         const pairs = CON.type_F_2_pairs(type, F);
         const tuple = pairs.map(([x, y]) => {
             const a = BA[BI.get(M.encode_order_pair([x, y]))];
-            if (a == undefined) { debugger; }
             return ((x < y) || (a == 0)) ? a : ((a == 1) ? 2 : 1);
         });
         const I = CON.implied[type].get(tuple.join(""));
-        if (I == undefined) { debugger; }
         if (!Array.isArray(I)) { return I; } // I in [0, 1, 2]
         return I.map(([i, a]) => {      // flip infered orders as necessary
             const [x, y] = pairs[i];
@@ -45,7 +43,7 @@ export const SOLVER = {    // STATE SOLVER
             const C = BT[i];
             for (const type of CON.types) {
                 for (const F of SOLVER.unpack_cons(C, type, f1, f2)) {
-                    const I = SOLVER.infer([type, F], BI, BA);
+                    const I = SOLVER.infer(type, F, BI, BA);
                     if (I == CON.state.dead) { continue; }
                     if (Array.isArray(I)) {
                         for (const [j, s] of I) {
@@ -86,7 +84,7 @@ export const SOLVER = {    // STATE SOLVER
                     const [f1, f2] = M.decode(BF[bi_]);
                     for (const type of CON.types) {
                         for (const F of SOLVER.unpack_cons(C, type, f1, f2)) {
-                            const I = SOLVER.infer([type, F], BI, BA);
+                            const I = SOLVER.infer(type, F, BI, BA);
                             if (I == CON.state.dead) { continue; }
                             const vars = CON.type_F_2_pairs(type, F).map(
                                 (p) => M.encode_order_pair(p));
