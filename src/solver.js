@@ -193,28 +193,48 @@ export const SOLVER = {    // STATE SOLVER
         }
         NOTE.time("Assigning orders based on crease assignment");
         const B0 = [];
-        NOTE.start_check("crease", BA0);
+        const BP = new Map();
+        let level = [];
         for (const [i, a] of BA0.entries()) {
-            NOTE.check(i);
-            const conflict = `  - Conflict assigning variable ${M.decode(BF[i])}`;
             if (a != 0) {
-                if (BA[i] != 0) {
-                    if (BA[i] != a) {
-                        NOTE.log(conflict);
-                        return [];
-                    }
-                } else {
-                    const B = SOLVER.propagate(i, a, BI, BF, BT, BA);
-                    if (B.length == 0) {
-                        NOTE.log(conflict);
-                        return [];
-                    } else {
-                        for (const b of B) {
-                            B0.push(b);
+                level.push([i, a]);
+                BP.set(i, []);
+            }
+        }
+        let [count, depth] = [0, 0];
+        NOTE.start_check("variable", BA);
+        while (level.length > 0) {
+            NOTE.log(`   - ${level.length} orders assigned at depth ${depth}`);
+            for (const [i, a] of level) {
+                B0.push(i);
+                BA[i] = a;
+            }
+            const new_level = [];
+            for (const [i, a] of level) {
+                NOTE.check(count);
+                count += 1;
+                const [f1, f2] = M.decode(BF[i]);
+                const C = BT[i];
+                for (const type of CON.types) {
+                    for (const F of SOLVER.unpack_cons(C, type, f1, f2)) {
+                        const I = SOLVER.infer(type, F, BI, BA);
+                        if (I == CON.state.conflict) {
+                            const E = SOLVER.error_faces(type, F, BF, BI, BA, BP);
+                            return [type, F, E]; // constraint unsatisfiable
+                        }
+                        if (!Array.isArray(I)) {
+                            continue;
+                        }
+                        for (const [i_, a_] of I) {
+                            if (BP.has(i_)) { continue; }
+                            BP.set(i_, [type, F]);
+                            new_level.push([i_, a_]);
                         }
                     }
                 }
             }
+            level = new_level;
+            ++depth;
         }
         NOTE.annotate(B0, "initially assignable variables");
         NOTE.lap();
@@ -234,6 +254,39 @@ export const SOLVER = {    // STATE SOLVER
             GA.push(A);
         }
         return [GB, GA];
+    },
+    error_faces: (type, F, BF, BI, BA, BP) => {
+        const vars = [];
+        for (const pair of CON.type_F_2_pairs(type, F)) {
+            vars.push(BI.get(M.encode_order_pair(pair)));
+        }
+        const seen = new Set();
+        while (vars.length > 0) {
+            const i = vars.pop();
+            seen.add(i);
+            const a = BA[i];
+            if (a != 0) {
+                const par = BP.get(i);
+                if (par.length > 0) {
+                    [type, F] = par;
+                    for (const pair of CON.type_F_2_pairs(type, F)) {
+                        const i_ = BI.get(M.encode_order_pair(pair));
+                        if (!seen.has(i_)) {
+                            vars.push(i_);
+                        }
+                    }
+                }
+            }
+        }
+        const E_set = new Set();
+        for (const i of seen) {
+            for (const f of M.decode(BF[i])) {
+                E_set.add(f);
+            }
+        }
+        const E = Array.from(E_set);
+        E.sort((a, b) => (a < b) ? -1 : 1);
+        return E;
     },
     BF_GB_GA_GI_2_edges: (BF, GB, GA, GI) => {
         const edges = [];

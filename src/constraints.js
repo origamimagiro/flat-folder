@@ -4,6 +4,7 @@ export const CON = {      // CONSTRAINTS
     //      '1' if A is assigned over B
     //      '2' if B is assigned over A
     T: { taco_taco: 0, taco_tortilla: 1, tortilla_tortilla: 2, transitivity: 3 },
+    names: ["taco-taco", "taco-tortilla", "tortilla-tortilla", "transitivity"],
     types: [0, 1, 2, 3],
     pair_maps: [
         ([A,B,C,D]) => [[A,B],[C,D],[C,B],[A,D],[A,C],[B,D]], // 0: taco-taco
