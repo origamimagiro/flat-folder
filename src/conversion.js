@@ -490,7 +490,7 @@ export const X = {     // CONVERSION
             X.add_constraint(cons, BF_map, BT);
             if (cons) {
                 const [type, F] = cons;
-                if (type == CON.taco_tortilla) {
+                if (type == CON.T.taco_tortilla) {
                     T2.push(F);
                 }
             }
@@ -513,7 +513,7 @@ export const X = {     // CONVERSION
             X.add_constraint(cons, BF_map, BT);
             if (cons) {
                 const [type, F] = cons;
-                if (type == CON.taco_tortilla) {
+                if (type == CON.T.taco_tortilla) {
                     T2.push(F);
                 }
             }
@@ -522,7 +522,7 @@ export const X = {     // CONVERSION
         for (let i = 0; i < BT3.length; ++i) { // Convert to sets
             BT3[i] = new Set(M.decode(BT3[i]));
         }
-        NOTE.time(" - implied by taco-taco ");
+        NOTE.time(" - implied by taco-taco");
         NOTE.start_check("variable", BF);
         for (const [i, k] of BF.entries()) {
             NOTE.check(i);
@@ -532,7 +532,7 @@ export const X = {     // CONVERSION
                 }
             }
         }
-        NOTE.time(" - implied by taco-tortilla ");
+        NOTE.time(" - implied by taco-tortilla");
         const FG = new Map();   // partition and construct connectivity graphs
         for (const [A, B, C] of T2) {
             if (!FG.has(C)) { FG.set(C, new Map()); }
