@@ -181,7 +181,23 @@ const MAIN = {
         const BA0 = X.EF_EA_Ff_BF_2_BA0(EF, EA, Ff, BF);
         const val = document.getElementById("limit_select").value;
         const lim = (val == "all") ? Infinity : +val;
-        const [GB, GA] = SOLVER.solve(BF, BT, BA0, lim);
+        const sol = SOLVER.solve(BF, BT, BA0, lim);
+        if (sol.length == 3) { // solve found unsatisfiable constraint
+            const [type, F, E] = sol;
+            const str = `Unable to resolve ${CON.names[type]} on faces [${F}]`;
+            NOTE.log(`   - ${str}`);
+            NOTE.log(`   - Faces participating in conflict: [${E}]`);
+            GUI.update_error(F, E, BF, FC);
+            NOTE.time("Solve completed");
+            NOTE.count(0, "folded states");
+            const num_states = document.getElementById("num_states");
+            num_states.textContent = `(Found 0 states) ${str}`;
+            NOTE.lap();
+            stop = Date.now();
+            NOTE.end();
+            return;
+        } // solve completed
+        const [GB, GA] = sol;
         const n = (GA == undefined) ? 0 : GA.reduce((s, A) => {
             return s*BigInt(A.length);
         }, BigInt(1));

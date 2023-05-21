@@ -25,6 +25,7 @@ export const GUI = {   // INTERFACE
         rand: ["lime", "red", "blue", "green", "aqua", "orange", "pink",
             "purple", "brown", "darkviolet", "teal", "olivedrab", "fuchsia",
             "deepskyblue", "orangered", "maroon", "yellow"],
+        error: ["yellow", "lightskyblue", "lightpink", "lightgreen"],
     },
     update_text: (FOLD, CELL) => {
         SVG.clear("export");
@@ -80,21 +81,12 @@ export const GUI = {   // INTERFACE
         SVG.draw_points(svg, K, {id: "flat_check", fill: "red", r: 10});
         const lines = EV.map(l => M.expand(l, V));
         const colors = EA.map(a => GUI.COLORS.edge[a]);
-        const creases = [];
-        const edges = [];
-        for (const [i, a] of EA.entries()) {
-            if (a == "F") {
-                creases.push(i);
-            } else {
-                edges.push(i);
-            }
-        }
-        SVG.draw_segments(svg, creases.map(i => lines[i]), {
-            id: "flat_e_flat", stroke: creases.map(i => colors[i]),
-            stroke_width: GUI.WIDTH});
-        SVG.draw_segments(svg, edges.map(i => lines[i]), {
-            id: "flat_e_folded", stroke: edges.map(i => colors[i]),
-            stroke_width: GUI.WIDTH});
+        SVG.draw_segments(svg, lines, {
+            id: "flat_e_flat", stroke: colors,
+            stroke_width: GUI.WIDTH, filter: (i) => (EA[i] == "F")});
+        SVG.draw_segments(svg, lines, {
+            id: "flat_e_folded", stroke: colors,
+            stroke_width: GUI.WIDTH, filter: (i) => (EA[i] != "F")});
         SVG.append("g", svg, {id: "flat_text"});
         SVG.append("g", svg, {id: "flat_notes"});
         GUI.update_text(FOLD);
@@ -159,15 +151,13 @@ export const GUI = {   // INTERFACE
         });
         SVG.draw_polygons(svg, cells, {
             id: "fold_c", fill: colors, stroke: colors});
-        const [creases, segments] = [[], []];
-        for (const [i, a] of SD.entries()) {
-            if (a == "C") { creases.push(M.expand(SP[i], Q)); }
-            if (a == "B") { segments.push(M.expand(SP[i], Q)); }
-        }
-        SVG.draw_segments(svg, creases, {
-            id: "fold_s_crease", stroke: GUI.COLORS.edge.F});
-        SVG.draw_segments(svg, segments, {
-            id: "fold_s_edge", stroke: GUI.COLORS.edge.B});
+        const lines = SP.map((ps) => M.expand(ps, Q));
+        SVG.draw_segments(svg, lines, {
+            id: "fold_s_crease", stroke: GUI.COLORS.edge.F,
+            filter: (i) => SD[i] == "C"});
+        SVG.draw_segments(svg, lines, {
+            id: "fold_s_edge", stroke: GUI.COLORS.edge.B,
+            filter: (i) => SD[i] == "B"});
     },
     update_component: (FOLD, CELL, BF, GB, GA, GI) => {
         SVG.clear("export");
@@ -422,6 +412,25 @@ export const GUI = {   // INTERFACE
         for (const a of A) {
             const el = document.getElementById(`${id}${a}`);
             el.setAttribute("fill", GUI.COLORS.active);
+        }
+    },
+    update_error: (F, E, BF, FC) => {
+        for (const i of E) {
+            const f = document.getElementById(`flat_f${i}`);
+            f.setAttribute("opacity", 0.2);
+        }
+        const CFnum = new Map();
+        for (const i of F) {
+            const f = document.getElementById(`flat_f${i}`);
+            f.setAttribute("fill", "red");
+            for (const j of FC[i]) {
+                const val = CFnum.get(j);
+                CFnum.set(j, (val == undefined) ? 0 : val + 1);
+            }
+        }
+        for (const [i, val] of CFnum) {
+            const c = document.getElementById(`cell_c${i}`);
+            c.setAttribute("fill", GUI.COLORS.error[val]);
         }
     },
 };

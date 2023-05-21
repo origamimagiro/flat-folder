@@ -436,7 +436,7 @@ export const X = {     // CONVERSION
     add_constraint: (T, BF_map, BT) => {
         if (T != undefined) {
             const [type, F] = T;
-            const pairs = CON.T_2_pairs(T);
+            const pairs = CON.type_F_2_pairs(type, F);
             for (const p of pairs) {
                 const i = BF_map.get(M.encode_order_pair(p));
                 if (i == undefined) { debugger; }
@@ -470,21 +470,21 @@ export const X = {     // CONVERSION
             const choice = (f1f2 << 2) | (f1f3 << 1) | f1f4;
             switch (choice) {
                 case 0: // 000
-                    cons = [CON.taco_tortilla, [f3, f4, f2]]; break;
+                    cons = [CON.T.taco_tortilla, [f3, f4, f2]]; break;
                 case 1: // 001
-                    cons = [CON.tortilla_tortilla, [f1, f2, f4, f3]]; break;
+                    cons = [CON.T.tortilla_tortilla, [f1, f2, f4, f3]]; break;
                 case 2: // 010
-                    cons = [CON.tortilla_tortilla, [f1, f2, f3, f4]]; break;
+                    cons = [CON.T.tortilla_tortilla, [f1, f2, f3, f4]]; break;
                 case 3: // 011
-                    cons = [CON.taco_tortilla, [f3, f4, f1]]; break;
+                    cons = [CON.T.taco_tortilla, [f3, f4, f1]]; break;
                 case 4: // 100  no overlap
                     break;
                 case 5: // 101
-                    cons = [CON.taco_tortilla, [f1, f2, f4]]; break;
+                    cons = [CON.T.taco_tortilla, [f1, f2, f4]]; break;
                 case 6: // 110
-                    cons = [CON.taco_tortilla, [f1, f2, f3]]; break;
+                    cons = [CON.T.taco_tortilla, [f1, f2, f3]]; break;
                 case 7: // 111
-                    cons = [CON.taco_taco, [f1, f2, f3, f4]]; break;
+                    cons = [CON.T.taco_taco, [f1, f2, f3, f4]]; break;
                 default: break;
             }
             X.add_constraint(cons, BF_map, BT);
@@ -506,9 +506,9 @@ export const X = {     // CONVERSION
             const f1f2 = X.check_overlap([f1, f2], BF_map);
             let cons;
             if (f1f2 == 1) {
-                cons = [CON.taco_tortilla, [f1, f2, f3]];
+                cons = [CON.T.taco_tortilla, [f1, f2, f3]];
             } else {
-                cons = [CON.tortilla_tortilla, [f1, f2, f3, f3]];
+                cons = [CON.T.tortilla_tortilla, [f1, f2, f3, f3]];
             }
             X.add_constraint(cons, BF_map, BT);
             if (cons) {

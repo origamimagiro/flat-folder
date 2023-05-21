@@ -51,6 +51,7 @@ export const SVG = {   // DRAWING
         const g = SVG.append("g", svg);
         if (options.id != undefined) { g.setAttribute("id", options.id); }
         for (const [i, l] of L.entries()) {
+            if (options.filter && !options.filter(i)) { continue; }
             const [[x1, y1], [x2, y2]] = l.map(p => M.mul(p, SVG.SCALE));
             const p = SVG.append("line", g, {x1, x2, y1, y2});
             const color = SVG.get_val(options.stroke, i, "black");
