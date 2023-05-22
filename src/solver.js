@@ -249,7 +249,7 @@ export const SOLVER = {    // STATE SOLVER
             const A = SOLVER.guess_vars(B, BI, BF, BT, BA, lim);
             NOTE.count(A.length, "assignments");
             if (A.length == 0) {
-                return [];
+                return [[], []];
             }
             GA.push(A);
         }

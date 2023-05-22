@@ -189,7 +189,7 @@ export const IO = {    // INPUT-OUTPUT
             EA = ex["edges_assignment"];
         } else {
             NOTE.time("FOLD file does not contain edges_assignments");
-            NOTe.time("   - assuming all unassigned");
+            NOTE.time("   - assuming all unassigned");
             EA = EV.map(() => "U");
         }
         if ("faces_vertices" in ex) {
