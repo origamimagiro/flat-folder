@@ -55,23 +55,23 @@ export const IO = {    // INPUT-OUTPUT
         const opx_lines = Array.from(dom.getElementsByClassName("oripa.OriLineProxy"));
         const lines = [];
         const coords = ["x0", "x1", "y0", "y1"];
-        const map = ["", "F", "M", "V"];
+        const map = ["", "F", "M", "V", "U"];
         for (const opx_line of opx_lines) {
             if (opx_line.nodeName == "object") {
                 const line = new Map();
                 for (const f of coords) {
                     line.set(f, 0);
                 }
-                line.set("type", 1);
                 for (const node of opx_line.children) {
                     const property = node.getAttribute("property");
                     line.set(property, +node.firstElementChild.innerHTML);
                 }
                 const [x0, x1, y0, y1] = coords.map(c => line.get(c));
                 const type = map[line.get("type")];
-                lines.push([[x0, y0], [x1, y1], type]);
+                lines.push([[x0, y0], [x1, y1], (type == undefined) ? 1 : type]);
             }
         }
+        console.log(lines);
         return lines;
     },
     CP_2_L: (doc) => {
