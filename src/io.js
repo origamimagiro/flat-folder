@@ -71,7 +71,6 @@ export const IO = {    // INPUT-OUTPUT
                 lines.push([[x0, y0], [x1, y1], (type == undefined) ? 1 : type]);
             }
         }
-        console.log(lines);
         return lines;
     },
     CP_2_L: (doc) => {
