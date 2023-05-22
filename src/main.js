@@ -198,12 +198,7 @@ const MAIN = {
             return;
         } // solve completed
         const [GB, GA] = sol;
-        for (const [i, B] of GB.entries()) {
-            console.log(`Component ${i}`);
-            console.log(B.map(i => [M.decode(BF[i]), BT[i]]));
-            console.log(GA[i].map(A => M.bit_decode(A, B.length)));
-        }
-        const n = (GA.length == 0) ? 0 : GA.reduce((s, A) => {
+        const n = (GA == undefined) ? 0 : GA.reduce((s, A) => {
             return s*BigInt(A.length);
         }, BigInt(1));
         NOTE.time("Solve completed");
