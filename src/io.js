@@ -68,7 +68,7 @@ export const IO = {    // INPUT-OUTPUT
                 }
                 const [x0, x1, y0, y1] = coords.map(c => line.get(c));
                 const type = map[line.get("type")];
-                lines.push([[x0, y0], [x1, y1], (type == undefined) ? 1 : type]);
+                lines.push([[x0, y0], [x1, y1], (type == undefined) ? "F" : type]);
             }
         }
         return lines;
