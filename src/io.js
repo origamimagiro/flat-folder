@@ -199,7 +199,7 @@ export const IO = {    // INPUT-OUTPUT
         }
         return [V, EV, EA, VV, FV];
     },
-    doc_type_2_V_VV_EV_EA_EF_FV_FE: (doc, type) => {
+    doc_type_2_V_VV_VK_EV_EA_EF_FV_FE_Vf_Ff: (doc, type) => {
         let V, VV, EV, EA, FV;
         if (type == "fold") {
             [V, EV, EA, VV, FV] = IO.FOLD_2_V_EV_EA_VV_FV(doc);
@@ -256,6 +256,9 @@ export const IO = {    // INPUT-OUTPUT
                 EA[i] = "B";
             }
         }
-        return [V, VV, EV, EA, EF, FV, FE];
+        const VK = X.V_VV_EV_EA_2_VK(V, VV, EV, EA);
+        const [Pf, Ff] = X.V_FV_EV_EA_2_Vf_Ff(V, FV, EV, EA);
+        const Vf = M.normalize_points(Pf);
+        return [V, VV, VK, EV, EA, EF, FV, FE, Vf, Ff];
     },
 };

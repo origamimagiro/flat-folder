@@ -316,6 +316,25 @@ export const X = {     // CONVERSION
         });
         return [EF, FE];
     },
+    EV_SP_SE_2_SEmap_ESmap: (EV, SP, SE) => {
+        const SE_map = new Map();
+        for (const [i, E] of SE.entries()) {
+            SE_map.set(M.encode(SP[i]), E);
+        }
+        const ES_map = new Map();
+        for (const [i, E] of SE.entries()) {
+            for (const e of E) {
+                const k = M.encode(EV[e]);
+                const A = ES_map.get(k);
+                if (A == undefined) {
+                    ES_map.set(k, [i]);
+                } else {
+                    A.push(i);
+                }
+            }
+        }
+        return [SE_map, ES_map];
+    },
     EF_FV_SP_SE_CP_SC_2_CF_FC: (EF, FV, SP, SE, CP, SC) => {
         const SF_map = new Map();
         for (const [i, vs] of SP.entries()) {
@@ -565,5 +584,72 @@ export const X = {     // CONVERSION
             }
         }
         return BA0;
+    },
+    BF_GB_GA_GI_2_edges: (BF, GB, GA, GI) => {
+        const edges = [];
+        NOTE.start_check("group", GB);
+        for (const [i, B] of GB.entries()) {
+            NOTE.check(i);
+            const orders = M.bit_decode(GA[i][GI[i]], B.length);
+            for (const [j, F] of B.entries()) {
+                const [f1, f2] = M.decode(BF[F]);
+                const o = orders[j];
+                edges.push(M.encode((o == 1) ? [f1, f2] : [f2, f1]));
+            }
+        }
+        return edges;
+    },
+    edges_Ff_2_FO: (edges, Ff) => {
+        return edges.map((k) => {
+            const [f1, f2] = M.decode(k);
+            return [f1, f2, (Ff[f2] ? 1 : -1)];
+        });
+    },
+    CF_edges_2_CD: (CF, edges) => {
+        const edge_map = new Set(edges);
+        NOTE.start_check("cell", CF);
+        return CF.map((F, i) => {
+            NOTE.check(i);
+            const S = F.map(i => i);
+            S.sort((a, b) => (edge_map.has(M.encode([a, b])) ? 1 : -1));
+            return S;
+        });
+    },
+    EF_SE_SC_CF_CD_2_SD: (EF, SE, SC, CF, CD) => {
+        const FE_map = new Map();
+        for (const [i, F] of EF.entries()) {
+            if (F.length == 2) {
+                const k = M.encode_order_pair(F);
+                if (FE_map.has(k)) {
+                    FE_map.get(k).push(i);
+                } else {
+                    FE_map.set(k, [i]);
+                }
+            }
+        }
+        const SE_map = SE.map(E => new Set(E));
+        NOTE.start_check("segment", SC);
+        return SC.map((C, i) => {
+            NOTE.check(i);
+            if ((C.length == 2) &&
+                (CF[C[0]].length > 0) &&
+                (CF[C[1]].length > 0)
+            ) {
+                const [f1, f2] = C.map(c => CD[c]);
+                if (f1 == f2) {
+                    return "N";
+                }
+                const k = M.encode_order_pair([f1, f2]);
+                const E = FE_map.get(k);
+                if (E != undefined) {
+                    for (const e of E) {
+                        if (SE_map[i].has(e)) {
+                            return "C";
+                        }
+                    }
+                }
+            }
+            return "B";
+        });
     },
 };
