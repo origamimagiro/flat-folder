@@ -209,9 +209,9 @@ const MAIN = {
         if (n > 0) {
             const GI = GB.map(() => 0);
             NOTE.time("Computing state");
-            const edges = SOLVER.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
-            FOLD.FO = SOLVER.edges_Ff_2_FO(edges, Ff);
-            CELL.CD = SOLVER.CF_edges_flip_2_CD(CF, edges);
+            const edges = X.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
+            FOLD.FO = X.edges_Ff_2_FO(edges, Ff);
+            CELL.CD = X.CF_edges_flip_2_CD(CF, edges);
             document.getElementById("state_controls").style.display = "inline"; 
             document.getElementById("flip").onchange = (e) => {
                 NOTE.start("Flipping model");

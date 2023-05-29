@@ -1,6 +1,6 @@
 import { M } from "./math.js";
 import { NOTE } from "./note.js";
-import { SOLVER } from "./solver.js";
+import { X } from "./conversion.js";
 import { SVG } from "./svg.js";
 
 export const GUI = {   // INTERFACE
@@ -140,7 +140,7 @@ export const GUI = {   // INTERFACE
         const svg = SVG.clear("fold");
         const flip = document.getElementById("flip").checked;
         const tops = CD.map(S => flip ? S[0] : S[S.length - 1]);
-        const SD = SOLVER.EF_SE_SC_CF_CD_2_SD(EF, SE, SC, CF, tops);
+        const SD = X.EF_SE_SC_CF_CD_2_SD(EF, SE, SC, CF, tops);
         const m = [0.5, 0.5];
         const Q = P.map(p => (flip ? M.add(M.refX(M.sub(p, m)), m) : p));
         const cells = CP.map(V => M.expand(V, Q));
@@ -189,9 +189,9 @@ export const GUI = {   // INTERFACE
                 if (j > n) { j = n; }
                 state_select.value = j;
                 GI[c] = j - 1;
-                const edges = SOLVER.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
-                FOLD.FO = SOLVER.edges_Ff_2_FO(edges, FOLD.Ff);
-                CELL.CD = SOLVER.CF_edges_flip_2_CD(CELL.CF, edges);
+                const edges = X.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
+                FOLD.FO = X.edges_Ff_2_FO(edges, FOLD.Ff);
+                CELL.CD = X.CF_edges_flip_2_CD(CELL.CF, edges);
                 GUI.update_fold(FOLD, CELL);
                 NOTE.end();
             };
