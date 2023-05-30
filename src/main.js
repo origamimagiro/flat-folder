@@ -106,7 +106,7 @@ const MAIN = {
     },
     compute_cells: (FOLD) => {
         NOTE.start("*** Computing cell graph ***");
-        const {V, Vf, EV, EF, FE, FV, Ff} = FOLD;
+        const {Vf, EV, EF, FV} = FOLD;
         const L = EV.map((P) => M.expand(P, Vf));
         FOLD.eps = M.min_line_length(L) / M.EPS;
         NOTE.time(`Using eps ${FOLD.eps} from min line length ${
@@ -144,8 +144,8 @@ const MAIN = {
         window.setTimeout(MAIN.compute_constraints, 0, FOLD, CELL);
     },
     compute_constraints: (FOLD, CELL) => {
-        const {V, Vf, EV, EA, EF, FV, FE, Ff} = FOLD;
-        const {P, SP, SE, CP, CS, SC, CF, FC} = CELL;
+        const {Vf, EF, FV} = FOLD;
+        const {SE, SC, CF, FC} = CELL;
         NOTE.time("Computing edge-edge overlaps");
         const ExE = X.SE_2_ExE(SE);
         NOTE.count(ExE, "edge-edge adjacencies");
@@ -157,6 +157,8 @@ const MAIN = {
         NOTE.time("Computing variables");
         const BF = X.CF_2_BF(CF);
         NOTE.annotate(BF, "variables_faces");
+        const BF2 = X.V_FV_2_BF(Vf, FV, FOLD.eps);
+        NOTE.annotate(BF2, "variables_faces2");
         NOTE.lap();
         NOTE.time("Computing transitivity constraints");
         const BT3 = X.FC_CF_BF_2_BT3(FC, CF, BF);
@@ -177,8 +179,8 @@ const MAIN = {
         window.setTimeout(MAIN.compute_states, 0, FOLD, CELL, BF, BT);
     },
     compute_states: (FOLD, CELL, BF, BT) => {
-        const {V, Vf, EV, EA, EF, FE, FV, Ff} = FOLD;
-        const {P, SP, SE, CP, CS, SC, CF, FC} = CELL;
+        const {EA, EF, Ff} = FOLD;
+        const {CF, FC} = CELL;
         const BA0 = X.EF_EA_Ff_BF_2_BA0(EF, EA, Ff, BF);
         const val = document.getElementById("limit_select").value;
         const lim = (val == "all") ? Infinity : +val;
