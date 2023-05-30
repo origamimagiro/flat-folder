@@ -76,8 +76,7 @@ const MAIN = {
         NOTE.annotate(EF, "edges_faces");
         NOTE.annotate(FV, "faces_vertices");
         NOTE.annotate(FE, "faces_edges");
-        const [Pf, Ff] = X.V_FV_EV_EA_2_Vf_Ff(V, FV, EV, EA);
-        const Vf = M.normalize_points(Pf);
+        const [Vf, Ff] = X.V_FV_EV_EA_2_Vf_Ff(V, FV, EV, EA);
         NOTE.annotate(Vf, "vertices_coords_folded");
         NOTE.annotate(Ff, "faces_flip");
         NOTE.lap();
@@ -108,11 +107,11 @@ const MAIN = {
         NOTE.start("*** Computing cell graph ***");
         const {V, Vf, EV, EF, FE, FV, Ff} = FOLD;
         const L = EV.map((P) => M.expand(P, Vf));
-        const eps = M.min_line_length(L) / M.EPS;
-        NOTE.time(`Using eps ${eps} from min line length ${
-            eps*M.EPS} (factor ${M.EPS})`);
+        FOLD.eps = M.min_line_length(L) / M.EPS;
+        NOTE.time(`Using eps ${FOLD.eps} from min line length ${
+            FOLD.eps*M.EPS} (factor ${M.EPS})`);
         NOTE.time("Constructing points and segments from edges");
-        const [P, SP, SE] = X.L_2_V_EV_EL(L, eps);
+        const [P, SP, SE] = X.L_2_V_EV_EL(L, FOLD.eps);
         NOTE.annotate(P, "points_coords");
         NOTE.annotate(SP, "segments_points");
         NOTE.annotate(SE, "segments_edges");

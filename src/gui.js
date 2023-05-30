@@ -95,11 +95,12 @@ export const GUI = {   // INTERFACE
         SVG.clear("export");
         const svg = SVG.clear("cell");
         if (CELL == undefined) {
-            const {Vf, FV} = FOLD;
-            const F = FV.map(f => M.expand(f, Vf));
+            const Vf = M.normalize_points(FOLD.Vf);
+            const F = FOLD.FV.map(f => M.expand(f, Vf));
             SVG.draw_polygons(svg, F, {id: "cell_f", opacity: 0.05});
         } else {
-            const {P, SP, SE, CP, SC, CF, FC} = CELL;
+            const {SP, SE, CP, SC, CF, FC} = CELL;
+            const P = M.normalize_points(CELL.P);
             const cells = CP.map(f => M.expand(f, P));
             const lines = SP.map(l => M.expand(l, P));
             const Ccolors = GUI.CF_2_Cbw(CF);
@@ -136,7 +137,8 @@ export const GUI = {   // INTERFACE
     update_fold: (FOLD, CELL) => {
         SVG.clear("export");
         const {EF, Ff} = FOLD;
-        const {P, SP, SE, CP, SC, CF, CD} = CELL;
+        const {SP, SE, CP, SC, CF, CD} = CELL;
+        const P = M.normalize_points(CELL.P);
         const svg = SVG.clear("fold");
         const flip = document.getElementById("flip").checked;
         const tops = CD.map(S => flip ? S[0] : S[S.length - 1]);
