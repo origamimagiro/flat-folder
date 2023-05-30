@@ -77,10 +77,11 @@ const MAIN = {
         NOTE.annotate(FV, "faces_vertices");
         NOTE.annotate(FE, "faces_edges");
         const [Vf, Ff] = X.V_FV_EV_EA_2_Vf_Ff(V, FV, EV, EA);
+        const Vf_norm = M.normalize_points(Vf);
         NOTE.annotate(Vf, "vertices_coords_folded");
         NOTE.annotate(Ff, "faces_flip");
         NOTE.lap();
-        const FOLD = {V, Vf, VK, EV, EA, EF, FV, FE, Ff};
+        const FOLD = {V, Vf, Vf_norm, VK, EV, EA, EF, FV, FE, Ff};
         NOTE.time("Drawing flat");
         GUI.update_flat(FOLD);
         NOTE.time("Drawing cell");
@@ -112,6 +113,7 @@ const MAIN = {
             FOLD.eps*M.EPS} (factor ${M.EPS})`);
         NOTE.time("Constructing points and segments from edges");
         const [P, SP, SE] = X.L_2_V_EV_EL(L, FOLD.eps);
+        const P_norm = M.normalize_points(P);
         NOTE.annotate(P, "points_coords");
         NOTE.annotate(SP, "segments_points");
         NOTE.annotate(SE, "segments_edges");
@@ -129,7 +131,7 @@ const MAIN = {
         const [CF, FC] = X.EF_FV_SP_SE_CP_SC_2_CF_FC(EF, FV, SP, SE, CP, SC);
         NOTE.count(CF, "face-cell adjacencies");
         NOTE.lap();
-        const CELL = {P, SP, SE, CP, CS, SC, CF, FC};
+        const CELL = {P, P_norm, SP, SE, CP, CS, SC, CF, FC};
         NOTE.time("Updating cell");
         GUI.update_cell(FOLD, CELL);
         NOTE.lap();

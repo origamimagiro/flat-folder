@@ -53,15 +53,15 @@ export const GUI = {   // INTERFACE
             SVG.draw_points(flat_text, V, {
                 text: true, id: "v_text", fill: "green"});
             if (CELL != undefined) {
-                const {P, SP, CP} = CELL;
+                const {P_norm, SP, CP} = CELL;
                 const cell_text = document.getElementById("cell_text");
-                const cell_centers = CP.map(f => M.interior_point(M.expand(f, P)));
-                const seg_centers = SP.map(l => M.centroid(M.expand(l, P)));
+                const cell_centers = CP.map(f => M.interior_point(M.expand(f, P_norm)));
+                const seg_centers = SP.map(l => M.centroid(M.expand(l, P_norm)));
                 SVG.draw_points(cell_text, cell_centers, {
                     text: true, id: "c_text"});
                 SVG.draw_points(cell_text, seg_centers, {
                     text: true, id: "s_text"});
-                SVG.draw_points(cell_text, P, {
+                SVG.draw_points(cell_text, P_norm, {
                     text: true, id: "p_text", fill: "green"});
             }
         }
@@ -95,14 +95,12 @@ export const GUI = {   // INTERFACE
         SVG.clear("export");
         const svg = SVG.clear("cell");
         if (CELL == undefined) {
-            const Vf = M.normalize_points(FOLD.Vf);
-            const F = FOLD.FV.map(f => M.expand(f, Vf));
+            const F = FOLD.FV.map(f => M.expand(f, FOLD.Vf_norm));
             SVG.draw_polygons(svg, F, {id: "cell_f", opacity: 0.05});
         } else {
-            const {SP, SE, CP, SC, CF, FC} = CELL;
-            const P = M.normalize_points(CELL.P);
-            const cells = CP.map(f => M.expand(f, P));
-            const lines = SP.map(l => M.expand(l, P));
+            const {P_norm, SP, SE, CP, SC, CF, FC} = CELL;
+            const cells = CP.map(f => M.expand(f, P_norm));
+            const lines = SP.map(l => M.expand(l, P_norm));
             const Ccolors = GUI.CF_2_Cbw(CF);
             SVG.draw_polygons(svg, cells, {fill: Ccolors, id: "cell_c"});
             SVG.draw_segments(svg, lines, {
@@ -137,14 +135,13 @@ export const GUI = {   // INTERFACE
     update_fold: (FOLD, CELL) => {
         SVG.clear("export");
         const {EF, Ff} = FOLD;
-        const {SP, SE, CP, SC, CF, CD} = CELL;
-        const P = M.normalize_points(CELL.P);
+        const {P_norm, SP, SE, CP, SC, CF, CD} = CELL;
         const svg = SVG.clear("fold");
         const flip = document.getElementById("flip").checked;
         const tops = CD.map(S => flip ? S[0] : S[S.length - 1]);
         const SD = X.EF_SE_SC_CF_CD_2_SD(EF, SE, SC, CF, tops);
         const m = [0.5, 0.5];
-        const Q = P.map(p => (flip ? M.add(M.refX(M.sub(p, m)), m) : p));
+        const Q = P_norm.map(p => (flip ? M.add(M.refX(M.sub(p, m)), m) : p));
         const cells = CP.map(V => M.expand(V, Q));
         const colors = tops.map(d => {
             if (d == undefined) { return undefined; }
@@ -198,13 +195,13 @@ export const GUI = {   // INTERFACE
                 NOTE.end();
             };
         }
-        const {Vf, FV} = FOLD;
+        const {Vf_norm, FV} = FOLD;
         const g = SVG.clear("component_notes");
         for (const comp of C) {
             const lines = GB[comp].map(b => {
                 const [f1, f2] = M.decode(BF[b]);
-                const p1 = M.centroid(M.expand(FV[f1], Vf));
-                const p2 = M.centroid(M.expand(FV[f2], Vf));
+                const p1 = M.centroid(M.expand(FV[f1], Vf_norm));
+                const p2 = M.centroid(M.expand(FV[f2], Vf_norm));
                 return [p1, p2];
             });
             const stroke = GUI.COLORS.rand[comp % GUI.COLORS.rand.length];
@@ -214,7 +211,7 @@ export const GUI = {   // INTERFACE
     },
     update_cell_face_listeners: (FOLD, CELL, BF, BT) => {
         const {V, EV, FV, FE} = FOLD;
-        const {P, SP, CP, CS, CF, FC, SE} = CELL;
+        const {P_norm, SP, CP, CS, CF, FC, SE} = CELL;
         const ES_map = new Map();
         for (const [i, E] of SE.entries()) {
             for (const e of E) {
@@ -344,7 +341,7 @@ export const GUI = {   // INTERFACE
                         const k = M.encode_order_pair([v1, v2]);
                         const color = GUI.COLORS.rand[j % GUI.COLORS.rand.length];
                         for (const s of ES_map.get(k)) {
-                            S.push(SP[s].map(p => P[p]));
+                            S.push(SP[s].map(p => P_norm[p]));
                             Scolors.push(color);
                         }
                         Lcolors.push(color);
@@ -386,7 +383,7 @@ export const GUI = {   // INTERFACE
                         Lcolors.push(color);
                     }
                     Scolors.push(color);
-                    return [p1, p2].map(p => P[p]);
+                    return [p1, p2].map(p => P_norm[p]);
                 });
                 SVG.draw_segments(flat_notes, L, {
                     id: "flat_c_bounds", stroke: Lcolors, stroke_width: 5});
