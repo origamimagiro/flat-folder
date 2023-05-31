@@ -157,8 +157,6 @@ const MAIN = {
         NOTE.time("Computing variables");
         const BF = X.CF_2_BF(CF);
         NOTE.annotate(BF, "variables_faces");
-        const BF2 = X.V_FV_2_BF(Vf, FV, FOLD.eps);
-        NOTE.annotate(BF2, "variables_faces2");
         NOTE.lap();
         NOTE.time("Computing transitivity constraints");
         const BT3 = X.FC_CF_BF_2_BT3(FC, CF, BF);
