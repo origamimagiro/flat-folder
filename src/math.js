@@ -101,6 +101,7 @@ export const M = {     // MATH
         for (const p3 of P) {
             const a = M.area2(p1, p2, p3);
             if (a <= 0) {           // reflex vertex cannot be an ear
+                [p1, p2] = [p2, p3];
                 continue;
             }
             let found = true;
