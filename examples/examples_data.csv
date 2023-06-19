@@ -155,6 +155,20 @@ grids,152,Daniel BROWN,4x4 C11,93,173,81,300,680,175,596,0,2736,1488,1,false,1,|
 grids,153,Daniel BROWN,4x4 C12,108,208,101,300,1020,344,808,0,5060,2680,13,false,4096,|1|2|2|2|2|2|2|2|2|2|2|2|2|
 grids,154,Daniel BROWN,4x4 C13,88,176,89,300,772,204,668,0,3364,1140,1,false,1,|1|
 grids,155,Daniel BROWN,4x4 C14,112,212,101,300,988,264,828,0,4580,2088,5,false,81,|1|3|3|3|3|
+grids,156,Daniel BROWN,4x4 C15,80,148,69,300,620,120,572,0,2692,1368,1,false,1,|1|
+grids,157,Daniel BROWN,4x4 C16,92,176,85,300,928,224,836,0,4788,2596,13,false,160000,|1|2|2|2|2|2|2|2|2|5|5|5|5|
+grids,158,Daniel BROWN,4x4 C17,84,168,85,300,932,268,656,0,5708,3492,5,false,1296,|1|6|6|6|6|
+grids,159,Daniel BROWN,4x4 C18,56,116,61,300,432,96,344,0,1496,408,1,false,1,|1|
+grids,160,Daniel BROWN,4x4 C19,80,168,89,300,804,260,576,0,3892,2324,5,false,256,|1|4|4|4|4|
+grids,161,Daniel BROWN,4x4 C20,80,144,65,300,512,76,552,0,1888,728,9,false,256,|1|2|2|2|2|2|2|2|2|
+grids,162,Daniel BROWN,4x4 C21,221,385,165,300,1660,567,1478,0,8076,4564,13,false,160000,|1|2|2|2|2|2|2|2|2|5|5|5|5|
+grids,163,Daniel BROWN,4x4 C22,88,180,93,300,856,332,500,0,4748,2880,9,false,256,|1|2|2|2|2|2|2|2|2|
+grids,164,Daniel BROWN,4x4 C23,88,176,89,300,1008,276,808,0,6200,3424,5,false,16,|1|2|2|2|2|
+grids,165,Daniel BROWN,4x4 C24,64,128,65,300,380,76,324,0,1044,164,1,false,1,|1|
+grids,166,Daniel BROWN,4x4 C25,64,128,65,300,336,56,292,0,792,144,1,false,1,|1|
+grids,167,Daniel BROWN,4x4 C26,128,268,141,300,2744,1000,1852,0,31592,22612,5,false,1296,|1|6|6|6|6|
+grids,168,Daniel BROWN,4x4 C27,196,392,197,300,2440,860,1916,0,19900,14656,1,false,1,|1|
+grids,169,Daniel BROWN,4x4 C28,176,328,153,300,1812,604,1352,0,12356,7400,9,false,1296,|1|3|3|3|3|2|2|2|2|
 instagram,001,Traditional,Sailboat,23,42,20,300,158,42,116,0,724,444,2,false,4,|1|4|
 instagram,002,Traditional,Kabuto,19,36,18,300,117,21,88,0,420,214,3,false,9,|1|3|3|
 instagram,003,Jason KU,Triangle Bird,134,309,176,300,4024,1256,3472,0,50944,40658,4,false,4428,|1|3|3|492|
@@ -467,3 +481,17 @@ instagram,309,Xiao CHEN & Kei MORISUE,Keied Raiden Shogun,513,1108,596,300,46944
 instagram,310,Kota IMAI,Dorcus hopei binodulosus,1305,2840,1536,1000,153638,37071,187069,0,9601048,8630220,14,true,2418647040000,|1|2|2|3|3|18|18|18|18|2|2|4|4|10000|
 instagram,311,Jason KU,HJ Dragon,172,433,262,300,12579,2014,15410,384,330840,283592,8,false,6912,|1|2|2|2|2|3|3|48|
 instagram,312,Satoshi KAMIYA,Kzinssie Type 2,230,499,270,300,13925,3882,13982,0,426087,379401,1,false,1,|1|
+instagram,313,Hyung Kyu MAENG,Shrimp,683,1408,726,300,64967,26398,61296,0,3534194,3216103,2,false,2,|1|2|
+instagram,314,Minh Than,Butterfly,436,890,455,300,8006,1959,8665,0,75320,48591,14,false,331776,|1|2|2|3|3|2|2|2|2|2|2|2|2|36|
+instagram,315,Kei MORISUE,Marnie (Pokemon),48,93,46,300,455,39,556,0,2412,1282,1,false,1,|1|
+instagram,316,Akitaya et al. Box Pleating is Hard,Unassigned Clause,12,18,7,300,21,2,23,0,35,8,2,false,6,|1|6|
+instagram,317,Akitaya et al. Box Pleating is Hard,Unassigned Crossover,16,24,9,300,36,12,36,0,84,16,2,false,8,|1|8|
+instagram,318,Akitaya et al. Box Pleating is Hard,Unassigned Split,11,17,7,300,21,2,25,0,35,0,2,false,4,|1|4|
+instagram,319,Akitaya et al. Box Pleating is Hard,Unassigned Solvable,3435,5665,2231,300,14286,4398,17345,0,35402,5226,2,false,2,|1|2|
+instagram,319,Kota IMAI,Vinegaroon v2,762,1683,922,300,118005,40261,120926,0,9192186,8578622,9,false,1048576,|1|2|2|2|2|16|16|16|16|
+instagram,320,Satoshi KAMIYA,Unicorn,157,360,204,300,8354,2446,7944,0,202076,180930,3,false,9,|1|3|3|
+instagram,321,Hyung Kyu MAENG,Dicranocephalus wallichii,432,878,447,300,25743,10913,24433,0,861287,765438,2,false,2,|1|2|
+instagram,322,Kei MORISUE,Cerberus (Helltaker),511,1092,582,300,52795,11571,66318,0,3171336,2861486,11,false,4181760,|1|2|2|2|2|11|11|2|180|3|2|
+instagram,323,Brian CHAN,M.O.D.O.K.,252,542,291,300,7258,1864,7891,0,94144,69018,3,false,16,|1|4|4|
+instagram,324,Jacob Stebleton,Hammersley's See Saw,144,280,137,300,1144,260,1232,0,4640,1716,1,false,1,|1|
+instagram,325,Bern & Hayes The Complexity of Flat Origami,Unassigned 45˚ Crossover,16,24,9,300,32,0,42,0,60,11,2,false,4,|1|4|
