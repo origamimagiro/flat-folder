@@ -163,6 +163,12 @@ or [Twitter](https://twitter.com/_flatfolder_).
 
 ## Algorithm
 
+I gave a talk on the Flat-Folder algorithm at [Meiji University](http://cmma.mims.meiji.ac.jp/events/jointresearch_seminars/index_2022.html#001)
+in December 2022.
+
+- A one-page abstract can be found on page 5 of [this PDF](http://cmma.mims.meiji.ac.jp/pdf/abstract_20221216-17.pdf).
+- A 25-min recording of the talk is available [here](https://www.youtube.com/watch?v=mPcDwP6pctc&t=1s).
+
 Existing software like [ORIPA](https://github.com/oripa/oripa) and
 [Orihime/Oriedita](https://github.com/oriedita/oriedita) find flat-foldable states by:
 
