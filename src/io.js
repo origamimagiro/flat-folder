@@ -130,17 +130,26 @@ export const IO = {    // INPUT-OUTPUT
             if (sty == undefined) { continue; }
             const a = IO.SVGstyle_2_A(sty);
             const P = svg_poly.getAttribute("points").split(" ");
-            let v1;
-            for (const p of P) {
-                if (p == "") { continue; }
-                const coords = p.split(",");
-                console.assert(coords.length == 2);
-                if (v1 == undefined) {
-                    v1 = coords.map(c => +c);
-                } else {
-                    const v2 = coords.map(c => +c);
-                    lines.push([v1, v2, a]);
-                    v1 = v2;
+            if (P[0].split(",").length == 2) {
+                let v1;
+                for (const p of P) {
+                    if (p == "") { continue; }
+                    const coords = p.split(",");
+                    if (v1 == undefined) {
+                        v1 = coords.map(c => +c);
+                    } else {
+                        const v2 = coords.map(c => +c);
+                        lines.push([v1, v2, a]);
+                        v1 = v2;
+                    }
+                }
+            } else if (P.length % 2 == 0) {
+                const Q = [];
+                for (let i = 0; i < P.length; i += 2) {
+                    Q.push([+P[i], P[i + 1]]);
+                }
+                for (let i = 1; i < Q.length; ++i) {
+                    lines.push([Q[i - 1], Q[i], a]);
                 }
             }
         }
