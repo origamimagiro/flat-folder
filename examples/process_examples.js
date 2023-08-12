@@ -14,7 +14,7 @@ const main = () => {
     NOTE.start();
     CON.build();
     const fold_files = [];
-    const datasets = 1 ? ["grids", "instagram"] : ["process"];
+    const datasets = 0 ? ["grids", "instagram"] : ["process"];
     for (const dataset of datasets) {
         const path = `./${dataset}/`;
         const files = fs.readdirSync(path);
