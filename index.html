@@ -10,21 +10,29 @@
         <span style="font-family:sans-serif">
             <b>Flat-Folder&nbsp;&nbsp;</b>
         </span>
-        <input type="button" id="side" value="+" style="width: 25px;"/>
+        <input type="button" id="side" value="+" style="width:25px;"/>
         <input type="file" id="import"/>
         <input type="button" id="export_button" value="Export" style="display:none">
         <div id="export" style="display:inline"></div>
     </div>
-    <div id="fold_controls" style="display:none">
+    <div id="flat_controls" style="display:none">
+        <span style="display:inline-block;width:100px">Crease Pattern</span>
         <input type="button" id="fold_button" value="Fold">
         <label for="limit_select">Limit</label>
         <select id="limit_select"></select>
+        <label for="flip_flat">Flip</label>
+        <input type="checkbox" id="flip_flat">
         <label for="text">Text</label>
         <input type="checkbox" id="text">
         <span id="num_states"></span>
-        <div id="state_controls">
-            <label for="flip">Flip</label>
-            <input type="checkbox" id="flip">
+    </div>
+    <div id="fold_controls" style="display:none">
+        <span style="display:inline-block;width:100px">Folded State</span>
+        <div id="state_controls" style="display:inline">
+            <label for="flip_fold">Flip</label>
+            <input type="checkbox" id="flip_fold">
+            <label for="visible">Visible</label>
+            <input type="checkbox" id="visible">
             <label for="component_select">Component</label>
             <select id="component_select"></select>
         </div>
