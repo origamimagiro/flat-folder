@@ -82,20 +82,27 @@ const MAIN = {
         NOTE.annotate(Ff, "faces_flip");
         NOTE.lap();
         const FOLD = {V, Vf, Vf_norm, VK, EV, EA, EF, FV, FE, Ff};
+        for (const input of ["text", "flip_flat", "flip_fold", "visible"]) {
+            document.getElementById(input).checked = false;
+        }
         NOTE.time("Drawing flat");
         GUI.update_flat(FOLD);
         NOTE.time("Drawing cell");
         GUI.update_cell(FOLD);
         SVG.clear("fold");
         document.getElementById("num_states").innerHTML = "";
-        document.getElementById("fold_controls").style.display = "inline";
-        document.getElementById("state_controls").style.display = "none";
-        document.getElementById("state_config").style.display = "none";
+        document.getElementById("flat_controls").style.display = "inline";
+        document.getElementById("fold_controls").style.display = "none";
         document.getElementById("export_button").style.display = "inline";
         document.getElementById("export_button").onclick = () => IO.write(FOLD);
         document.getElementById("text").onchange = () => {
             NOTE.start("Toggling Text");
             GUI.update_text(FOLD);
+            NOTE.end();
+        };
+        document.getElementById("flip_flat").onchange = () => {
+            NOTE.start("Flipping crease pattern");
+            GUI.update_flat(FOLD);
             NOTE.end();
         };
         document.getElementById("fold_button").onclick = () => {
@@ -213,12 +220,25 @@ const MAIN = {
             const edges = X.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
             FOLD.FO = X.edges_Ff_2_FO(edges, Ff);
             CELL.CD = X.CF_edges_flip_2_CD(CF, edges);
-            document.getElementById("state_controls").style.display = "inline"; 
-            document.getElementById("flip").onchange = (e) => {
+            document.getElementById("fold_controls").style.display = "block"; 
+            document.getElementById("flip_flat").onchange = () => {
+                NOTE.start("Flipping crease pattern");
+                GUI.update_flat(FOLD);
+                GUI.update_visible(FOLD, CELL);
+                GUI.update_cell(FOLD, CELL);
+                GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
+                NOTE.end();
+            };
+            document.getElementById("flip_fold").onchange = () => {
                 NOTE.start("Flipping model");
                 GUI.update_fold(FOLD, CELL);
                 NOTE.end();
             };
+            document.getElementById("visible").onchange = () => {
+                NOTE.start("Toggling visible faces");
+                GUI.update_visible(FOLD, CELL);
+                NOTE.end();
+            }
             const comp_select = SVG.clear("component_select");
             for (const opt of ["none", "all"]) {
                 const el = document.createElement("option");
