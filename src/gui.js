@@ -13,13 +13,13 @@ export const GUI = {   // INTERFACE
         TF: ["lightgreen", "lightpink", "lightorange", "lightskyblue"],
         edge: {
             U: "#000",
-            F: "#BBB",
+            F: "#CCC",
             M: "blue",  // crease pattern is
             V: "red",   // rendered white-side up
             B: "#000",
         },
         face: {
-            top: "#888",
+            top: "#AAA",
             bottom: "#FFF",
             visible: "#000",
         },
