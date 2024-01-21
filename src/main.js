@@ -85,6 +85,7 @@ const MAIN = {
         for (const input of ["text", "flip_flat", "flip_fold", "visible"]) {
             document.getElementById(input).checked = false;
         }
+        document.getElementById("shadow").value = 0;
         NOTE.time("Drawing flat");
         GUI.update_flat(FOLD);
         NOTE.time("Drawing cell");
@@ -220,7 +221,7 @@ const MAIN = {
             const edges = X.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
             FOLD.FO = X.edges_Ff_2_FO(edges, Ff);
             CELL.CD = X.CF_edges_flip_2_CD(CF, edges);
-            document.getElementById("fold_controls").style.display = "block"; 
+            document.getElementById("fold_controls").style.display = "block";
             document.getElementById("flip_flat").onchange = () => {
                 NOTE.start("Flipping crease pattern");
                 GUI.update_flat(FOLD);
@@ -231,6 +232,11 @@ const MAIN = {
             };
             document.getElementById("flip_fold").onchange = () => {
                 NOTE.start("Flipping model");
+                GUI.update_fold(FOLD, CELL);
+                NOTE.end();
+            };
+            document.getElementById("shadow").onchange = () => {
+                NOTE.start("Toggling shadows");
                 GUI.update_fold(FOLD, CELL);
                 NOTE.end();
             };

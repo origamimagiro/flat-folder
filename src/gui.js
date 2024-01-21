@@ -177,25 +177,29 @@ export const GUI = {   // INTERFACE
     },
     update_fold: (FOLD, CELL) => {
         SVG.clear("export");
-        const {EF, Ff, V, Vf_norm, FV} = FOLD;
-        const {P_norm, SP, SE, CP, SC, CF, CD} = CELL;
+        const {Ff, EF} = FOLD;
+        const {P_norm, CP, CD} = CELL;
         const svg = SVG.clear("fold");
         const flip = document.getElementById("flip_fold").checked;
         const tops = CD.map(S => flip ? S[0] : S[S.length - 1]);
-        const SD = X.EF_SE_SC_CF_CD_2_SD(EF, SE, SC, CF, tops);
         const m = [0.5, 0.5];
         const Q = P_norm.map(p => (flip ? M.add(M.refX(M.sub(p, m)), m) : p));
-        const cells = CP.map(V => M.expand(V, Q));
-        const colors = tops.map(d => {
+        const [UP, UF, SP, SD] = X.tops_CP_EF_Ff_P_2_UP_UF_SP_SD(tops, CP, EF, Ff, Q);
+        const cells = UP.map(V => M.expand(V, Q));
+        const colors = UF.map(d => {
             if (d == undefined) { return undefined; }
             if (Ff[d] != flip)  { return GUI.COLORS.face.top; }
             else                { return GUI.COLORS.face.bottom; }
         });
         const G = {};
-        for (const id of ["c", "s_crease", "s_edge", "notes", "comps"]) {
+        for (const id of ["c", "shadow", "s_crease", "s_edge", "notes", "comps"]) {
             G[id] = SVG.append("g", svg, {id: `fold_${id}`});
         }
         SVG.draw_polygons(G.c, cells, {fill: colors, stroke: colors});
+        const n = +document.getElementById("shadow").value;
+        if (n > 0) {
+            SVG.draw_shadows(G.shadow, cells, EF, Ff, CD, UP, UF, Q, flip, {n});
+        }
         const lines = SP.map((ps) => M.expand(ps, Q));
         SVG.draw_segments(G.s_crease, lines, {
             stroke: GUI.COLORS.edge.F, filter: (i) => SD[i] == "C"});

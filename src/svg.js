@@ -92,4 +92,82 @@ export const SVG = {   // DRAWING
             }
         }
     },
+    draw_shadows: (svg, F, EF, Ff, CD, UP, UF, P, flip, options) => {
+        const FN = Ff.map(() => []);
+        for (let i = 0; i < EF.length; ++i) {
+            if (EF[i].length != 2) { continue; }
+            const [fi, fj] = EF[i];
+            if (Ff[fi] == Ff[fj]) {
+                FN[fi].push(fj);
+                FN[fj].push(fi);
+            }
+        }
+        const FH = FN.map(() => undefined);
+        let hn = 0;
+        for (let start = 0; start < FN.length; ++start) {
+            if (FH[start] != undefined) { continue; }
+            const Q = [start];
+            FH[start] = hn;
+            let i = 0;
+            while (i < Q.length) {
+                const fi = Q[i]; ++i;
+                for (const fj of FN[fi]) {
+                    if (FH[fj] != undefined) { continue; }
+                    FH[fj] = hn;
+                    Q.push(fj);
+                }
+            }
+            ++hn;
+        }
+        const above = new Set();
+        for (const D of CD) {
+            for (let i = 0; i < D.length; ++i) {
+                for (let j = i + 1; j < D.length; ++j) {
+                    above.add(`${FH[D[i]]},${FH[D[j]]}`);
+                }
+            }
+        }
+        const EF_map = new Map();
+        for (const [i, U] of UP.entries()) {
+            for (const [j, v1] of U.entries()) {
+                const v2 = U[(j + 1) % U.length];
+                EF_map.set(M.encode([v2, v1]), i);
+            }
+        }
+        for (const [i, ps] of F.entries()) {
+            const F = ps.map(p => M.mul(p, SVG.SCALE));
+            const V = F.map(v => v.join(",")).join(" ");
+            const clip = SVG.append("clipPath", svg, {id: `clip_c${i}`});
+            const el = SVG.append("polygon", clip, {points: V});
+            const g = SVG.append("g", svg, {"clip-path": `url(#clip_c${i})`});
+            const n = 4*SVG.get_val(options.n, i, 2);
+            const G = Array(n).fill(0).map(() => SVG.append("g", g));
+            const color = (Ff[UF[i]] != flip) ? 0xAA : 0xFF;
+            const shift = 3;
+            const C = Array(n).fill(0).map((a, i) => {
+                const c = (Math.max(color - (i + 1)*shift, 0)).toString(16);
+                return `#${c}${c}${c}`;
+            });
+            const base = 2;
+            const off = 1;
+            const W = Array(n).fill(0).map((a, i) => base + 2*(n - i)*off);
+            const Q = UP[i];
+            for (let pi = 0; pi < Q.length; ++pi) {
+                const pj = (pi + 1) % Q.length;
+                const j = EF_map.get(M.encode([Q[pi], Q[pj]]));
+                if (j == undefined) { continue; }
+                const [hi, hj] = [i, j].map(a => FH[UF[a]]);
+                const k = flip ? `${hj},${hi}` : `${hi},${hj}`;
+                if (!above.has(k)) { continue; }
+                const [[x1, y1], [x2, y2]] = [pi, pj].map(
+                    p => M.mul(P[Q[p]], SVG.SCALE));
+                for (let i = 0; i < G.length; ++i) {
+                    const e = SVG.append("line", G[i], {
+                        x1, y1, x2, y2, stroke: C[i],
+                        "stroke-width": W[i], "stroke-linecap": "round",
+                    });
+                }
+            }
+        }
+    },
 };
