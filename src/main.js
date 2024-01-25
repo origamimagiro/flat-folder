@@ -103,25 +103,31 @@ const MAIN = {
         GUI.update_cell(FOLD);
         SVG.clear("fold");
         document.getElementById("num_states").innerHTML = "";
-        document.getElementById("flat_controls").style.display = "inline";
-        document.getElementById("fold_controls").style.display = "none";
-        document.getElementById("export_button").style.display = "inline";
+        for (const [id, style] of [
+            ["flat_controls", "block"], ["fold_controls", "none"],
+            ["cell_controls", "block"], ["state_controls", "none"],
+            ["export_button", "inline"],
+        ]) {
+            document.getElementById(id).style.display = style;
+        }
         document.getElementById("export_button").onclick = () => IO.write(FOLD);
         document.getElementById("text").onchange = () => {
             NOTE.start("Toggling Text");
             GUI.update_text(FOLD);
             NOTE.end();
         };
-        document.getElementById("flip_flat").onchange = () => {
-            NOTE.start("Flipping crease pattern");
-            GUI.update_flat(FOLD);
-            NOTE.end();
-        };
-        document.getElementById("rotate_flat").onchange = () => {
-            NOTE.start("Rotating crease pattern");
-            GUI.update_flat(FOLD);
-            NOTE.end();
-        };
+        for (const [id, log] of [["flip", "Flipping"], ["rotate", "Rotating"]]) {
+            document.getElementById(`${id}_flat`).onchange = () => {
+                NOTE.start(`${log} crease pattern`);
+                GUI.update_flat(FOLD);
+                NOTE.end();
+            };
+            document.getElementById(`${id}_fold`).onchange = () => {
+                NOTE.start(`${log} model`);
+                GUI.update_cell(FOLD);
+                NOTE.end();
+            };
+        }
         document.getElementById("fold_button").onclick = () => {
             MAIN.compute_cells(FOLD);
         };
@@ -213,6 +219,10 @@ const MAIN = {
             NOTE.log(`   - ${str}`);
             NOTE.log(`   - Faces participating in conflict: [${E}]`);
             GUI.update_error(F, E, BF, FC);
+            document.getElementById("fold_button").onclick = undefined;
+            for (const id of ["flip_flat", "rotate_flat", "flip_fold", "rotate_fold"]) {
+                document.getElementById(id).onchange = undefined;
+            }
             NOTE.time("Solve completed");
             NOTE.count(0, "folded states");
             const num_states = document.getElementById("num_states");
@@ -237,37 +247,25 @@ const MAIN = {
             const edges = X.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
             FOLD.FO = X.edges_Ff_2_FO(edges, Ff);
             CELL.CD = X.CF_edges_flip_2_CD(CF, edges);
-            document.getElementById("fold_controls").style.display = "block";
-            document.getElementById("flip_flat").onchange = () => {
-                NOTE.start("Flipping crease pattern");
-                GUI.update_flat(FOLD);
-                GUI.update_visible(FOLD, CELL);
-                GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
-                NOTE.end();
-            };
-            document.getElementById("rotate_flat").onchange = () => {
-                NOTE.start("Rotating crease pattern");
-                GUI.update_flat(FOLD);
-                GUI.update_visible(FOLD, CELL);
-                GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
-                NOTE.end();
-            };
-            document.getElementById("rotate_fold").onchange = () => {
-                NOTE.start("Rotating model");
-                GUI.update_fold(FOLD, CELL);
-                GUI.update_cell(FOLD, CELL);
-                GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
-                GUI.update_component(FOLD, CELL, BF, GB, GA, GI);
-                NOTE.end();
-            };
-            document.getElementById("flip_fold").onchange = () => {
-                NOTE.start("Flipping model");
-                GUI.update_fold(FOLD, CELL);
-                GUI.update_cell(FOLD, CELL);
-                GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
-                GUI.update_component(FOLD, CELL, BF, GB, GA, GI);
-                NOTE.end();
-            };
+            document.getElementById("fold_controls").style.display = "inline";
+            document.getElementById("state_controls").style.display = "block";
+            for (const [id, log] of [["flip", "Flipping"], ["rotate", "Rotating"]]) {
+                document.getElementById(`${id}_flat`).onchange = () => {
+                    NOTE.start(`${log} crease pattern`);
+                    GUI.update_flat(FOLD);
+                    GUI.update_visible(FOLD, CELL);
+                    GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
+                    NOTE.end();
+                };
+                document.getElementById(`${id}_fold`).onchange = () => {
+                    NOTE.start(`${log} folded state`);
+                    GUI.update_fold(FOLD, CELL);
+                    GUI.update_cell(FOLD, CELL);
+                    GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
+                    GUI.update_component(FOLD, CELL, BF, GB, GA, GI);
+                    NOTE.end();
+                };
+            }
             document.getElementById("shadow").onchange = () => {
                 NOTE.start("Toggling shadows");
                 GUI.update_fold(FOLD, CELL);

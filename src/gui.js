@@ -140,7 +140,8 @@ export const GUI = {   // INTERFACE
             G[id] = SVG.append("g", svg, {id: `cell_${id}`});
         }
         if (CELL == undefined) {
-            const F = FOLD.FV.map(f => M.expand(f, FOLD.Vf_norm));
+            const P = GUI.transform_points(FOLD.Vf_norm, "fold");
+            const F = FOLD.FV.map(f => M.expand(f, P));
             SVG.draw_polygons(G.f, F, {opacity: 0.05});
         } else {
             const {P_norm, SP, SE, CP, SC, CF, FC} = CELL;

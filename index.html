@@ -27,13 +27,13 @@
         <select id="limit_select"></select>
         <input type="button" id="fold_button" value="Fold">
     </div>
-    <div id="fold_controls" style="display:none">
-        <div>
-            <span style="display:inline-block;width:110px">Folded View</span>
-            <label for="rotate_fold">Rotate</label>
-            <select id="rotate_fold"></select>
-            <label for="flip_fold">Flip</label>
-            <input type="checkbox" id="flip_fold">
+    <div id="cell_controls" style="display:none">
+        <span style="display:inline-block;width:110px">Folded View</span>
+        <label for="rotate_fold">Rotate</label>
+        <select id="rotate_fold"></select>
+        <label for="flip_fold">Flip</label>
+        <input type="checkbox" id="flip_fold">
+        <div id="fold_controls" style="display:none">
             <label for="scale">Scale</label>
             <input type="checkbox" id="scale">
             <label for="shadow">Shadows</label>
@@ -41,14 +41,14 @@
             <label for="visible">Visible</label>
             <input type="checkbox" id="visible">
         </div>
-        <div>
-            <span style="display:inline-block;width:110px">Folded State</span>
-            <label for="component_select">Component</label>
-            <select id="component_select"></select>
-            <div id="state_config" style="display:none">
-                <label for="state_select" id="state_label"></label>
-                <input id="state_select" type="number">
-            </div>
+    </div>
+    <div id="state_controls" style="display:none">
+        <span style="display:inline-block;width:110px">Folded State</span>
+        <label for="component_select">Component</label>
+        <select id="component_select"></select>
+        <div id="state_config" style="display:none">
+            <label for="state_select" id="state_label"></label>
+            <input id="state_select" type="number">
         </div>
     </div>
     <div><span id="num_states"></span></div>
