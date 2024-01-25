@@ -247,6 +247,11 @@ const MAIN = {
             };
             document.getElementById("scale").onchange = () => {
                 NOTE.start("Toggling scale faces");
+                if (document.getElementById("scale").checked) {
+                    const [p_min, p_max] = M.bounding_box(CELL.P);
+                    const d = M.sub(p_max, p_min);
+                    NOTE.log(`Scaled to [width, height] = [${d[0]},${d[1]}]`);
+                }
                 GUI.update_fold(FOLD, CELL);
                 NOTE.end();
             };
