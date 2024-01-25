@@ -43,6 +43,15 @@ const MAIN = {
             el.textContent = val;
             limit_select.appendChild(el);
         }
+        for (const id of ["flat", "fold"]) {
+            const rotate_select = SVG.clear(`rotate_${id}`);
+            for (const val of [0, 90, 180, 270]) {
+                const el = document.createElement("option");
+                el.setAttribute("value", val);
+                el.textContent = val;
+                rotate_select.appendChild(el);
+            }
+        }
         document.getElementById("import").onchange = (e) => {
             if (e.target.files.length > 0) {
                 const file_reader = new FileReader();
@@ -85,7 +94,9 @@ const MAIN = {
         for (const input of ["text", "flip_flat", "flip_fold", "visible", "scale"]) {
             document.getElementById(input).checked = false;
         }
-        document.getElementById("shadow").value = 0;
+        for (const id of ["rotate_flat", "rotate_fold", "shadow"]) {
+            document.getElementById(id).value = 0;
+        }
         NOTE.time("Drawing flat");
         GUI.update_flat(FOLD);
         NOTE.time("Drawing cell");
@@ -103,6 +114,11 @@ const MAIN = {
         };
         document.getElementById("flip_flat").onchange = () => {
             NOTE.start("Flipping crease pattern");
+            GUI.update_flat(FOLD);
+            NOTE.end();
+        };
+        document.getElementById("rotate_flat").onchange = () => {
+            NOTE.start("Rotating crease pattern");
             GUI.update_flat(FOLD);
             NOTE.end();
         };
@@ -226,13 +242,30 @@ const MAIN = {
                 NOTE.start("Flipping crease pattern");
                 GUI.update_flat(FOLD);
                 GUI.update_visible(FOLD, CELL);
+                GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
+                NOTE.end();
+            };
+            document.getElementById("rotate_flat").onchange = () => {
+                NOTE.start("Rotating crease pattern");
+                GUI.update_flat(FOLD);
+                GUI.update_visible(FOLD, CELL);
+                GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
+                NOTE.end();
+            };
+            document.getElementById("rotate_fold").onchange = () => {
+                NOTE.start("Rotating model");
+                GUI.update_fold(FOLD, CELL);
                 GUI.update_cell(FOLD, CELL);
                 GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
+                GUI.update_component(FOLD, CELL, BF, GB, GA, GI);
                 NOTE.end();
             };
             document.getElementById("flip_fold").onchange = () => {
                 NOTE.start("Flipping model");
                 GUI.update_fold(FOLD, CELL);
+                GUI.update_cell(FOLD, CELL);
+                GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
+                GUI.update_component(FOLD, CELL, BF, GB, GA, GI);
                 NOTE.end();
             };
             document.getElementById("shadow").onchange = () => {

@@ -39,6 +39,7 @@ export const M = {     // MATH
         const ang = Math.atan2(y, x);
         return ang + ((ang < 0) ? 2*Math.PI : 0);
     },
+    rotate_cos_sin: ([x, y], c, s) => [x*c - y*s, x*s + y*c],
     centroid: (P) => {
         const n = P.length;
         let p = [0, 0];
