@@ -212,8 +212,9 @@ export const GUI = {   // INTERFACE
     update_component: (FOLD, CELL, BF, GB, GA, GI) => {
         SVG.clear("export");
         const comp_select = document.getElementById("component_select");
+        const state_config = document.getElementById("state_config");
+        state_config.style.display = "none";
         const c = comp_select.value;
-        document.getElementById("state_config").style.display = "none";
         comp_select.style.background = "white";
         const C = [];
         if (c == "none") {
@@ -225,7 +226,7 @@ export const GUI = {   // INTERFACE
             C.push(c);
             const n = GA[c].length;
             comp_select.style.background = GUI.COLORS.rand[c % GUI.COLORS.rand.length];
-            document.getElementById("state_config").style.display = "inline";
+            state_config.style.display = "inline";
             const state_label = document.getElementById("state_label");
             const state_select = document.getElementById("state_select");
             state_label.innerHTML = `${n} State${(n == 1) ? "" : "s"}`;
