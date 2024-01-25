@@ -178,12 +178,14 @@ export const GUI = {   // INTERFACE
     update_fold: (FOLD, CELL) => {
         SVG.clear("export");
         const {Ff, EF} = FOLD;
-        const {P_norm, CP, CD} = CELL;
+        const {P, P_norm, CP, CD} = CELL;
         const svg = SVG.clear("fold");
+        const scale = document.getElementById("scale").checked;
         const flip = document.getElementById("flip_fold").checked;
-        const tops = CD.map(S => flip ? S[0] : S[S.length - 1]);
         const m = [0.5, 0.5];
-        const Q = P_norm.map(p => (flip ? M.add(M.refX(M.sub(p, m)), m) : p));
+        const Q = (scale ? M.center_points_on(P, m) : P_norm)
+            .map(p => (flip ? M.add(M.refX(M.sub(p, m)), m) : p));
+        const tops = CD.map(S => flip ? S[0] : S[S.length - 1]);
         const [UP, UF, SP, SD] = X.tops_CP_EF_Ff_P_2_UP_UF_SP_SD(tops, CP, EF, Ff, Q);
         const cells = UP.map(V => M.expand(V, Q));
         const colors = UF.map(d => {

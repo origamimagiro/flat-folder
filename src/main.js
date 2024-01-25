@@ -82,7 +82,7 @@ const MAIN = {
         NOTE.annotate(Ff, "faces_flip");
         NOTE.lap();
         const FOLD = {V, Vf, Vf_norm, VK, EV, EA, EF, FV, FE, Ff};
-        for (const input of ["text", "flip_flat", "flip_fold", "visible"]) {
+        for (const input of ["text", "flip_flat", "flip_fold", "visible", "scale"]) {
             document.getElementById(input).checked = false;
         }
         document.getElementById("shadow").value = 0;
@@ -244,7 +244,12 @@ const MAIN = {
                 NOTE.start("Toggling visible faces");
                 GUI.update_visible(FOLD, CELL);
                 NOTE.end();
-            }
+            };
+            document.getElementById("scale").onchange = () => {
+                NOTE.start("Toggling scale faces");
+                GUI.update_fold(FOLD, CELL);
+                NOTE.end();
+            };
             const comp_select = SVG.clear("component_select");
             for (const opt of ["none", "all"]) {
                 const el = document.createElement("option");

@@ -99,7 +99,7 @@ export const M = {     // MATH
             return M.add(M.add(dx, dy), F_[i1]);
         });
     },
-    normalize_points: (P) => {
+    bounding_box: (P) => {
         let [x_min, x_max] = [Infinity, -Infinity];
         let [y_min, y_max] = [Infinity, -Infinity];
         for (const [x, y] of P) {
@@ -108,12 +108,20 @@ export const M = {     // MATH
             if (y < y_min) { y_min = y; }
             if (y > y_max) { y_max = y; }
         }
-        const x_diff = x_max - x_min;
-        const y_diff = y_max - y_min;
+        return [[x_min, y_min], [x_max, y_max]];
+    },
+    center_points_on: (P, c) => {
+        const [p_min, p_max] = M.bounding_box(P);
+        const off = M.sub(c, M.div(M.add(p_max, p_min), 2));
+        return P.map(p => M.add(p, off));
+    },
+    normalize_points: (P) => {
+        const [p_min, p_max] = M.bounding_box(P);
+        const [x_diff, y_diff] = M.sub(p_max, p_min);
         const is_tall = (x_diff < y_diff);
         const diff = is_tall ? y_diff : x_diff;
         const off = M.sub([0.5, 0.5], M.div([x_diff, y_diff], 2*diff));
-        return P.map(p => M.add(M.div(M.sub(p, [x_min, y_min]), diff), off));
+        return P.map(p => M.add(M.div(M.sub(p, p_min), diff), off));
     },
     interior_point: (P_) => {    // currently O(n^2), could be O(n log n)
         // In:  P | array of 2D points that define a simple polygon with the
