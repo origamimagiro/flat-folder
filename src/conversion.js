@@ -634,16 +634,16 @@ export const X = {     // CONVERSION
         });
     },
     tops_CP_EF_Ff_P_2_UP_UF_SP_SD: (tops, CP, EF, Ff, P) => {
-        const Fs = Ff.map(() => []);
+        const FC = Ff.map(() => []);
         for (let ci = 0; ci < tops.length; ++ci) {
             const fi = tops[ci];
             if (fi == undefined) { continue; }
-            Fs[fi].push(ci);
+            FC[fi].push(ci);
         }
         const UP = [];
         const UF = [];
-        for (let fi = 0; fi < Fs.length; ++fi) {
-            const C = Fs[fi];
+        for (let fi = 0; fi < FC.length; ++fi) {
+            const C = FC[fi];
             if (C.length == 0) { continue; }
             const Adj = P.map(() => new Set());
             for (const ci of C) {
@@ -666,17 +666,16 @@ export const X = {     // CONVERSION
             for (const start of Q) {
                 if (Adj[start].size == 0) { continue; }
                 const out = [];
-                let v = start;
+                let u = start;
                 do {
-                    out.push(v);
-                    let vvv;
-                    for (const vv of Adj[v]) {
-                        vvv = vv;
+                    out.push(u);
+                    let v;
+                    for (v of Adj[u]) {
                         break;
                     }
-                    Adj[v].delete(vvv);
-                    v = vvv;
-                } while (v != start);
+                    Adj[u].delete(v);
+                    u = v;
+                } while (u != start);
                 UP.push(out);
                 UF.push(fi);
             }
