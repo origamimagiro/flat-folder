@@ -80,7 +80,7 @@ export const GUI = {   // INTERFACE
         }
         const flip = document.getElementById("flip_flat").checked;
         SVG.draw_polygons(G.f, F, {id: true, fill: (
-            flip ? GUI.COLORS.face.top : GUI.COLORS.face.bottom)});
+            GUI.COLORS.face[flip ? "top" : "bottom"])});
         const K = [];
         const eps = 1/M.EPS;
         for (const [i, k] of VK.entries()) {
@@ -191,8 +191,7 @@ export const GUI = {   // INTERFACE
         const cells = UP.map(V => M.expand(V, P_));
         const colors = UF.map(d => {
             if (d == undefined) { return undefined; }
-            if (Ff[d] != flip)  { return GUI.COLORS.face.top; }
-            else                { return GUI.COLORS.face.bottom; }
+            return GUI.COLORS.face[(Ff[d] != flip) ? "top" : "bottom"];
         });
         const G = {};
         for (const id of ["c", "shadow", "s_crease", "s_edge", "notes", "comps"]) {
@@ -468,10 +467,7 @@ export const GUI = {   // INTERFACE
         const flip = document.getElementById("flip_flat").checked;
         for (const [i, C] of FC.entries()) {
             const f = document.getElementById(`flat_f${i}`);
-            f.setAttribute("fill", (flip
-                ? GUI.COLORS.face.top
-                : GUI.COLORS.face.bottom
-            ));
+            f.setAttribute("fill", GUI.COLORS.face[(flip ? "top" : "bottom")]);
         }
         const Ccolors = GUI.CF_2_Cbw(CF);
         for (const [i, F] of CF.entries()) {
