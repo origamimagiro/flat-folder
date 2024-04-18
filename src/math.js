@@ -5,7 +5,7 @@ export const M = {     // MATH
     encode: (A) => {
         const B = [];
         for (const a of A) {
-            B.push(String.fromCodePoint(a));
+            B.push(String.fromCodePoint(a + 57344));
         }
         return B.join("");
     },
@@ -13,7 +13,7 @@ export const M = {     // MATH
     decode: (S) => {
         const B = [];
         for (const s of S) {
-            B.push(s.codePointAt(0));
+            B.push(s.codePointAt() - 57344);
         }
         return B;
     },
