@@ -5,15 +5,25 @@ export const M = {     // MATH
     encode: (A) => {
         const B = [];
         for (const a of A) {
-            B.push(String.fromCodePoint(a + 57344));
+            if (a >= 0x8000) {
+                B.push(String.fromCharCode(0x8000 + (a >> 16)));
+                B.push(String.fromCharCode(a & 0xFFFF));
+            } else {
+                B.push(String.fromCharCode(a));
+            }
         }
         return B.join("");
     },
     encode_order_pair: ([a, b]) => M.encode((a < b) ? [a, b] : [b, a]),
     decode: (S) => {
         const B = [];
-        for (const s of S) {
-            B.push(s.codePointAt() - 57344);
+        for (let i = 0; i < S.length; i++) {
+            let a = S.charCodeAt(i);
+            if (a >= 0x8000) {
+                i++;
+                a = (a - 0x8000) << 16 + S.charCodeAt(i);
+            }
+            B.push(a);
         }
         return B;
     },
