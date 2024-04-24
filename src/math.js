@@ -3,25 +3,33 @@ export const M = {     // MATH
     FLOAT_EPS: 10**(-16),
     near_zero: (a) => Math.abs(a) < M.FLOAT_EPS,
     encode: (A) => {
+        // Encodes an iterator of non-negative integers up to 2^31 as a string
+        // integers < 2^15 are encoded as a single 16-bit UTF16 code unit
+        // larger integers are encoded as two 16-bit UTF16 code units:
+        // 1: the top 15 bits of the 31-bit integer + the highest bit
+        // 2: the bottom 16 bits of the 31-bit integer
         const B = [];
         for (const a of A) {
-            if (a >= 0x8000) {
+            if (a >= 0x8000) {         // 2^15
+                if (a >= 0x80000000) { // 2^31
+                    throw new Exception(`Number ${a} too large for encoding`);
+                }
                 B.push(String.fromCharCode(0x8000 + (a >> 16)));
-                B.push(String.fromCharCode(a & 0xFFFF));
-            } else {
-                B.push(String.fromCharCode(a));
             }
+            B.push(String.fromCharCode(a));
         }
         return B.join("");
     },
     encode_order_pair: ([a, b]) => M.encode((a < b) ? [a, b] : [b, a]),
     decode: (S) => {
+        // Decodes a (possibly not welformed) string of UTF16 code points into
+        // an array of integers, as encoded in the encoding method above
         const B = [];
         for (let i = 0; i < S.length; i++) {
             let a = S.charCodeAt(i);
-            if (a >= 0x8000) {
+            if (a >= 0x8000) {  // 2^15
                 i++;
-                a = (a - 0x8000) << 16 + S.charCodeAt(i);
+                a = ((a - 0x8000) << 16) + S.charCodeAt(i);
             }
             B.push(a);
         }
