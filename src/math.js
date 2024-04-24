@@ -12,7 +12,7 @@ export const M = {     // MATH
         for (const a of A) {
             if (a >= 0x8000) {         // 2^15
                 if (a >= 0x80000000) { // 2^31
-                    throw new Exception(`Number ${a} too large for encoding`);
+                    throw new RangeError("Integers must be < 2^31 for encoding");
                 }
                 B.push(String.fromCharCode(0x8000 + (a >> 16)));
             }
