@@ -34,15 +34,15 @@ export const IO = {    // INPUT-OUTPUT
             type: "text/plain"});
         const ex = SVG.clear("export");
         for (const [type, ext] of [
-            ["cp", "fold"], 
-            ["state", "fold"], 
-            ["img", "svg"], 
+            ["cp", "fold"],
+            ["state", "fold"],
+            ["img", "svg"],
             ["log", "txt"]
         ]) {
             const link = document.createElement("a");
             const button = document.createElement("input");
-            ex.appendChild(link); 
-            link.appendChild(button); 
+            ex.appendChild(link);
+            link.appendChild(button);
             link.setAttribute("download", `${name}_${type}.${ext}`);
             link.setAttribute("href", window.URL.createObjectURL(data[type]));
             button.setAttribute("type", "button");
@@ -55,27 +55,26 @@ export const IO = {    // INPUT-OUTPUT
         const opx_lines = Array.from(dom.getElementsByClassName("oripa.OriLineProxy"));
         const lines = [];
         const coords = ["x0", "x1", "y0", "y1"];
-        const map = ["", "F", "M", "V"];
+        const map = ["", "F", "M", "V", "U"];
         for (const opx_line of opx_lines) {
             if (opx_line.nodeName == "object") {
                 const line = new Map();
                 for (const f of coords) {
                     line.set(f, 0);
                 }
-                line.set("type", 1);
                 for (const node of opx_line.children) {
                     const property = node.getAttribute("property");
                     line.set(property, +node.firstElementChild.innerHTML);
                 }
                 const [x0, x1, y0, y1] = coords.map(c => line.get(c));
                 const type = map[line.get("type")];
-                lines.push([[x0, y0], [x1, y1], type]);
+                lines.push([[x0, y0], [x1, y1], (type == undefined) ? "F" : type]);
             }
         }
         return lines;
     },
     CP_2_L: (doc) => {
-        const map = ["", "U", "M", "V", "F"];
+        const map = ["", "B", "M", "V", "F"];
         const L = doc.split("\n").map(line => {
             line = line.trim();
             const [a, x1, y1, x2, y2] = line.split(" ").map(t => t.trim());
@@ -102,6 +101,8 @@ export const IO = {    // INPUT-OUTPUT
                         a = "V";
                     } else if (val == "gray" || val == "#808080") {
                         a = "F";
+                    } else if (val == "black" || val == "#000000") {
+                        a = "B";
                     }
                     break;
                 }
@@ -129,17 +130,26 @@ export const IO = {    // INPUT-OUTPUT
             if (sty == undefined) { continue; }
             const a = IO.SVGstyle_2_A(sty);
             const P = svg_poly.getAttribute("points").split(" ");
-            let v1;
-            for (const p of P) {
-                if (p == "") { continue; }
-                const coords = p.split(",");
-                console.assert(coords.length == 2);
-                if (v1 == undefined) {
-                    v1 = coords.map(c => +c);
-                } else {
-                    const v2 = coords.map(c => +c);
-                    lines.push([v1, v2, a]);
-                    v1 = v2;
+            if (P[0].split(",").length == 2) {
+                let v1;
+                for (const p of P) {
+                    if (p == "") { continue; }
+                    const coords = p.split(",");
+                    if (v1 == undefined) {
+                        v1 = coords.map(c => +c);
+                    } else {
+                        const v2 = coords.map(c => +c);
+                        lines.push([v1, v2, a]);
+                        v1 = v2;
+                    }
+                }
+            } else if (P.length % 2 == 0) {
+                const Q = [];
+                for (let i = 0; i < P.length; i += 2) {
+                    Q.push([+P[i], P[i + 1]]);
+                }
+                for (let i = 1; i < Q.length; ++i) {
+                    lines.push([Q[i - 1], Q[i], a]);
                 }
             }
         }
@@ -174,34 +184,34 @@ export const IO = {    // INPUT-OUTPUT
         let V, EV, EA, VV, FV;
         const ex = JSON.parse(doc);
         if ("vertices_coords" in ex) {
-            V = ex["vertices_coords"]; 
+            V = ex["vertices_coords"];
         } else {
             NOTE.time("FOLD file does not contain vertices_coords");
             return [];
         }
         if ("edges_vertices" in ex) {
             EV = ex["edges_vertices"].map(
-                ([v1, v2]) => (v1 < v2) ? [v1, v2] : [v2, v1]); 
+                ([v1, v2]) => (v1 < v2) ? [v1, v2] : [v2, v1]);
         } else {
             NOTE.time("FOLD file does not contain edges_vertices");
             return [];
         }
         if ("edges_assignment" in ex) {
-            EA = ex["edges_assignment"]; 
+            EA = ex["edges_assignment"];
         } else {
             NOTE.time("FOLD file does not contain edges_assignments");
-            NOTe.time("   - assuming all unassigned");
+            NOTE.time("   - assuming all unassigned");
             EA = EV.map(() => "U");
         }
         if ("faces_vertices" in ex) {
-            FV = ex["faces_vertices"]; 
+            FV = ex["faces_vertices"];
             M.sort_faces(FV, V);
             VV = await X.V_FV_2_VV(V, FV);
         }
         return [V, EV, EA, VV, FV];
     },
     doc_type_2_V_VV_EV_EA_EF_FV_FE: async (doc, type) => {
-        let V, VV, EV, EA, FV;
+        let V, VV, EV, EA, FV, EF, FE;
         if (type == "fold") {
             [V, EV, EA, VV, FV] = await IO.FOLD_2_V_EV_EA_VV_FV(doc);
             if (V == undefined) { return []; }
@@ -221,7 +231,7 @@ export const IO = {    // INPUT-OUTPUT
             NOTE.time(`Using eps ${eps} from min line length ${eps*M.EPS}`);
             NOTE.time("Constructing FOLD from lines");
             [V, EV, EL] = await X.L_2_V_EV_EL(L, eps);
-            EA = EL.map(l => L[l[0]][2]); 
+            EA = EL.map(l => L[l[0]][2]);
         }
         V = M.normalize_points(V);
         const flip_EA = (EA) => {
@@ -251,7 +261,11 @@ export const IO = {    // INPUT-OUTPUT
                 V = flip_Y(V);
             }
         }
-        const [EF, FE] = await X.EV_FV_2_EF_FE(EV, FV);
+        [EF, FE] = await X.EV_FV_2_EF_FE(EV, FV);     // remove holes
+        FV = FV.filter((F, i) => !FE[i].every(e => (EA[e] == "B")));
+        if (FV.length != FE.length) {           // recompute face maps
+            [EF, FE] = await X.EV_FV_2_EF_FE(EV, FV);
+        }
         for (const [i, F] of EF.entries()) {    // boundary edge assignment
             if (F.length == 1) {
                 EA[i] = "B";

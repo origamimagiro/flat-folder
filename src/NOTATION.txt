@@ -27,8 +27,8 @@ For brevity, Flat-Folder abbreviates such names in the following way:
 
 object_property -> XY
 
-where X and Y are some capital letter abbreviation for the names "object" and 
-"property" respectively. 
+where X and Y are some capital letter abbreviation for the names "object" and
+"property" respectively.
 
 Here is a list of the abbreviations used in Flat-Folder:
 
@@ -59,7 +59,7 @@ T | constraints - 4 types of constraints
     T0 |        - taco-taco
     T1 |        - taco-tortilla
     T2 |        - tortilla-tortilla
-    T3 |        - transitivity 
+    T3 |        - transitivity
 
 Solver
 
@@ -152,4 +152,3 @@ EF_FV_SP_SE_CP_SC_2_CF_FC
 BF_EF_ExE_ExF_BT3_2_BT0_BT1_BT2
          FC_CF_BF_2_BT3
       EF_EA_Ff_BF_2_BA0
-                T_2_pairs

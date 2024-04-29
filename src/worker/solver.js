@@ -3,23 +3,20 @@ import { CON } from "./constraints.js";
 import { NOTE } from "./note.js";
 
 export const SOLVER = {    // STATE SOLVER
-    infer: (T, BI, BA) => {
-        // In:   T | constraint of form [type, F]
-        //      BI | map from variable keys to indices
-        //      BA | array of variable assignments
-        // Out:  I | false if BA conflicts with T, else array of pairs [i, a]
-        //         | where a is assignment inferred for variable at index i
-        const [type,] = T;
-        const pairs = CON.T_2_pairs(T);
+    infer: (type, F, BI, BA) => {
+        // In: type | constraint type
+        //        F | array of constraint face indices
+        //       BI | map from variable keys to indices
+        //       BA | array of variable assignments
+        // Out:   I | false if BA conflicts with T, else array of pairs [i, a]
+        //          | where a is assignment inferred for variable at index i
+        const pairs = CON.type_F_2_pairs(type, F);
         const tuple = pairs.map(([x, y]) => {
             const a = BA[BI.get(M.encode_order_pair([x, y]))];
-            if (a == undefined) { debugger; }
             return ((x < y) || (a == 0)) ? a : ((a == 1) ? 2 : 1);
         });
         const I = CON.implied[type].get(tuple.join(""));
-        if (I == undefined) { debugger; }
-        if (I == 0) { return false; }   // assignment not possible
-        if (I == 1) { return [];    }   // possible, but nothing inferable
+        if (!Array.isArray(I)) { return I; } // I in [0, 1, 2]
         return I.map(([i, a]) => {      // flip infered orders as necessary
             const [x, y] = pairs[i];
             const bi = BI.get(M.encode_order_pair([x, y]));
@@ -45,8 +42,9 @@ export const SOLVER = {    // STATE SOLVER
             const C = BT[i];
             for (const type of CON.types) {
                 for (const F of SOLVER.unpack_cons(C, type, f1, f2)) {
-                    const I = SOLVER.infer([type, F], BI, BA);
-                    if (I) {
+                    const I = SOLVER.infer(type, F, BI, BA);
+                    if (I == CON.state.dead) { continue; }
+                    if (Array.isArray(I)) {
                         for (const [j, s] of I) {
                             if (BA[j] == 0) {
                                 B.push(j);
@@ -55,11 +53,10 @@ export const SOLVER = {    // STATE SOLVER
                                 if (BA[j] != s) {
                                     I = false;
                                     break;
-                                } 
+                                }
                             }
                         }
-                    }
-                    if (!I) {
+                    } else if (I == CON.state.conflict) {
                         for (const j of B) { // reset BA
                             BA[j] = 0;
                         }
@@ -86,7 +83,9 @@ export const SOLVER = {    // STATE SOLVER
                     const [f1, f2] = M.decode(BF[bi_]);
                     for (const type of CON.types) {
                         for (const F of SOLVER.unpack_cons(C, type, f1, f2)) {
-                            const vars = CON.T_2_pairs([type, F]).map(
+                            const I = SOLVER.infer(type, F, BI, BA);
+                            if (I == CON.state.dead) { continue; }
+                            const vars = CON.type_F_2_pairs(type, F).map(
                                 (p) => M.encode_order_pair(p));
                             for (const k__ of vars) {
                                 const bi__ = BI.get(k__);
@@ -108,7 +107,7 @@ export const SOLVER = {    // STATE SOLVER
         return GB;
     },
     unpack_cons: (C, type, f1, f2) => {
-        if (type == CON.transitivity) {
+        if (type == CON.T.transitivity) {
             return M.decode(C[type]).map(f3 => [f1, f2, f3]);
         } else {
             return C[type];
@@ -119,15 +118,15 @@ export const SOLVER = {    // STATE SOLVER
         const A = [];
         const sol = G.map(() => 0);
         let idx = 0;
-        let backtracking = false;  
-        NOTE.start_check("state"); // at start of loop, idx is an index of G     
+        let backtracking = false;
+        NOTE.start_check("state"); // at start of loop, idx is an index of G
         while (true) {             // if backtracking, idx after the last guess
-            NOTE.check(A.length);  //            else, idx to guess next        
+            NOTE.check(A.length);  //            else, idx to guess next
             for (let i = 0; i < idx; ++i) { if (BA[G[i]] == 0) { debugger; } }
             if (backtracking) {
                 if (guesses.length == 0) {
                     break;
-                } 
+                }
                 const guess = guesses.pop();
                 const a = BA[guess[0]];
                 while (G[idx] != guess[0]) {
@@ -176,13 +175,13 @@ export const SOLVER = {    // STATE SOLVER
         return A;
     },
     solve: (BF, BT, BA0, lim) => {
-        // In:   BF | array for each variable: key 
+        // In:   BF | array for each variable: key
         //       BT | array for each variable: constraints
         //      BA0 | array for each variable: known assignment
         //      lim | upper limit on # solutions to return per group
-        // Out:  GB | array for each independent group: 
+        // Out:  GB | array for each independent group:
         //          |   array of variables in group
-        //       GA | array for each independent group: 
+        //       GA | array for each independent group:
         //          |   array of valid assignments:  (max length lim)
         //          |     array for each variable in group: an assignment
         //          | returns [] if no solutions found
@@ -193,28 +192,48 @@ export const SOLVER = {    // STATE SOLVER
         }
         NOTE.time("Assigning orders based on crease assignment");
         const B0 = [];
-        NOTE.start_check("crease", BA0);
+        const BP = new Map();
+        let level = [];
         for (const [i, a] of BA0.entries()) {
-            NOTE.check(i);
-            const conflict = `  - Conflict assigning variable ${M.decode(BF[i])}`;
             if (a != 0) {
-                if (BA[i] != 0) {
-                    if (BA[i] != a) {
-                        NOTE.log(conflict);
-                        return [];
-                    }
-                } else {
-                    const B = SOLVER.propagate(i, a, BI, BF, BT, BA);
-                    if (B.length == 0) {
-                        NOTE.log(conflict);
-                        return [];
-                    } else {
-                        for (const b of B) {
-                            B0.push(b); 
+                level.push([i, a]);
+                BP.set(i, []);
+            }
+        }
+        let [count, depth] = [0, 0];
+        NOTE.start_check("variable", BA);
+        while (level.length > 0) {
+            NOTE.log(`   - ${level.length} orders assigned at depth ${depth}`);
+            for (const [i, a] of level) {
+                B0.push(i);
+                BA[i] = a;
+            }
+            const new_level = [];
+            for (const [i, a] of level) {
+                NOTE.check(count);
+                count += 1;
+                const [f1, f2] = M.decode(BF[i]);
+                const C = BT[i];
+                for (const type of CON.types) {
+                    for (const F of SOLVER.unpack_cons(C, type, f1, f2)) {
+                        const I = SOLVER.infer(type, F, BI, BA);
+                        if (I == CON.state.conflict) {
+                            const E = SOLVER.error_faces(type, F, BF, BI, BA, BP);
+                            return [type, F, E]; // constraint unsatisfiable
+                        }
+                        if (!Array.isArray(I)) {
+                            continue;
+                        }
+                        for (const [i_, a_] of I) {
+                            if (BP.has(i_)) { continue; }
+                            BP.set(i_, [type, F]);
+                            new_level.push([i_, a_]);
                         }
                     }
                 }
             }
+            level = new_level;
+            ++depth;
         }
         NOTE.annotate(B0, "initially assignable variables");
         NOTE.lap();
@@ -229,13 +248,46 @@ export const SOLVER = {    // STATE SOLVER
             const A = SOLVER.guess_vars(B, BI, BF, BT, BA, lim);
             NOTE.count(A.length, "assignments");
             if (A.length == 0) {
-                return [];
+                return [GB, undefined];
             }
             GA.push(A);
         }
         return [GB, GA];
     },
-    BF_GB_GA_GI_2_edges: (BF, GB, GA, GI) => {
+    error_faces: (type, F, BF, BI, BA, BP) => {
+        const vars = [];
+        for (const pair of CON.type_F_2_pairs(type, F)) {
+            vars.push(BI.get(M.encode_order_pair(pair)));
+        }
+        const seen = new Set();
+        while (vars.length > 0) {
+            const i = vars.pop();
+            seen.add(i);
+            const a = BA[i];
+            if (a != 0) {
+                const par = BP.get(i);
+                if (par.length > 0) {
+                    [type, F] = par;
+                    for (const pair of CON.type_F_2_pairs(type, F)) {
+                        const i_ = BI.get(M.encode_order_pair(pair));
+                        if (!seen.has(i_)) {
+                            vars.push(i_);
+                        }
+                    }
+                }
+            }
+        }
+        const E_set = new Set();
+        for (const i of seen) {
+            for (const f of M.decode(BF[i])) {
+                E_set.add(f);
+            }
+        }
+        const E = Array.from(E_set);
+        E.sort((a, b) => (a < b) ? -1 : 1);
+        return E;
+    },
+	BF_GB_GA_GI_2_edges: (BF, GB, GA, GI) => {
         const edges = [];
         NOTE.start_check("group", GB);
         for (const [i, B] of GB.entries()) {
@@ -301,5 +353,86 @@ export const SOLVER = {    // STATE SOLVER
             }
             return "B";
         });
+    },
+    tops_CP_EF_Ff_P_2_UP_UF_SP_SD: (tops, CP, EF, Ff, P) => {
+        const FC = Ff.map(() => []);
+        for (let ci = 0; ci < tops.length; ++ci) {
+            const fi = tops[ci];
+            if (fi == undefined) { continue; }
+            FC[fi].push(ci);
+        }
+        const UP = [];
+        const UF = [];
+        for (let fi = 0; fi < FC.length; ++fi) {
+            const C = FC[fi];
+            if (C.length == 0) { continue; }
+            const Adj = P.map(() => new Set());
+            for (const ci of C) {
+                const P_ = CP[ci];
+                let pi = P_[P_.length - 1];
+                for (const pj of P_) {
+                    const A = Adj[pj];
+                    if (A.has(pi)) {
+                        A.delete(pi);
+                    } else {
+                        Adj[pi].add(pj);
+                    }
+                    pi = pj;
+                }
+            }
+            const Q = [];
+            for (let i = 0; i < Adj.length; ++i) {
+                if (Adj[i].size > 0) { Q.push(i); }
+            }
+            for (const start of Q) {
+                if (Adj[start].size == 0) { continue; }
+                const out = [];
+                let u = start;
+                do {
+                    out.push(u);
+                    let v;
+                    for (v of Adj[u]) {
+                        break;
+                    }
+                    Adj[u].delete(v);
+                    u = v;
+                } while (u != start);
+                UP.push(out);
+                UF.push(fi);
+            }
+        }
+        const PU = new Map();
+        for (let ui = 0; ui < UP.length; ++ui) {
+            const P = UP[ui];
+            let pi = P[P.length - 1];
+            for (const pj of P) {
+                PU.set(`${pi},${pj}`, ui);
+                pi = pj;
+            }
+        }
+        const SP = [];
+        const SD = [];
+        const check = new Set();
+        for (const F of EF) {
+            if (F.length != 2) { continue; }
+            const [i, j] = F;
+            if (Ff[i] == Ff[j]) {
+                check.add(M.encode_order_pair([i, j]));
+            }
+        }
+        for (const [k, ui] of PU) {
+            const [pi, pj] = k.split(",").map(c => +c);
+            const k2 = `${pj},${pi}`;
+            const uj = PU.get(k2);
+            if (uj == undefined) {
+                SP.push([pi, pj]);
+                SD.push("B");
+            } else if (pi < pj) {
+                SP.push([pi, pj]);
+                const key = M.encode_order_pair([UF[ui], UF[uj]]);
+                SD.push(check.has(key) ? "C" : "B");
+            }
+        }
+        return [UP, UF, SP, SD];
     },
 };

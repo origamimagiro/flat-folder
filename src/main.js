@@ -15,8 +15,8 @@ const MAIN = {
         const [b, s] = [50, SVG.SCALE];
         const main = document.getElementById("main");
         for (const [k, v] of Object.entries({
-            xmlns: SVG.NS, 
-            style: `background: ${GUI.COLORS.background}`, 
+            xmlns: SVG.NS,
+            style: `background: ${GUI.COLORS.background}`,
             viewBox: [0, 0, 3*s, s].join(" "),
         })) {
             main.setAttribute(k, v);
@@ -40,6 +40,15 @@ const MAIN = {
             el.setAttribute("value", val);
             el.textContent = val;
             limit_select.appendChild(el);
+        }
+        for (const id of ["flat", "fold"]) {
+            const rotate_select = SVG.clear(`rotate_${id}`);
+            for (const val of [0, 90, 180, 270]) {
+                const el = document.createElement("option");
+                el.setAttribute("value", val);
+                el.textContent = val;
+                rotate_select.appendChild(el);
+            }
         }
         document.getElementById("import").onchange = (e) => {
             if (e.target.files.length > 0) {
@@ -73,28 +82,49 @@ const MAIN = {
         NOTE.annotate(EF, "edges_faces");
         NOTE.annotate(FV, "faces_vertices");
         NOTE.annotate(FE, "faces_edges");
-        const [Pf, Ff] = await X.V_FV_EV_EA_2_Vf_Ff(V, FV, EV, EA);
-        const Vf = M.normalize_points(Pf);
+        const [Vf, Ff] = await X.V_FV_EV_EA_2_Vf_Ff(V, FV, EV, EA);
+        const Vf_norm = M.normalize_points(Vf);
         NOTE.annotate(Vf, "vertices_coords_folded");
         NOTE.annotate(Ff, "faces_flip");
         NOTE.lap();
-        const FOLD = {V, Vf, VK, EV, EA, EF, FV, FE, Ff};
+        const FOLD = {V, Vf, Vf_norm, VK, EV, EA, EF, FV, FE, Ff};
+        for (const input of ["text", "flip_flat", "flip_fold", "visible", "scale"]) {
+            document.getElementById(input).checked = false;
+        }
+        for (const id of ["rotate_flat", "rotate_fold", "shadow"]) {
+            document.getElementById(id).value = 0;
+        }
         NOTE.time("Drawing flat");
         GUI.update_flat(FOLD);
         NOTE.time("Drawing cell");
         GUI.update_cell(FOLD);
         SVG.clear("fold");
         document.getElementById("num_states").innerHTML = "";
-        document.getElementById("fold_controls").style.display = "inline";
-        document.getElementById("state_controls").style.display = "none";
-        document.getElementById("state_config").style.display = "none";
-        document.getElementById("export_button").style.display = "inline";
+        for (const [id, style] of [
+            ["flat_controls", "block"], ["fold_controls", "none"],
+            ["cell_controls", "block"], ["state_controls", "none"],
+            ["export_button", "inline"],
+        ]) {
+            document.getElementById(id).style.display = style;
+        }
         document.getElementById("export_button").onclick = () => IO.write(FOLD);
         document.getElementById("text").onchange = () => {
             NOTE.start("Toggling Text");
             GUI.update_text(FOLD);
             NOTE.end();
         };
+        for (const [id, log] of [["flip", "Flipping"], ["rotate", "Rotating"]]) {
+            document.getElementById(`${id}_flat`).onchange = () => {
+                NOTE.start(`${log} crease pattern`);
+                GUI.update_flat(FOLD);
+                NOTE.end();
+            };
+            document.getElementById(`${id}_fold`).onchange = () => {
+                NOTE.start(`${log} model`);
+                GUI.update_cell(FOLD);
+                NOTE.end();
+            };
+        }
         document.getElementById("fold_button").onclick = async () => {
             try {
                 MAIN.toggle_controls(false);
@@ -122,11 +152,12 @@ const MAIN = {
         NOTE.start("*** Computing cell graph ***");
         const {Vf, EV, EA, EF, FV, Ff} = FOLD;
         const L = EV.map((P) => M.expand(P, Vf));
-        const eps = M.min_line_length(L) / M.EPS;
-        NOTE.time(`Using eps ${eps} from min line length ${
-            eps*M.EPS} (factor ${M.EPS})`);
+        FOLD.eps = M.min_line_length(L) / M.EPS;
+        NOTE.time(`Using eps ${FOLD.eps} from min line length ${
+            FOLD.eps*M.EPS} (factor ${M.EPS})`);
         NOTE.time("Constructing points and segments from edges");
-        const [P, SP, SE] = await X.L_2_V_EV_EL(L, eps);
+        const [P, SP, SE] = await X.L_2_V_EV_EL(L, FOLD.eps);
+        const P_norm = M.normalize_points(P);
         NOTE.annotate(P, "points_coords");
         NOTE.annotate(SP, "segments_points");
         NOTE.annotate(SE, "segments_edges");
@@ -144,7 +175,7 @@ const MAIN = {
         const [CF, FC] = await X.EF_FV_SP_SE_CP_SC_2_CF_FC(EF, FV, SP, SE, CP, SC);
         NOTE.count(CF, "face-cell adjacencies");
         NOTE.lap();
-        const CELL = {P, SP, SE, CP, CS, SC, CF, FC};
+        const CELL = {P, P_norm, SP, SE, CP, CS, SC, CF, FC};
         NOTE.time("Updating cell");
         GUI.update_cell(FOLD, CELL);
         NOTE.lap();
@@ -154,7 +185,11 @@ const MAIN = {
             NOTE.end();
         };
         NOTE.time("*** Computing constraints ***");
-
+        window.setTimeout(MAIN.compute_constraints, 0, FOLD, CELL);
+    },
+    compute_constraints: async (FOLD, CELL) => {
+        const {Vf, EF, FV} = FOLD;
+        const {SE, SC, CF, FC} = CELL;
         NOTE.time("Computing edge-edge overlaps");
         const ExE = await X.SE_2_ExE(SE);
         NOTE.count(ExE, "edge-edge adjacencies");
@@ -183,11 +218,35 @@ const MAIN = {
         GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
         NOTE.lap();
         NOTE.time("*** Computing states ***");
-
+        window.setTimeout(MAIN.compute_states, 0, FOLD, CELL, BF, BT);
+    },
+    compute_states: async (FOLD, CELL, BF, BT) => {
+        const {EA, EF, Ff} = FOLD;
+        const {CF, FC} = CELL;
         const BA0 = await X.EF_EA_Ff_BF_2_BA0(EF, EA, Ff, BF);
         const val = document.getElementById("limit_select").value;
         const lim = (val == "all") ? Infinity : +val;
-        const [GB, GA] = await SOLVER.solve(BF, BT, BA0, lim);
+        const sol = await SOLVER.solve(BF, BT, BA0, lim);
+        if (sol.length == 3) { // solve found unsatisfiable constraint
+            const [type, F, E] = sol;
+            const str = `Unable to resolve ${CON.names[type]} on faces [${F}]`;
+            NOTE.log(`   - ${str}`);
+            NOTE.log(`   - Faces participating in conflict: [${E}]`);
+            GUI.update_error(F, E, BF, FC);
+            document.getElementById("fold_button").onclick = undefined;
+            for (const id of ["flip_flat", "rotate_flat", "flip_fold", "rotate_fold"]) {
+                document.getElementById(id).onchange = undefined;
+            }
+            NOTE.time("Solve completed");
+            NOTE.count(0, "folded states");
+            const num_states = document.getElementById("num_states");
+            num_states.textContent = `(Found 0 states) ${str}`;
+            NOTE.lap();
+            stop = Date.now();
+            NOTE.end();
+            return;
+        } // solve completed
+        const [GB, GA] = sol;
         const n = (GA == undefined) ? 0 : GA.reduce((s, A) => {
             return s*BigInt(A.length);
         }, BigInt(1));
@@ -202,10 +261,43 @@ const MAIN = {
             const edges = await SOLVER.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
             FOLD.FO = await SOLVER.edges_Ff_2_FO(edges, Ff);
             CELL.CD = await SOLVER.CF_edges_flip_2_CD(CF, edges);
-            document.getElementById("state_controls").style.display = "inline"; 
-            document.getElementById("flip").onchange = async (e) => {
-                NOTE.start("Flipping model");
-                await GUI.update_fold(FOLD, CELL);
+            document.getElementById("fold_controls").style.display = "inline";
+            document.getElementById("state_controls").style.display = "block";
+            for (const [id, log] of [["flip", "Flipping"], ["rotate", "Rotating"]]) {
+                document.getElementById(`${id}_flat`).onchange = () => {
+                    NOTE.start(`${log} crease pattern`);
+                    GUI.update_flat(FOLD);
+                    GUI.update_visible(FOLD, CELL);
+                    GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
+                    NOTE.end();
+                };
+                document.getElementById(`${id}_fold`).onchange = () => {
+                    NOTE.start(`${log} folded state`);
+                    GUI.update_fold(FOLD, CELL);
+                    GUI.update_cell(FOLD, CELL);
+                    GUI.update_cell_face_listeners(FOLD, CELL, BF, BT);
+                    GUI.update_component(FOLD, CELL, BF, GB, GA, GI);
+                    NOTE.end();
+                };
+            }
+            document.getElementById("shadow").onchange = () => {
+                NOTE.start("Toggling shadows");
+                GUI.update_fold(FOLD, CELL);
+                NOTE.end();
+            };
+            document.getElementById("visible").onchange = () => {
+                NOTE.start("Toggling visible faces");
+                GUI.update_visible(FOLD, CELL);
+                NOTE.end();
+            };
+            document.getElementById("scale").onchange = () => {
+                NOTE.start("Toggling scale faces");
+                if (document.getElementById("scale").checked) {
+                    const [p_min, p_max] = M.bounding_box(CELL.P);
+                    const d = M.sub(p_max, p_min);
+                    NOTE.log(`Scaled to [width, height] = [${d[0]},${d[1]}]`);
+                }
+                GUI.update_fold(FOLD, CELL);
                 NOTE.end();
             };
             const comp_select = SVG.clear("component_select");
