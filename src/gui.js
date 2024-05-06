@@ -241,7 +241,7 @@ export const GUI = {   // INTERFACE
                 GI[c] = j - 1;
                 const edges = X.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
                 FOLD.FO = X.edges_Ff_2_FO(edges, FOLD.Ff);
-                CELL.CD = X.CF_edges_flip_2_CD(CELL.CF, edges);
+                CELL.CD = X.CF_edges_2_CD(CELL.CF, edges);
                 GUI.update_fold(FOLD, CELL);
                 GUI.update_visible(FOLD, CELL);
                 NOTE.end();
