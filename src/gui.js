@@ -200,7 +200,7 @@ export const GUI = {   // INTERFACE
         SVG.draw_polygons(G.c, cells, {fill: colors, stroke: colors});
         const n = +document.getElementById("shadow").value;
         if (n > 0) {
-            SVG.draw_shadows(G.shadow, cells, EF, Ff, CD, UP, UF, P_, flip, {n});
+            SVG.draw_shadows(G.shadow, cells, EF, Ff, CD, UP, UF, P_, flip, n);
         }
         const lines = SP.map((ps) => M.expand(ps, P_));
         SVG.draw_segments(G.s_crease, lines, {

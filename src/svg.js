@@ -69,6 +69,7 @@ export const SVG = {   // DRAWING
     },
     draw_polygons: (svg, P, options) => {
         for (const [i, ps] of P.entries()) {
+            if (options.filter && !options.filter(i)) { continue; }
             const F = ps.map(p => M.mul(p, SVG.SCALE));
             const color = SVG.get_val(options.fill, i, "black");
             if (color == undefined) { continue; }
@@ -92,7 +93,7 @@ export const SVG = {   // DRAWING
             }
         }
     },
-    draw_shadows: (svg, F, EF, Ff, CD, UP, UF, P, flip, options) => {
+    draw_shadows: (svg, F, EF, Ff, CD, UP, UF, P, flip, level) => {
         const FN = Ff.map(() => []);
         for (let i = 0; i < EF.length; ++i) {
             if (EF[i].length != 2) { continue; }
@@ -137,10 +138,11 @@ export const SVG = {   // DRAWING
         for (const [i, ps] of F.entries()) {
             const F = ps.map(p => M.mul(p, SVG.SCALE));
             const V = F.map(v => v.join(",")).join(" ");
-            const clip = SVG.append("clipPath", svg, {id: `clip_c${i}`});
+            const id = `${svg.id}${i}`;
+            const clip = SVG.append("clipPath", svg, {id});
             const el = SVG.append("polygon", clip, {points: V});
-            const g = SVG.append("g", svg, {"clip-path": `url(#clip_c${i})`});
-            const n = 4*SVG.get_val(options.n, i, 2);
+            const g = SVG.append("g", svg, {"clip-path": `url(#${id})`});
+            const n = 4*SVG.get_val(level, i, 2);
             const G = Array(n).fill(0).map(() => SVG.append("g", g));
             const color = (Ff[UF[i]] != flip) ? 0xAA : 0xFF;
             const shift = 3;

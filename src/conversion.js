@@ -586,7 +586,7 @@ export const X = {     // CONVERSION
             return [f1, f2, (Ff[f2] ? 1 : -1)];
         });
     },
-    CF_edges_flip_2_CD: (CF, edges) => {
+    CF_edges_2_CD: (CF, edges) => {
         const edge_map = new Set(edges);
         NOTE.start_check("cell", CF);
         return CF.map((F, i) => {
