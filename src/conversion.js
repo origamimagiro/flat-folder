@@ -617,6 +617,12 @@ export const X = {     // CONVERSION
                 (CF[C[1]].length > 0)
             ) {
                 const [f1, f2] = C.map(c => CD[c]);
+                if ((f1 == undefined) && (f2 == undefined)) {
+                    return "N";
+                }
+                if ((f1 == undefined) || (f2 == undefined)) {
+                    return "B";
+                }
                 if (f1 == f2) {
                     return "N";
                 }
@@ -630,7 +636,7 @@ export const X = {     // CONVERSION
                     }
                 }
             }
-            return "B";
+            return (CD[C[0]] == undefined) ? "N" : "B";
         });
     },
     tops_CP_EF_Ff_P_2_UP_UF_SP_SD: (tops, CP, EF, Ff, P) => {
