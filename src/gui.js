@@ -31,9 +31,7 @@ export const GUI = {   // INTERFACE
     update_text: (FOLD, CELL) => {
         SVG.clear("export");
         const flat_text = SVG.clear("flat_text");
-        if (CELL != undefined) {
-            SVG.clear("cell_text");
-        }
+        const cell_text = SVG.clear("cell_text");
         const visible = document.getElementById("text").checked;
         if (!visible) { return; }
         const G = {};
@@ -55,7 +53,6 @@ export const GUI = {   // INTERFACE
         if (CELL != undefined) {
             const {P_norm, SP, CP} = CELL;
             const P_ = GUI.transform_points(P_norm, "fold");
-            const cell_text = document.getElementById("cell_text");
             const cell_centers = CP.map(f => M.interior_point(M.expand(f, P_)));
             const seg_centers = SP.map(l => M.centroid(M.expand(l, P_)));
             for (const id of ["c", "s", "p"]) {

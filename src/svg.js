@@ -13,7 +13,7 @@ export const SVG = {   // DRAWING
     },
     clear: (id) => {
         const el = document.getElementById(id);
-        if (el.children != undefined) {
+        if ((el != null) && (el.children != undefined)) {
             while (el.children.length > 0) {
                 el.removeChild(el.firstChild);
             }
