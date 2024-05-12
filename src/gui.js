@@ -183,10 +183,10 @@ export const GUI = {   // INTERFACE
         const P_ = GUI.transform_points(
             scale ? M.center_points_on(P, [0.5, 0.5]) : P_norm, "fold");
         const flip = document.getElementById("flip_fold").checked;
-        const tops = CD.map(S => flip ? S[0] : S[S.length - 1]);
-        const [UP, UF, SP, SD] = X.tops_CP_EF_Ff_P_2_UP_UF_SP_SD(tops, CP, EF, Ff, P_);
-        const cells = UP.map(V => M.expand(V, P_));
-        const colors = UF.map(d => {
+        const [RP, RF, SP, SD] = X.CD_CP_EF_Ff_P_flip_2_RP_RF_SP_SD(
+            CD, CP, EF, Ff, P_, flip);
+        const cells = RP.map(V => M.expand(V, P_));
+        const colors = RF.map(d => {
             if (d == undefined) { return undefined; }
             return GUI.COLORS.face[(Ff[d] != flip) ? "top" : "bottom"];
         });
@@ -197,7 +197,7 @@ export const GUI = {   // INTERFACE
         SVG.draw_polygons(G.c, cells, {fill: colors, stroke: colors});
         const n = +document.getElementById("shadow").value;
         if (n > 0) {
-            SVG.draw_shadows(G.shadow, cells, EF, Ff, CD, UP, UF, P_, flip, n);
+            SVG.draw_shadows(G.shadow, cells, EF, Ff, CD, RP, RF, P_, flip, n);
         }
         const lines = SP.map((ps) => M.expand(ps, P_));
         SVG.draw_segments(G.s_crease, lines, {

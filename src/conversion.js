@@ -639,15 +639,17 @@ export const X = {     // CONVERSION
             return (CD[C[0]] == undefined) ? "N" : "B";
         });
     },
-    tops_CP_EF_Ff_P_2_UP_UF_SP_SD: (tops, CP, EF, Ff, P) => {
+    CD_CP_EF_Ff_P_flip_2_RP_RF_SP_SD: (CD, CP, EF, Ff, P, flip) => {
+        const Ctop = CD.map(S => flip ? S[0] : S[S.length - 1]);
+        // mapping from top faces to the cells they are visible from
         const FC = Ff.map(() => []);
-        for (let ci = 0; ci < tops.length; ++ci) {
-            const fi = tops[ci];
+        for (let ci = 0; ci < Ctop.length; ++ci) {
+            const fi = Ctop[ci];
             if (fi == undefined) { continue; }
             FC[fi].push(ci);
         }
-        const UP = [];
-        const UF = [];
+        const RP = [];
+        const RF = [];
         for (let fi = 0; fi < FC.length; ++fi) {
             const C = FC[fi];
             if (C.length == 0) { continue; }
@@ -682,16 +684,16 @@ export const X = {     // CONVERSION
                     Adj[u].delete(v);
                     u = v;
                 } while (u != start);
-                UP.push(out);
-                UF.push(fi);
+                RP.push(out);
+                RF.push(fi);
             }
         }
-        const PU = new Map();
-        for (let ui = 0; ui < UP.length; ++ui) {
-            const P = UP[ui];
+        const PR = new Map();
+        for (let ui = 0; ui < RP.length; ++ui) {
+            const P = RP[ui];
             let pi = P[P.length - 1];
             for (const pj of P) {
-                PU.set(`${pi},${pj}`, ui);
+                PR.set(`${pi},${pj}`, ui);
                 pi = pj;
             }
         }
@@ -705,19 +707,19 @@ export const X = {     // CONVERSION
                 check.add(M.encode_order_pair([i, j]));
             }
         }
-        for (const [k, ui] of PU) {
+        for (const [k, ui] of PR) {
             const [pi, pj] = k.split(",").map(c => +c);
             const k2 = `${pj},${pi}`;
-            const uj = PU.get(k2);
+            const uj = PR.get(k2);
             if (uj == undefined) {
                 SP.push([pi, pj]);
                 SD.push("B");
             } else if (pi < pj) {
                 SP.push([pi, pj]);
-                const key = M.encode_order_pair([UF[ui], UF[uj]]);
+                const key = M.encode_order_pair([RF[ui], RF[uj]]);
                 SD.push(check.has(key) ? "C" : "B");
             }
         }
-        return [UP, UF, SP, SD];
+        return [RP, RF, SP, SD];
     },
 };
