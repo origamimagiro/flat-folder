@@ -93,50 +93,15 @@ export const SVG = {   // DRAWING
             }
         }
     },
-    draw_shadows: (svg, F, EF, Ff, CD, UP, UF, P, flip, level) => {
-        const FN = Ff.map(() => []);
-        for (let i = 0; i < EF.length; ++i) {
-            if (EF[i].length != 2) { continue; }
-            const [fi, fj] = EF[i];
-            if (Ff[fi] == Ff[fj]) {
-                FN[fi].push(fj);
-                FN[fj].push(fi);
-            }
+    draw_shadows: (svg, RP, Rf, P, SP, SD, flip, level) => {
+        const SD_set = new Set();
+        for (const [i, d] of SD.entries()) {
+            if (d.length != 2) { continue; }
+            const [p, q] = SP[i];
+            SD_set.add(M.encode((d == "BL") ? [p, q] : [q, p]));
         }
-        const FH = FN.map(() => undefined);
-        let hn = 0;
-        for (let start = 0; start < FN.length; ++start) {
-            if (FH[start] != undefined) { continue; }
-            const Q = [start];
-            FH[start] = hn;
-            let i = 0;
-            while (i < Q.length) {
-                const fi = Q[i]; ++i;
-                for (const fj of FN[fi]) {
-                    if (FH[fj] != undefined) { continue; }
-                    FH[fj] = hn;
-                    Q.push(fj);
-                }
-            }
-            ++hn;
-        }
-        const above = new Set();
-        for (const D of CD) {
-            for (let i = 0; i < D.length; ++i) {
-                for (let j = i + 1; j < D.length; ++j) {
-                    above.add(`${FH[D[i]]},${FH[D[j]]}`);
-                }
-            }
-        }
-        const EF_map = new Map();
-        for (const [i, U] of UP.entries()) {
-            for (const [j, v1] of U.entries()) {
-                const v2 = U[(j + 1) % U.length];
-                EF_map.set(M.encode([v2, v1]), i);
-            }
-        }
-        for (const [i, ps] of F.entries()) {
-            const F = ps.map(p => M.mul(p, SVG.SCALE));
+        for (const [i, ps] of RP.entries()) {
+            const F = M.expand(ps, P).map(p => M.mul(p, SVG.SCALE));
             const V = F.map(v => v.join(",")).join(" ");
             const id = `${svg.id}${i}`;
             const clip = SVG.append("clipPath", svg, {id});
@@ -144,7 +109,7 @@ export const SVG = {   // DRAWING
             const g = SVG.append("g", svg, {"clip-path": `url(#${id})`});
             const n = 4*SVG.get_val(level, i, 2);
             const G = Array(n).fill(0).map(() => SVG.append("g", g));
-            const color = (Ff[UF[i]] != flip) ? 0xAA : 0xFF;
+            const color = (Rf[i] != flip) ? 0xAA : 0xFF;
             const shift = 3;
             const C = Array(n).fill(0).map((a, i) => {
                 const c = (Math.max(color - (i + 1)*shift, 0)).toString(16);
@@ -153,14 +118,10 @@ export const SVG = {   // DRAWING
             const base = 2;
             const off = 1;
             const W = Array(n).fill(0).map((a, i) => base + 2*(n - i)*off);
-            const Q = UP[i];
+            const Q = RP[i];
             for (let pi = 0; pi < Q.length; ++pi) {
                 const pj = (pi + 1) % Q.length;
-                const j = EF_map.get(M.encode([Q[pi], Q[pj]]));
-                if (j == undefined) { continue; }
-                const [hi, hj] = [i, j].map(a => FH[UF[a]]);
-                const k = flip ? `${hj},${hi}` : `${hi},${hj}`;
-                if (!above.has(k)) { continue; }
+                if (!SD_set.has(M.encode([Q[pi], Q[pj]]))) { continue; }
                 const [[x1, y1], [x2, y2]] = [pi, pj].map(
                     p => M.mul(P[Q[p]], SVG.SCALE));
                 for (let i = 0; i < G.length; ++i) {

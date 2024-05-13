@@ -177,33 +177,32 @@ export const GUI = {   // INTERFACE
     update_fold: (FOLD, CELL) => {
         SVG.clear("export");
         const {Ff, EF} = FOLD;
-        const {P, P_norm, CP, CD} = CELL;
+        const {P, P_norm, CP, CD, SP, SC, SE} = CELL;
         const svg = SVG.clear("fold");
         const scale = document.getElementById("scale").checked;
         const P_ = GUI.transform_points(
             scale ? M.center_points_on(P, [0.5, 0.5]) : P_norm, "fold");
         const flip = document.getElementById("flip_fold").checked;
-        const [RP, RF, SP, SD] = X.CD_CP_EF_Ff_P_flip_2_RP_RF_SP_SD(
-            CD, CP, EF, Ff, P_, flip);
-        const cells = RP.map(V => M.expand(V, P_));
-        const colors = RF.map(d => {
-            if (d == undefined) { return undefined; }
-            return GUI.COLORS.face[(Ff[d] != flip) ? "top" : "bottom"];
+        const Ctop = CD.map(S => flip ? S[0] : S[S.length - 1]);
+        const SD = X.Ctop_SC_SE_EF_Ff_2_SD(Ctop, SC, SE, EF, Ff);
+        const [RP, Rf] = X.Ctop_CP_SC_SD_Ff_P_2_RP_Rf(Ctop, CP, SC, SD, Ff, P_);
+        const regions = RP.map(V => M.expand(V, P_));
+        const colors = Rf.map(f => {
+            if (f == undefined) { return undefined; }
+            return GUI.COLORS.face[(f != flip) ? "top" : "bottom"];
         });
         const G = {};
         for (const id of ["c", "shadow", "s_crease", "s_edge", "notes", "comps"]) {
             G[id] = SVG.append("g", svg, {id: `fold_${id}`});
         }
-        SVG.draw_polygons(G.c, cells, {fill: colors, stroke: colors});
+        SVG.draw_polygons(G.c, regions, {fill: colors, stroke: colors});
         const n = +document.getElementById("shadow").value;
-        if (n > 0) {
-            SVG.draw_shadows(G.shadow, cells, EF, Ff, CD, RP, RF, P_, flip, n);
-        }
+        if (n > 0) { SVG.draw_shadows(G.shadow, RP, Rf, P_, SP, SD, flip, n); }
         const lines = SP.map((ps) => M.expand(ps, P_));
         SVG.draw_segments(G.s_crease, lines, {
-            stroke: GUI.COLORS.edge.F, filter: (i) => SD[i] == "C"});
+            stroke: GUI.COLORS.edge.F, filter: (i) => SD[i][0] == "C"});
         SVG.draw_segments(G.s_edge, lines, {
-            stroke: GUI.COLORS.edge.B, filter: (i) => SD[i] == "B"});
+            stroke: GUI.COLORS.edge.B, filter: (i) => SD[i][0] == "B"});
     },
     update_component: (FOLD, CELL, BF, GB, GA, GI) => {
         SVG.clear("export");

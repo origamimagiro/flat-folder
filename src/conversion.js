@@ -639,20 +639,59 @@ export const X = {     // CONVERSION
             return (CD[C[0]] == undefined) ? "N" : "B";
         });
     },
-    CD_CP_EF_Ff_P_flip_2_RP_RF_SP_SD: (CD, CP, EF, Ff, P, flip) => {
-        const Ctop = CD.map(S => flip ? S[0] : S[S.length - 1]);
-        // mapping from top faces to the cells they are visible from
-        const FC = Ff.map(() => []);
-        for (let ci = 0; ci < Ctop.length; ++ci) {
-            const fi = Ctop[ci];
-            if (fi == undefined) { continue; }
-            FC[fi].push(ci);
+    Ctop_SC_SE_EF_Ff_2_SD: (Ctop, SC, SE, EF, Ff) => {
+        const EF_set = new Set(
+            EF.filter(F => F.length == 2).map(F => M.encode_order_pair(F)));
+        const SD = SC.map((C, si) => {
+            const F = C.map(ci => Ctop[ci]);
+            if (F[0] == F[1]) { return "N"; }
+            if ((F[0] == undefined) || (F[1] == undefined)) { return "B"; }
+            const flips = F.map(fi => Ff[fi]);
+            if ((flips[0] == flips[1]) &&
+                EF_set.has(M.encode_order_pair(F))) { return "C"; }
+            let left = false, right = false;
+            for (const ei of SE[si]) {
+                const [fi, fj] = EF[ei];
+                if (Ff[fi] == Ff[fj]) { continue; }
+                if ((fi == F[0]) || (fj == F[0])) { left = true; }
+                if ((fi == F[1]) || (fj == F[1])) { right = true; }
+            }
+            if (left == right) { return "B"; }
+            return left ? "BL" : "BR";
+        });
+        return SD;
+    },
+    Ctop_CP_SC_SD_Ff_P_2_RP_Rf: (Ctop, CP, SC, SD, Ff, P) => {
+        const cn = Ctop.length;
+        const CC = Array(cn).fill(0).map(() => []);
+        for (let si = 0; si < SC.length; ++si) {
+            const C = SC[si];
+            if (C.length != 2) { continue; }
+            const d = SD[si];
+            if (SD[si][0] == "B") { continue; }
+            const [ci, cj] = C;
+            CC[ci].push(cj);
+            CC[cj].push(ci);
         }
         const RP = [];
-        const RF = [];
-        for (let fi = 0; fi < FC.length; ++fi) {
-            const C = FC[fi];
-            if (C.length == 0) { continue; }
+        const Rf = [];
+        let ri = 0;
+        const seen = Array(cn).fill(false);
+        for (let ci = 0; ci < cn; ++ci) {
+            const fi = Ctop[ci];
+            if ((fi == undefined) || seen[ci]) { continue; }
+            seen[ci] = true;
+            const C = [ci];
+            let i = 0;
+            while (i < C.length) {
+                for (const cj of CC[C[i]]) {
+                    if (!seen[cj]) {
+                        seen[cj] = true;
+                        C.push(cj);
+                    }
+                }
+                ++i;
+            }
             const Adj = P.map(() => new Set());
             for (const ci of C) {
                 const P_ = CP[ci];
@@ -667,59 +706,21 @@ export const X = {     // CONVERSION
                     pi = pj;
                 }
             }
-            const Q = [];
+            let start;
             for (let i = 0; i < Adj.length; ++i) {
-                if (Adj[i].size > 0) { Q.push(i); }
+                if (Adj[i].size == 1) { start = i; break; }
             }
-            for (const start of Q) {
-                if (Adj[start].size == 0) { continue; }
-                const out = [];
-                let u = start;
-                do {
-                    out.push(u);
-                    let v;
-                    for (v of Adj[u]) {
-                        break;
-                    }
-                    Adj[u].delete(v);
-                    u = v;
-                } while (u != start);
-                RP.push(out);
-                RF.push(fi);
-            }
+            const Q = [];
+            let u = start;
+            do {
+                Q.push(u);
+                let v;
+                for (v of Adj[u]) { break; }
+                u = v;
+            } while (u != start);
+            RP.push(Q);
+            Rf.push(Ff[fi]);
         }
-        const PR = new Map();
-        for (let ui = 0; ui < RP.length; ++ui) {
-            const P = RP[ui];
-            let pi = P[P.length - 1];
-            for (const pj of P) {
-                PR.set(`${pi},${pj}`, ui);
-                pi = pj;
-            }
-        }
-        const SP = [];
-        const SD = [];
-        const check = new Set();
-        for (const F of EF) {
-            if (F.length != 2) { continue; }
-            const [i, j] = F;
-            if (Ff[i] == Ff[j]) {
-                check.add(M.encode_order_pair([i, j]));
-            }
-        }
-        for (const [k, ui] of PR) {
-            const [pi, pj] = k.split(",").map(c => +c);
-            const k2 = `${pj},${pi}`;
-            const uj = PR.get(k2);
-            if (uj == undefined) {
-                SP.push([pi, pj]);
-                SD.push("B");
-            } else if (pi < pj) {
-                SP.push([pi, pj]);
-                const key = M.encode_order_pair([RF[ui], RF[uj]]);
-                SD.push(check.has(key) ? "C" : "B");
-            }
-        }
-        return [RP, RF, SP, SD];
+        return [RP, Rf];
     },
 };

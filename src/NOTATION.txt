@@ -69,8 +69,9 @@ FO | faceOrder  - layer order between a pair of overlapping faces
 
 Renderer
 
-D | stack       - for cell, stacking order of faces within cell
 R | region      - a maximal simple polygon visible from one side of a model
+D | stack       - for cell, stacking order of faces within cell
+D | draw        - for segment, draw type
 
 ABBREVIATED PAIRS
 
@@ -114,8 +115,9 @@ GI  | for each group:   an index of a chosen valid assignment
 
 FO | for each var:      triple representing layer order (via FOLD spec)
 CD | for each cell:     stacking order of faces overlapping cell (sorted CF)
-SD | for each segment:  pair representing index and assignment of top-most edge
+SD | for each segment:  draw type of ["N", "C", "B", "BL", "BR"]
 RP | for each region:   array of point indices (like CP)
+Rf | for each region:   indication of whether it is face-up or face-down
 
 FUNCTIONS
 
