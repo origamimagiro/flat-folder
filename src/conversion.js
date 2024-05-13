@@ -596,49 +596,6 @@ export const X = {     // CONVERSION
             return S;
         });
     },
-    EF_SE_SC_CF_CD_2_SD: (EF, SE, SC, CF, CD) => {
-        const FE_map = new Map();
-        for (const [i, F] of EF.entries()) {
-            if (F.length == 2) {
-                const k = M.encode_order_pair(F);
-                if (FE_map.has(k)) {
-                    FE_map.get(k).push(i);
-                } else {
-                    FE_map.set(k, [i]);
-                }
-            }
-        }
-        const SE_map = SE.map(E => new Set(E));
-        NOTE.start_check("segment", SC);
-        return SC.map((C, i) => {
-            NOTE.check(i);
-            if ((C.length == 2) &&
-                (CF[C[0]].length > 0) &&
-                (CF[C[1]].length > 0)
-            ) {
-                const [f1, f2] = C.map(c => CD[c]);
-                if ((f1 == undefined) && (f2 == undefined)) {
-                    return "N";
-                }
-                if ((f1 == undefined) || (f2 == undefined)) {
-                    return "B";
-                }
-                if (f1 == f2) {
-                    return "N";
-                }
-                const k = M.encode_order_pair([f1, f2]);
-                const E = FE_map.get(k);
-                if (E != undefined) {
-                    for (const e of E) {
-                        if (SE_map[i].has(e)) {
-                            return "C";
-                        }
-                    }
-                }
-            }
-            return (CD[C[0]] == undefined) ? "N" : "B";
-        });
-    },
     Ctop_SC_SE_EF_Ff_2_SD: (Ctop, SC, SE, EF, Ff) => {
         const EF_set = new Set(
             EF.filter(F => F.length == 2).map(F => M.encode_order_pair(F)));
