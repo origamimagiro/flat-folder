@@ -8,13 +8,14 @@ import { NOTE   } from "../src/note.js";
 import * as fs from 'fs';
 
 const main = () => {
-    const lim = 10000;
+    const lim = Infinity;
     const start = Date.now();
     NOTE.clear_log();
     NOTE.start();
     CON.build();
     const fold_files = [];
-    const datasets = 0 ? ["grids", "instagram"] : ["process"];
+    const datasets = ["grids"];
+    // const datasets = 0 ? ["grids", "instagram"] : ["process"];
     for (const dataset of datasets) {
         const path = `./${dataset}/`;
         const files = fs.readdirSync(path);
@@ -36,29 +37,22 @@ const main = () => {
         fold.file_name = file;
         fold.dataset = dataset;
         fold.number = file.slice(0, 3);
-        for (const eps of [300, 1000, 3000]) {
-            NOTE.show = true;
-            NOTE.time(`Processing file: ${fold.file_name} with eps = ${eps}`);
-            NOTE.show = false;
-            try {
-                const D = process_file(fold, eps, lim);
-                const L = [];
-                for (const field of headers) {
-                    L.push(D[field]);
-                }
-                lines.push(L.join(","));
-                break;
-            } catch (e) {
-                NOTE.show = true;
-                NOTE.time(`   - ERROR, trying new eps`);
-            }
+        NOTE.show = true;
+        NOTE.time(`Processing file: ${fold.file_name}`);
+        NOTE.show = false;
+        const D = process_file(fold, lim);
+        const L = [];
+        for (const field of headers) {
+            L.push(D[field]);
         }
+        lines.push(L.join(","));
     }
+    NOTE.show = true;
+    NOTE.end();
     fs.writeFileSync("./data.csv", lines.join("\n"));
 }
 
-const process_file = (fold, EPS, lim) => {
-    M.EPS = EPS;
+const process_file = (fold, lim) => {
     const V  = fold.vertices_coords;
     const EV = fold.edges_vertices;
     const EA = fold.edges_assignment;
@@ -67,8 +61,8 @@ const process_file = (fold, EPS, lim) => {
     const [EF, FE] = X.EV_FV_2_EF_FE(EV, FV);
     const [Vf, Ff] = X.V_FV_EV_EA_2_Vf_Ff(V, FV, EV, EA);
     const L = EV.map((P) => M.expand(P, Vf));
-    const eps = M.min_line_length(L) / M.EPS;
-    const [P, SP, SE] = X.L_2_V_EV_EL(L, eps);
+    const [P, SP, SE, eps_i] = X.L_2_V_EV_EL(L);
+    const eps = 2**eps_i;
     const [,CP] = X.V_EV_2_VV_FV(P, SP);
     const [SC, CS] = X.EV_FV_2_EF_FE(SP, CP);
     const [CF, FC] = X.EF_FV_SP_SE_CP_SC_2_CF_FC(EF, FV, SP, SE, CP, SC);
@@ -92,7 +86,7 @@ const process_file = (fold, EPS, lim) => {
         vertices: V.length,
         edges: EV.length,
         faces: FV.length,
-        eps: EPS,
+        eps: eps,
         variables: BF.length,
         "taco-taco": NOTE.count_subarrays(BT0)/6,
         "taco-tortilla": NOTE.count_subarrays(BT1)/3,
