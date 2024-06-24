@@ -8,14 +8,13 @@ import { NOTE   } from "../src/note.js";
 import * as fs from 'fs';
 
 const main = () => {
-    const lim = Infinity;
+    const lim = 10000;
     const start = Date.now();
     NOTE.clear_log();
     NOTE.start();
     CON.build();
     const fold_files = [];
-    const datasets = ["grids"];
-    // const datasets = 0 ? ["grids", "instagram"] : ["process"];
+    const datasets = 0 ? ["grids", "instagram"] : ["process"];
     for (const dataset of datasets) {
         const path = `./${dataset}/`;
         const files = fs.readdirSync(path);
@@ -40,12 +39,14 @@ const main = () => {
         NOTE.show = true;
         NOTE.time(`Processing file: ${fold.file_name}`);
         NOTE.show = false;
-        const D = process_file(fold, lim);
-        const L = [];
-        for (const field of headers) {
-            L.push(D[field]);
-        }
-        lines.push(L.join(","));
+        try {
+            const D = process_file(fold, lim);
+            const L = [];
+            for (const field of headers) {
+                L.push(D[field]);
+            }
+            lines.push(L.join(","));
+        } catch { console.log(" -- error, skipping"); }
     }
     NOTE.show = true;
     NOTE.end();
