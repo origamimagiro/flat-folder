@@ -6,21 +6,22 @@ import { AVL } from "./avl.js";
 export const X = {     // CONVERSION
     L_2_V_EV_EL: (L) => {
         const d = M.min_line_length(L);
-        let prev = undefined, count = 0;
+        let nV = 0, nE = 0, count = 0;
         const k = 2;    // decrease eps until found vertices # repeats twice
         for (const i of Array(50).fill().map((_, j) => j + 3)) {
             const eps = d/(2**i);
             if (eps < M.FLOAT_EPS) { break; }
             try {
                 const [V, EV, EL] = X.L_eps_2_V_EV_EL(L, eps);
-                if (V.length == prev) {
+                if ((V.length == nV) && (EV.length == nE)) {
                     ++count;
                     if (count == k) { return [V, EV, EL, i - k]; }
                 } else {
-                    prev = V.length;
+                    nV = V.length;
+                    nE = EV.length;
                     count = 0;
                 }
-            } catch { prev = undefined; count = 0; }
+            } catch { nV = 0; nE = 0; count = 0; }
         }
         return [[], [], [], 0];                 // not found
     },
