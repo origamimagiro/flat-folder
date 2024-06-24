@@ -75,14 +75,12 @@ export const M = {     // MATH
         }
     },
     min_line_length: (lines) => {
-        let min_line_lengthsq = Infinity;
+        let min_lensq = Infinity;
         for (const [p, q] of lines) {
             const lensq = M.distsq(p, q);
-            if (lensq < min_line_lengthsq) {
-                min_line_lengthsq = lensq;
-            }
+            min_lensq = Math.min(min_lensq, lensq);
         }
-        return min_line_lengthsq**0.5;
+        return min_lensq**0.5;
     },
     sort_faces: (FV, V) => {
         FV.sort((f1, f2) => {

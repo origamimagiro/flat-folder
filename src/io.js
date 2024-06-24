@@ -211,7 +211,7 @@ export const IO = {    // INPUT-OUTPUT
         return [V, EV, EA, VV, FV];
     },
     doc_type_2_V_VV_EV_EA_EF_FV_FE: (doc, type) => {
-        let V, VV, EV, EA, FV, EF, FE;
+        let V, VV, EV, EA, FV, EF, FE, eps_i;
         if (type == "fold") {
             [V, EV, EA, VV, FV] = IO.FOLD_2_V_EV_EA_VV_FV(doc);
             if (V == undefined) { return []; }
@@ -227,10 +227,10 @@ export const IO = {    // INPUT-OUTPUT
             }
             NOTE.annotate(L, "lines");
             NOTE.lap();
-            const eps = M.min_line_length(L) / M.EPS;
-            NOTE.time(`Using eps ${eps} from min line length ${eps*M.EPS}`);
             NOTE.time("Constructing FOLD from lines");
-            [V, EV, EL] = X.L_2_V_EV_EL(L, eps);
+            [V, EV, EL, eps_i] = X.L_2_V_EV_EL(L);
+            const eps = M.min_line_length(L)/(2**eps_i);
+            NOTE.time(`Used eps: ${2**eps_i} | ${eps}`);
             EA = EL.map(l => L[l[0]][2]);
         }
         V = M.normalize_points(V);

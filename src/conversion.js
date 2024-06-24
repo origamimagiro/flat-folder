@@ -1,105 +1,203 @@
 import { M } from "./math.js";
 import { CON } from "./constraints.js";
 import { NOTE } from "./note.js";
+import { AVL } from "./avl.js";
 
 export const X = {     // CONVERSION
-    L_2_V_EV_EL: (L, eps) => {
-        for (const l of L) {    // sort line's points by X then Y
-            l.sort(([x1, y1], [x2, y2]) => {
-                return (Math.abs(x1 - x2) < eps) ? (y1 - y2) : (x1 - x2);
-            });
-        }
-        const I = L.map((_, i) => i);
-        I.sort((i, j) => {      // sort first endpoint of lines by X then Y
-            const [[x1, y1],] = L[i];
-            const [[x2, y2],] = L[j];
-            return (Math.abs(x1 - x2) < eps) ? (y1 - y2) : (x1 - x2);
-        });
-        const P = [];   // point with corresponding edge index [[x, y], i]
-        let crossings = [];
-        NOTE.start_check("line", L);
-        for (const [i, idx] of I.entries()) {    // find line-line intersections
-            NOTE.check(i);
-            const [a, b] = L[idx];
-            P.push([a, idx]);
-            P.push([b, idx]);
-            for (const [k, X] of crossings.entries()) {
-                const [[c, d], j] = X;
-                if ((d[0] + eps) < a[0]) {
-                    crossings[k] = undefined;
+    L_2_V_EV_EL: (L) => {
+        const d = M.min_line_length(L);
+        let prev = undefined, count = 0;
+        const k = 2;    // decrease eps until found vertices # repeats twice
+        for (const i of Array(50).fill().map((_, j) => j + 3)) {
+            const eps = d/(2**i);
+            if (eps < M.FLOAT_EPS) { break; }
+            try {
+                const [V, EV, EL] = X.L_eps_2_V_EV_EL(L, eps);
+                if (V.length == prev) {
+                    ++count;
+                    if (count == k) { return [V, EV, EL, i - k]; }
                 } else {
-                    const x = M.intersect([a, b], [c, d], eps);
-                    if (x != undefined) {
-                        P.push([x, idx]);
-                        P.push([x, j]);
+                    prev = V.length;
+                    count = 0;
+                }
+            } catch { prev = undefined; count = 0; }
+        }
+        return [[], [], [], 0];                 // not found
+    },
+    L_eps_2_V_EV_EL: (L, eps) => {
+        const point_comp = ([x1, y1], [x2, y2]) => {    // point comparator
+            if (M.dist([x1, y1], [x2, y2]) < eps) { return 0; }
+            const dy = y1 - y2;
+            return (Math.abs(dy) >= eps) ? dy : (x1 - x2);
+        };
+        const line_intersect = ([x1, y1], [x2, y2], [x3, y3], [x4, y4]) => {
+            const dx12 = x1 - x2, dx34 = x3 - x4;
+            const dy12 = y1 - y2, dy34 = y3 - y4;
+            const denom = dx12*dy34 - dx34*dy12;
+            if (denom < eps*eps) { return undefined; }
+            const x = ((x1*y2 - y1*x2)*dx34 - (x3*y4 - y3*x4)*dx12)/denom;
+            const y = ((x1*y2 - y1*x2)*dy34 - (x3*y4 - y3*x4)*dy12)/denom;
+            return [x, y];
+        };
+        const V = [[-Infinity, -Infinity]];     // sentinal first point
+        const VL = [[]];                        // lines starting at vertex
+        const LV = [];                          // vertex index pair
+        const LU = [];                          // unit vector along line
+        const LA = [];                          // angle
+        const LD = [];                          // distance from origin
+        const Q = new AVL((vi, vj) => point_comp(V[vi], V[vj]));
+        for (let li = 0; li < L.length; ++li) { // filter endpoints into Q
+            let [p, q] = L[li];
+            if (point_comp(p, q) > 0) { [p, q] = [q, p]; }
+            const [vi, vj] = [p, q].map(v => {
+                const vn = V.length;
+                V.push(v);
+                VL.push([]);
+                const j = Q.insert(vn);
+                if (j == undefined) { return vn; }
+                V.pop();
+                VL.pop();
+                return j;
+            });
+            LV.push([vi, vj]);                  // index-based line data
+            const u = M.unit(M.sub(V[vj], V[vi]));
+            LU.push(u);
+            LA.push((u[1] < eps) ? 0 : M.angle(u));
+            LD.push(M.dot(M.perp(u), V[vj]));
+            VL[vi].push(li);
+        }
+        const SV = [[undefined, undefined]];    // sentinal segment
+        const SU = [[-1, 0]];                   // unit vector along segment
+        const SA = [Infinity];                  // angle
+        const SD = [undefined];                 // distance from origin
+        const SL = [[]];                        // lines overlapping segment
+        const point_seg_dist = (vi, si) => SD[si] - M.dot(M.perp(SU[si]), V[vi]);
+        const on_line = (vi, si) => (Math.abs(point_seg_dist(vi, si)) < eps);
+        let curr;
+        const seg_comp = (si, sj) => {
+            if(!on_line(curr, si)) {                // assumes si on curr
+                throw new Error();
+            }
+            const dj = point_seg_dist(curr, sj);    // only search near curr,
+            if (Math.abs(dj) < eps) {               // so can order locally
+                const pi = SV[si][1];
+                if ((pi != undefined) && on_line(pi, sj)) { return 0; }
+                return SA[sj] - SA[si];
+            }
+            return -dj;
+        };
+        const T = new AVL(seg_comp);
+        const VP = Array(V).fill();
+        const P = [];
+        while (Q.length > 0) {
+            const vi = Q.remove_next(0);    // processing vertex curr = vi
+            curr = vi;
+            const v = V[vi];
+            const S1 = [];
+            SV[0][0] = vi;
+            SD[0] = M.dot(M.perp(SU[0]), v);
+            if (SA[T.prev(0)] == 0) {
+                S1.push(T.remove_prev(0));  // entering horizontal segment
+            }
+            while (true) {
+                const si = T.next(0);
+                if ((si == undefined) || !on_line(curr, si)) { break; }
+                S1.push(T.remove_next(0));          // other entering segments
+            }
+            if ((VL[vi].length == 0) && (S1.length < 2)) {
+                if (S1.length == 0) { continue; }   // vertex unused
+                const si = S1[0];
+                let ends = false;
+                for (const li of SL[si]) {
+                    if (point_comp(V[LV[li][1]], V[vi]) <= 0) {
+                        ends = true;    // vertex used (ends some segment)
+                        continue;
                     }
-                    if (M.on_segment(a, b, c, eps)) { P.push([c, idx]); }
-                    if (M.on_segment(a, b, d, eps)) { P.push([d, idx]); }
-                    if (M.on_segment(c, d, a, eps)) { P.push([a, j]); }
-                    if (M.on_segment(c, d, b, eps)) { P.push([b, j]); }
+                }
+                if (!ends) {            // vertex unused (one segment passing)
+                    T.insert(si);
+                    continue;
                 }
             }
-            const temp = [[[a, b], idx]];
-            for (const line of crossings) {
-                if (line != undefined) {
-                    temp.push(line);
+            VP[vi] = P.length;
+            P.push(v);
+            for (const si of S1) {      // close segments
+                SV[si][1] = vi;
+                for (const li of SL[si]) {
+                    if (point_comp(V[LV[li][1]], V[vi]) <= 0) { continue; }
+                    VL[vi].push(li);    // add lines that pass through
                 }
             }
-            crossings = temp;
-        }
-        P.sort(([[x1, y1], i1], [[x2, y2], i2]) => {
-            return (Math.abs(x1 - x2) < eps) ? (y1 - y2) : (x1 - x2);
-        });
-        let curr = [P[0]];
-        const compressed_P = [curr];
-        for (const point of P) {
-            const [p, i1] = curr[0];
-            const [q, i2] = point;
-            if (M.close(p, q, eps)) {
-                curr.push(point);
-            } else {
-                curr = [point];
-                compressed_P.push(curr);
-            }
-        }
-        const V = compressed_P.map((ps) => ps[0][0]);
-        // 2) Constructing map from edges to overlapping lines
-        const LP = L.map(() => new Set());
-        for (const [i, cP] of compressed_P.entries()) {
-            for (const [, j] of cP) {
-                LP[j].add(i);
-            }
-        }
-        const edges = new Map();
-        for (const [i, S] of LP.entries()) {
-            const points_on_line = Array.from(S);
-            const [a, b] = L[i];
-            const dir = M.sub(b, a);
-            points_on_line.sort((pk, qk) => {
-                const dp = M.dot(dir, V[pk]);
-                const dq = M.dot(dir, V[qk]);
-                return dp - dq;
+            VL[vi].sort((i, j) => {     // process lines by distance from vi
+                const dj = M.distsq(v, V[LV[j][1]]);
+                const di = M.distsq(v, V[LV[i][1]]);
+                return dj - di;
             });
-            let prev = points_on_line[0];
-            for (const [j, curr] of points_on_line.entries()) {
-                if (j == 0) { continue; }
-                const k = M.encode_order_pair([curr, prev]);
-                const E = edges.get(k);
-                if (E == undefined) {
-                    edges.set(k, [i]);
-                } else {
-                    E.push(i);
+            for (const li of VL[vi]) {      // add lines to new segments
+                const si = SV.length;
+                SV.push([vi, LV[li][1]]);   // endpoint for comparisons
+                SU.push(LU[li]);
+                SA.push(LA[li]);
+                SD.push(LD[li]);
+                SL.push([li]);
+                const sj = T.insert(si);
+                if (sj != undefined) {      // existing segment
+                    SV.pop(); SU.pop();
+                    SA.pop(); SD.pop();
+                    SL.pop();
+                    SL[sj].push(li);
+                } else {                    // new segment
+                    SV[si][1] = undefined;  // erase endpoint
                 }
-                prev = curr;
+            }
+            const pairs = [];
+            pairs.push([T.prev(0), T.next(0)]); SA[0] = -Infinity
+            pairs.push([T.prev(0), T.next(0)]); SA[0] =  Infinity
+            for (const [l, r] of pairs) {   // check adjacent pairs
+                if ((l == undefined) || (r == undefined)) {
+                    continue;               // incomplete pair
+                }
+                const vl = SV[l][0], al = SA[l];
+                const vr = SV[r][0], ar = SA[r];
+                const x = line_intersect(V[vl], M.add(V[vl], SU[l]),
+                                         V[vr], M.add(V[vr], SU[r]));
+                if ((x == undefined) ||                         // none
+                    (point_comp(x, v) == 0) ||                  // near curr
+                    ((point_comp(x, v) < 0) && (x[1] <= v[1]))  // behind sweep
+                ) { continue; }
+                const vx = V.length;        // add point
+                V.push(x);
+                VL.push([]);
+                const vj = Q.insert(vx);
+                if (vj != undefined) {      // point near existing point
+                    V.pop();
+                    VL.pop();
+                }
             }
         }
-        // 3) separate into EV and EL
-        const [EV, EL] = [[], []];
-        for (const [k, E] of edges) {
-            EV.push(M.decode(k));
-            EL.push(E);
+        const X = [];
+        const X_map = new Map();
+        for (let si = 1; si < SV.length; ++si) {    // combine redundant
+            const pp = SV[si].map(vi => VP[vi]);
+            if ((pp[0] == undefined) || (pp[1] == undefined)) {
+                throw new Error();                  // missing endpoint
+            }
+            if (pp[1] < pp[0]) { pp.reverse(); }
+            const k = M.encode(pp);
+            let xi = X_map.get(k);
+            if (xi == undefined) {
+                xi = X.length;
+                X.push([pp, []]);
+                X_map.set(k, xi);
+            }
+            X[xi][1].push(...SL[si]);
         }
-        return [V, EV, EL];
+        X.sort(([[i1, j1], L1], [[i2, j2], L2]) => {    // lexicographic
+            return (i1 == i2) ? (j1 - j2) : (i1 - i2);
+        })
+        const XP = X.map(xi => xi[0]);
+        const XL = X.map(xi => xi[1].sort((a, b) => a - b));
+        return [P, XP, XL];
     },
     V_EV_2_VV_FV: (V, EV) => {
         const adj = V.map(() => []);

@@ -138,11 +138,10 @@ const MAIN = {
         NOTE.start("*** Computing cell graph ***");
         const {Vf, EV, EF, FV} = FOLD;
         const L = EV.map((P) => M.expand(P, Vf));
-        FOLD.eps = M.min_line_length(L) / M.EPS;
-        NOTE.time(`Using eps ${FOLD.eps} from min line length ${
-            FOLD.eps*M.EPS} (factor ${M.EPS})`);
         NOTE.time("Constructing points and segments from edges");
-        const [P, SP, SE] = X.L_2_V_EV_EL(L, FOLD.eps);
+        const [P, SP, SE, eps_i] = X.L_2_V_EV_EL(L);
+        FOLD.eps = M.min_line_length(L)/(2**eps_i);
+        NOTE.time(`Used eps: ${2**eps_i} | ${FOLD.eps}`);
         const P_norm = M.normalize_points(P);
         NOTE.annotate(P, "points_coords");
         NOTE.annotate(SP, "segments_points");
