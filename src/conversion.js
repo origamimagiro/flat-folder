@@ -7,7 +7,7 @@ export const X = {     // CONVERSION
     L_2_V_EV_EL: (L) => {
         const d = M.min_line_length(L);
         let nV = 0, nE = 0, count = 0;
-        const k = 2;    // decrease eps until found vertices # repeats twice
+        const k = 3;    // decrease eps until feature #s repeat sufficiently
         for (const i of Array(50).fill().map((_, j) => j + 3)) {
             const eps = d/(2**i);
             if (eps < M.FLOAT_EPS) { break; }
