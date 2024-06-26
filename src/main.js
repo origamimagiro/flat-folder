@@ -140,6 +140,14 @@ const MAIN = {
         const L = EV.map((P) => M.expand(P, Vf));
         NOTE.time("Constructing points and segments from edges");
         const [P, SP, SE, eps_i] = X.L_2_V_EV_EL(L);
+        if (P.length == 0) {
+            const num_states = document.getElementById("num_states");
+            const error = "(Precision Error: could not find stable graph)"
+            num_states.textContent = error;
+            NOTE.time(error);
+            NOTE.end();
+            return;
+        }
         FOLD.eps = M.min_line_length(L)/(2**eps_i);
         NOTE.time(`Used eps: ${2**eps_i} | ${FOLD.eps}`);
         const P_norm = M.normalize_points(P);
@@ -227,7 +235,6 @@ const MAIN = {
             const num_states = document.getElementById("num_states");
             num_states.textContent = `(Found 0 states) ${str}`;
             NOTE.lap();
-            stop = Date.now();
             NOTE.end();
             return;
         } // solve completed
@@ -309,7 +316,6 @@ const MAIN = {
             GUI.update_component(FOLD, CELL, BF, GB, GA, GI);
         }
         NOTE.lap();
-        stop = Date.now();
         NOTE.end();
     },
 };
