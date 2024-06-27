@@ -8,6 +8,7 @@ export const X = {     // CONVERSION
         const d = M.min_line_length(L);
         let nV = 0, nE = 0, count = 0;
         const k = 3;    // decrease eps until feature #s repeat sufficiently
+        let V_ = [], EV_ = [], EL_ = [], k_ = 1, i_ = 1;
         for (const i of Array(50).fill().map((_, j) => j + 3)) {
             const eps = d/(2**i);
             if (eps < M.FLOAT_EPS) { break; }
@@ -15,7 +16,9 @@ export const X = {     // CONVERSION
                 const [V, EV, EL] = X.L_eps_2_V_EV_EL(L, eps);
                 if ((V.length == nV) && (EV.length == nE)) {
                     ++count;
-                    if (count == k) { return [V, EV, EL, i - k]; }
+                    if (count <= k_) { continue; }
+                    V_ = V; EV_ = EV; EL_ = EL; k_ = count; i_ = i;
+                    if (count == k) { break; }
                 } else {
                     nV = V.length;
                     nE = EV.length;
@@ -23,7 +26,7 @@ export const X = {     // CONVERSION
                 }
             } catch { nV = 0; nE = 0; count = 0; }
         }
-        return [[], [], [], 0];                 // not found
+        return [V_, EV_, EL_, i_ - k_];
     },
     L_eps_2_V_EV_EL: (L, eps) => {
         const point_comp = ([x1, y1], [x2, y2]) => {    // point comparator
