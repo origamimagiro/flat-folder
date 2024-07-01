@@ -522,8 +522,8 @@ export const X = {     // CONVERSION
             const CB = await X.map_workers(W, [CF], "BF", {});
             for (const B of CB) { for (const k of B) { BF_set.add(k); } }
         } else {                                    // O(|C|t^2) <= O(|F|^4)
-            NOTE.log(" -- No web workers");   // t is max faces in a cell
-            NOTE.start_check("cell", CF);     // t^2 = O(|B|) <= O(|F|^2)
+            NOTE.log(" -- No web workers");         // t is max faces in a cell
+            NOTE.start_check("cell", CF);           // t^2 = O(|B|) <= O(|F|^2)
             for (const [i, F] of CF.entries()) {    // |C| = O(|F|^2)
                 NOTE.check(i);
                 for (const [j, f1] of F.entries()) {
