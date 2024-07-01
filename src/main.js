@@ -134,8 +134,18 @@ const MAIN = {
         NOTE.lap();
         NOTE.end();
     },
-    compute_cells: (FOLD) => {
-        NOTE.start("*** Computing cell graph ***");
+    compute_cells: async (FOLD) => {
+        NOTE.start();
+        let W;
+        if (window.Worker != undefined) {
+            const wn = 8;
+            NOTE.time(`*** Setting up ${wn} web workers ***`);
+            W = Array(wn).fill()
+                .map(() => new Worker("src/worker.js", {type: "module"}));
+            for (const w of W) { w.onerror = (e) => { debugger; }; }
+            await X.send_work(W, "init", wi => [wi]);
+        }
+        NOTE.time("*** Computing cell graph ***");
         const {Vf, EV, EF, FV} = FOLD;
         const L = EV.map((P) => M.expand(P, Vf));
         NOTE.time("Constructing points and segments from edges");
@@ -178,9 +188,9 @@ const MAIN = {
             NOTE.end();
         };
         NOTE.time("*** Computing constraints ***");
-        window.setTimeout(MAIN.compute_constraints, 0, FOLD, CELL);
+        window.setTimeout(MAIN.compute_constraints, 0, FOLD, CELL, W);
     },
-    compute_constraints: (FOLD, CELL) => {
+    compute_constraints: async (FOLD, CELL, W) => {
         const {Vf, EF, FV} = FOLD;
         const {SE, SC, CF, FC} = CELL;
         NOTE.time("Computing edge-edge overlaps");
@@ -192,18 +202,22 @@ const MAIN = {
         NOTE.count(ExF, "edge-face adjacencies");
         NOTE.lap();
         NOTE.time("Computing variables");
-        const BF = X.CF_2_BF(CF);
+        const BF = await X.CF_W_2_BF(CF, W);
         NOTE.annotate(BF, "variables_faces");
         NOTE.lap();
         NOTE.time("Computing transitivity constraints");
-        const BT3 = X.FC_CF_BF_2_BT3(FC, CF, BF);
+        const BT3 = await X.FC_CF_BF_W_2_BT3(FC, CF, BF, W);
         NOTE.count(BT3, "initial transitivity", 3);
         NOTE.lap();
         NOTE.time("Computing non-transitivity constraints");
-        const [BT0, BT1, BT2] = X.BF_EF_ExE_ExF_BT3_2_BT0_BT1_BT2(BF, EF, ExE, ExF, BT3);
+        const [BT0, BT1, BT2] = await X.BF_EF_ExE_ExF_BT3_2_BT0_BT1_BT2(
+            BF, EF, ExE, ExF, BT3);
         NOTE.count(BT0, "taco-taco", 6);
         NOTE.count(BT1, "taco-tortilla", 3);
         NOTE.count(BT2, "tortilla-tortilla", 2);
+        NOTE.lap();
+        NOTE.time("Cleaning transitivity constraints");
+        await X.BF_BT0_BT1_BT3_2_clean_BT3(BF, BT0, BT1, BT3);
         NOTE.count(BT3, "independent transitivity", 3);
         const BT = BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
         NOTE.lap();
@@ -213,7 +227,7 @@ const MAIN = {
         NOTE.time("*** Computing states ***");
         window.setTimeout(MAIN.compute_states, 0, FOLD, CELL, BF, BT);
     },
-    compute_states: (FOLD, CELL, BF, BT) => {
+    compute_states: (FOLD, CELL, BF, BT, W) => {
         const {EA, EF, Ff} = FOLD;
         const {CF, FC} = CELL;
         const BA0 = X.EF_EA_Ff_BF_2_BA0(EF, EA, Ff, BF);

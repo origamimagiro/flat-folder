@@ -516,21 +516,25 @@ export const X = {     // CONVERSION
         }
         return Array.from(ExF);
     },
-    CF_2_BF: (CF) => {                          // O(|C|t^2) <= O(|F|^4)
-        const BF_set = new Set();               // t is max faces in a cell
-        NOTE.start_check("cell", CF);           // t^2 = O(|B|) <= O(|F|^2)
-        for (const [i, F] of CF.entries()) {    // |C| = O(|F|^2)
-            NOTE.check(i);
-            for (const [j, f1] of F.entries()) {
-                for (let k = j + 1; k < F.length; k++) {
-                    const f2 = F[k];
-                    BF_set.add(M.encode([f1, f2]));
+    CF_W_2_BF: async (CF, W) => {
+        const BF_set = new Set();
+        if (W != undefined) {
+            const CB = await X.map_workers(W, [CF], "BF", {});
+            for (const B of CB) { for (const k of B) { BF_set.add(k); } }
+        } else {                                    // O(|C|t^2) <= O(|F|^4)
+            NOTE.log(" -- No web workers");   // t is max faces in a cell
+            NOTE.start_check("cell", CF);     // t^2 = O(|B|) <= O(|F|^2)
+            for (const [i, F] of CF.entries()) {    // |C| = O(|F|^2)
+                NOTE.check(i);
+                for (const [j, f1] of F.entries()) {
+                    for (let k = j + 1; k < F.length; k++) {
+                        const f2 = F[k];
+                        BF_set.add(M.encode([f1, f2]));
+                    }
                 }
             }
         }
-        const BF = Array.from(BF_set);
-        BF.sort();
-        return BF;                              // |BF| = O(|F|^2)
+        return Array.from(BF_set).sort();           // |BF| = O(|F|^2)
     },
     check_overlap: (p, BF_map) => {
         return (BF_map.has(M.encode_order_pair(p)) ? 1 : 0);
@@ -607,7 +611,9 @@ export const X = {     // CONVERSION
             }
             X.add_constraint(cons, BF_map, BT);
         }
-        NOTE.time("Cleaning transitivity constraints");
+        return BT;
+    },
+    BF_BT0_BT1_BT3_2_clean_BT3: (BF, BT0, BT1, BT3) => {
         const T3 = new Set();
         NOTE.start_check("variable", BF);
         for (const [i, k] of BF.entries()) {
@@ -626,9 +632,12 @@ export const X = {     // CONVERSION
             BT3[i] = M.encode(T3);
             T3.clear();
         }
-        return BT;
     },
-    FC_CF_BF_2_BT3: (FC, CF, BF) => {            // O(|B|kt) <= O(|F|^5)
+    FC_CF_BF_W_2_BT3: async (FC, CF, BF, W) => {
+        if (W != undefined) {
+            return X.map_workers(W, [BF], "BT3", {FC, CF});
+        }
+        NOTE.log(" -- No web workers");          // O(|B|kt) <= O(|F|^5)
         const BT3 = [];                          // k is max cells in a face,
         const FC_sets = FC.map(C => new Set(C)); // t is max faces in a cell
         const T = new Set();                     // k = O(|C|) <= O(|F|^2)
@@ -670,9 +679,7 @@ export const X = {     // CONVERSION
     },
     BF_GB_GA_GI_2_edges: (BF, GB, GA, GI) => {
         const edges = [];
-        NOTE.start_check("group", GB);
         for (const [i, B] of GB.entries()) {
-            NOTE.check(i);
             const orders = M.bit_decode(GA[i][GI[i]], B.length);
             for (const [j, F] of B.entries()) {
                 const [f1, f2] = M.decode(BF[F]);
@@ -690,9 +697,7 @@ export const X = {     // CONVERSION
     },
     CF_edges_2_CD: (CF, edges) => {
         const edge_map = new Set(edges);
-        NOTE.start_check("cell", CF);
         return CF.map((F, i) => {
-            NOTE.check(i);
             const S = F.map(i => i);
             S.sort((a, b) => (edge_map.has(M.encode([a, b])) ? 1 : -1));
             return S;
@@ -781,5 +786,32 @@ export const X = {     // CONVERSION
             Rf.push(Ff[fi]);
         }
         return [RP, Rf];
+    },
+    map_workers: async (W, A, type, init_args) => {
+        NOTE.log(` -- Partitioning work`);
+        const wn = W.length;
+        const J = Array(wn).fill().map(() => []);
+        for (let i = 0, ji = 0; i < A[0].length; ++i, ji = (ji + 1) % wn) {
+            const args = [i];
+            for (const a of A) { args.push(a[i]); }
+            J[ji].push(args);
+        }
+        NOTE.log(` -- Initializing workers`);
+        await X.send_work(W, "start", () => init_args);
+        NOTE.log(` -- Assigning jobs to workers`);
+        const R = await X.send_work(W, "map", wi => [J[wi], type]);
+        NOTE.log(` -- Stopping workers`);
+        await X.send_work(W, "stop", () => [type]);
+        NOTE.log(" -- Compiling work");
+        const out = Array(A[0].length).fill();
+        for (const r of R) { for (const [i, x] of r) { out[i] = x; } }
+        return out;
+    },
+    send_work: async (W, type, args_f) => {
+        return await Promise.all(W.map((w, wi) => new Promise((res) => {
+            w.onmessage = (e) => res(e.data);
+            const msg = {type, args: args_f(wi)};
+            w.postMessage(msg);
+        })));
     },
 };
