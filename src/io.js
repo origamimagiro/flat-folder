@@ -262,7 +262,9 @@ export const IO = {    // INPUT-OUTPUT
             }
         }
         [EF, FE] = X.EV_FV_2_EF_FE(EV, FV);     // remove holes
-        FV = FV.filter((F, i) => !FE[i].every(e => (EA[e] == "B")));
+        if (FV.length > 1) {
+            FV = FV.filter((F, i) => !FE[i].every(e => (EA[e] == "B")));
+        }
         if (FV.length != FE.length) {           // recompute face maps
             [EF, FE] = X.EV_FV_2_EF_FE(EV, FV);
         }

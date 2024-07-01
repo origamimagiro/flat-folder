@@ -11,7 +11,7 @@ export const NOTE = {  // ANNOTATION
     },
     lap: () => {
         const time = TIME.lap();
-        NOTE.log(`   - Time elapsed: ${time}`);
+        NOTE.log(`   - Time elapsed: ${TIME.str(time)}`);
         return time;
     },
     start_check: (label, A, interval = 5000) => {
@@ -43,7 +43,7 @@ export const NOTE = {  // ANNOTATION
     },
     end: () => {
         const time = TIME.read_time();
-        NOTE.log(`*** Total Time elapsed: ${time} ***`);
+        NOTE.log(`*** Total Time elapsed: ${TIME.str(time)} ***`);
         NOTE.log("");
         return time;
     },
@@ -88,12 +88,12 @@ const TIME = {  // TIME
         TIME.main_start = Date.now();
         TIME.main_lap = TIME.main_start;
     },
-    read_time: () => TIME.str(Date.now() - TIME.main_start),
+    read_time: () => Date.now() - TIME.main_start,
     lap: () => {
         const stop = Date.now();
         const time = stop - TIME.main_lap;
         TIME.main_lap = stop;
-        return TIME.str(time);
+        return time;
     },
     read_est: () => Date.now() - TIME.est_lap,
     start_est: (lim) => {
