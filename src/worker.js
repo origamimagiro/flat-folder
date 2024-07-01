@@ -17,6 +17,7 @@ onmessage = (e) => {
 
 const actions = {
     BF: (J) => {
+        if (J.length == 0) { return []; }
         const BF_set = new Set();
         if (id == 0) { NOTE.start_check(`worker ${id}: cell`, J); }
         for (let i = 0; i < J.length; ++i) {
@@ -34,6 +35,7 @@ const actions = {
         return out;
     },
     BT3: (J) => {
+        if (J.length == 0) { return []; }
         for (let i = 0; i < G.FC.length; ++i) { G.FC[i] = new Set(G.FC[i]); }
         const out = [];
         if (id == 0) { NOTE.start_check(`worker ${id}: variable`, J); }
