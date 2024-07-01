@@ -8,7 +8,7 @@ onmessage = (e) => {
     let out;
     switch (d.type) {
         case "map": out = actions[d.args.pop()](...d.args); break;
-        case "init": NOTE.start(); id = d.args[0]; break;
+        case "init": id = d.args[0]; break;
         case "start": for (const [k, v] of Object.entries(d.args)) { G[k] = v; } break;
         case "stop": for (const k of Object.keys(G)) { delete G[k]; } break;
     }

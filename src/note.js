@@ -43,7 +43,7 @@ export const NOTE = {  // ANNOTATION
     },
     end: () => {
         const time = TIME.read_time();
-        NOTE.log(`*** Total Time elapsed: $time{} ***`);
+        NOTE.log(`*** Total Time elapsed: ${time} ***`);
         NOTE.log("");
         return time;
     },
