@@ -202,11 +202,11 @@ const MAIN = {
         NOTE.count(ExF, "edge-face adjacencies");
         NOTE.lap();
         NOTE.time("Computing variables");
-        const BF = await X.CF_W_2_BF(CF, W);
+        const BF = await X.CF_2_BF(CF, W);
         NOTE.annotate(BF, "variables_faces");
         NOTE.lap();
         NOTE.time("Computing transitivity constraints");
-        const BT3 = await X.FC_CF_BF_W_2_BT3(FC, CF, BF, W);
+        const BT3 = await X.FC_CF_BF_2_BT3(FC, CF, BF, W);
         NOTE.count(BT3, "initial transitivity", 3);
         NOTE.lap();
         NOTE.time("Computing non-transitivity constraints");

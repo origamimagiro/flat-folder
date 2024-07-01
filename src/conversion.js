@@ -516,7 +516,7 @@ export const X = {     // CONVERSION
         }
         return Array.from(ExF);
     },
-    CF_W_2_BF: async (CF, W) => {
+    CF_2_BF: async (CF, W) => {
         const BF_set = new Set();
         if (W != undefined) {
             const CB = await X.map_workers(W, [CF], "BF", {});
@@ -633,7 +633,7 @@ export const X = {     // CONVERSION
             T3.clear();
         }
     },
-    FC_CF_BF_W_2_BT3: async (FC, CF, BF, W) => {
+    FC_CF_BF_2_BT3: async (FC, CF, BF, W) => {
         if (W != undefined) {
             return X.map_workers(W, [BF], "BT3", {FC, CF});
         }
