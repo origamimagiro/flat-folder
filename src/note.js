@@ -9,7 +9,11 @@ export const NOTE = {  // ANNOTATION
             NOTE.time(label);
         }
     },
-    lap: () => NOTE.log(`   - Time elapsed: ${TIME.lap()}`),
+    lap: () => {
+        const time = TIME.lap();
+        NOTE.log(`   - Time elapsed: ${time}`);
+        return time;
+    },
     start_check: (label, A, interval = 5000) => {
         const lim = (A == undefined) ? A : A.length;
         TIME.start_est(lim);
@@ -38,8 +42,10 @@ export const NOTE = {  // ANNOTATION
         NOTE.log(`${time} | ${label}`);
     },
     end: () => {
-        NOTE.log(`*** Total Time elapsed: ${TIME.read_time()} ***`);
+        const time = TIME.read_time();
+        NOTE.log(`*** Total Time elapsed: $time{} ***`);
         NOTE.log("");
+        return time;
     },
     count: (A, label, div = 1) => {
         const n = Array.isArray(A) ? NOTE.count_subarrays(A)/div : A;
