@@ -192,7 +192,7 @@ const MAIN = {
     },
     compute_constraints: async (FOLD, CELL, W) => {
         const {Vf, EF, FV} = FOLD;
-        const {SE, SC, CF, FC} = CELL;
+        const {SP, SE, SC, CP, CF, FC} = CELL;
         NOTE.time("Computing edge-edge overlaps");
         const ExE = X.SE_2_ExE(SE);
         NOTE.count(ExE, "edge-edge adjacencies");
@@ -202,11 +202,14 @@ const MAIN = {
         NOTE.count(ExF, "edge-face adjacencies");
         NOTE.lap();
         NOTE.time("Computing variables");
-        const BF = await X.CF_2_BF(CF, W);
+        const BF = X.EF_SP_SE_CP_CF_2_BF(EF, SP, SE, CP, CF);
         NOTE.annotate(BF, "variables_faces");
         NOTE.lap();
         NOTE.time("Computing transitivity constraints");
-        const BT3 = await X.FC_CF_BF_2_BT3(FC, CF, BF, W);
+        const BT3 = ((W == undefined) ?
+            X.EF_SP_SE_CP_FC_CF_BF_2_BT3(EF, SP, SE, CP, FC, CF, BF) :
+            (await X.FC_CF_BF_W_2_BT3(FC, CF, BF, W))
+        );
         NOTE.count(BT3, "initial transitivity", 3);
         NOTE.lap();
         NOTE.time("Computing non-transitivity constraints");

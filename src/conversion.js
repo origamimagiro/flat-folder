@@ -516,25 +516,82 @@ export const X = {     // CONVERSION
         }
         return Array.from(ExF);
     },
-    CF_2_BF: async (CF, W) => {
-        const BF_set = new Set();
-        if (W != undefined) {
-            const CB = await X.map_workers(W, [CF], "BF", {});
-            for (const B of CB) { for (const k of B) { BF_set.add(k); } }
-        } else {                                    // O(|C|t^2) <= O(|F|^4)
-            NOTE.log(" -- No web workers");         // t is max faces in a cell
-            NOTE.start_check("cell", CF);           // t^2 = O(|B|) <= O(|F|^2)
-            for (const [i, F] of CF.entries()) {    // |C| = O(|F|^2)
-                NOTE.check(i);
-                for (const [j, f1] of F.entries()) {
-                    for (let k = j + 1; k < F.length; k++) {
-                        const f2 = F[k];
-                        BF_set.add(M.encode([f1, f2]));
-                    }
+    CF_2_BF: (CF) => {                          // O(|C|t^2) <= O(|F|^4)
+        const BF_set = new Set();               // t is max faces in a cell
+        NOTE.start_check("cell", CF);           // t^2 = O(|B|) <= O(|F|^2)
+        for (const [i, F] of CF.entries()) {    // |C| = O(|F|^2)
+            NOTE.check(i);
+            for (const [j, f1] of F.entries()) {
+                for (let k = j + 1; k < F.length; k++) {
+                    const f2 = F[k];
+                    BF_set.add(M.encode([f1, f2]));
                 }
             }
         }
-        return Array.from(BF_set).sort();           // |BF| = O(|F|^2)
+        return Array.from(BF_set).sort();       // |BF| = O(|F|^2)
+    },
+    CF_W_2_BF: async (CF, W) => {
+        const BF_set = new Set();
+        const CB = await X.map_workers(W, [CF], "BF", {});
+        for (const B of CB) { for (const k of B) { BF_set.add(k); } }
+        return Array.from(BF_set).sort();
+    },
+    EF_SP_SE_CP_CF_2_BF: (EF, SP, SE, CP, CF) => {
+        const SF_map = new Map();
+        for (const [i, vs] of SP.entries()) {
+            const Fs = [];
+            for (const ei of SE[i]) {
+                for (const f of EF[ei]) {
+                    Fs.push(f);
+                }
+            }
+            SF_map.set(M.encode_order_pair(vs), Fs);
+        }
+        const SC_map = new Map();
+        for (const [i, C] of CP.entries()) {
+            let v1 = C[C.length - 1];
+            for (const v2 of C) {
+                SC_map.set(M.encode([v2, v1]), i);
+                v1 = v2;
+            }
+        }
+        const BF_set = new Set();
+        const seen = new Set();
+        const queue = [0];
+        {
+            const F = CF[0];
+            for (let j = 1; j < F.length; ++j) {
+                for (let i = 0; i < j; ++i) {
+                    BF_set.add(M.encode_order_pair([F[i], F[j]]));
+                }
+            }
+        }
+        let next = 0;
+        const CF_set = CF.map(F => new Set(F));
+        while (next < queue.length) {   // BFS on cells in the overlap graph
+            const ci = queue[next++];
+            const C = CP[ci];
+            let v1 = C[C.length - 1];
+            for (const v2 of C) {
+                const cj = SC_map.get(M.encode([v1, v2]));
+                if ((cj != undefined) && !seen.has(cj)) {
+                    queue.push(cj);
+                    seen.add(cj);
+                    const Fi_set = CF_set[ci];
+                    const Fj_set = CF_set[cj];
+                    const k = M.encode_order_pair([v1, v2]);
+                    for (const fi of SF_map.get(k)) {
+                        if (Fi_set.has(fi) || !Fj_set.has(fi)) { continue; }
+                        for (const fj of Fj_set) {
+                            if (fi == fj) { continue; }
+                            BF_set.add(M.encode_order_pair([fi, fj]));
+                        }
+                    }
+                }
+                v1 = v2;
+            }
+        }
+        return Array.from(BF_set).sort();
     },
     check_overlap: (p, BF_map) => {
         return (BF_map.has(M.encode_order_pair(p)) ? 1 : 0);
@@ -633,11 +690,7 @@ export const X = {     // CONVERSION
             T3.clear();
         }
     },
-    FC_CF_BF_2_BT3: async (FC, CF, BF, W) => {
-        if (W != undefined) {
-            return X.map_workers(W, [BF], "BT3", {FC, CF});
-        }
-        NOTE.log(" -- No web workers");          // O(|B|kt) <= O(|F|^5)
+    FC_CF_BF_2_BT3: (FC, CF, BF) => {            // O(|B|kt) <= O(|F|^5)
         const BT3 = [];                          // k is max cells in a face,
         const FC_sets = FC.map(C => new Set(C)); // t is max faces in a cell
         const T = new Set();                     // k = O(|C|) <= O(|F|^2)
@@ -659,6 +712,78 @@ export const X = {     // CONVERSION
             T.clear();
         }
         return BT3;                             // |BT3| = O(|B||F|) <= O(|F|^3)
+    },
+    FC_CF_BF_W_2_BT3: async (FC, CF, BF, W) => {
+        return await X.map_workers(W, [BF], "BT3", {FC, CF});
+    },
+    EF_SP_SE_CP_FC_CF_BF_2_BT3: (EF, SP, SE, CP, FC, CF, BF) => {
+        const FC_set = FC.map(C => new Set(C));
+        const CF_set = CF.map(F => new Set(F));
+        const SC_map = new Map();
+        for (const [i, C] of CP.entries()) {
+            let v1 = C[C.length - 1];
+            for (const v2 of C) {
+                SC_map.set(M.encode([v2, v1]), i);
+                v1 = v2;
+            }
+        }
+        const SF_map = new Map();
+        for (const [i, [v1, v2]] of SP.entries()) {
+            const F1 = [];
+            const F2 = [];
+            for (const ei of SE[i]) {
+                for (const f of EF[ei]) {
+                    const c1 = SC_map.get(M.encode([v1, v2]));
+                    const c2 = SC_map.get(M.encode([v2, v1]));
+                    if ((c1 != undefined) && CF_set[c1].has(f)) { F1.push(f); }
+                    if ((c2 != undefined) && CF_set[c2].has(f)) { F2.push(f); }
+                }
+            }
+            SF_map.set(M.encode([v1, v2]), F1);
+            SF_map.set(M.encode([v2, v1]), F2);
+        }
+        const BT3 = [];
+        const T = new Set();
+        NOTE.start_check("variable", BF);
+        for (const [i, k] of BF.entries()) {
+            NOTE.check(i);
+            let [f1, f2] = M.decode(k);
+            if (FC[f1].length > FC[f2].length) { [f1, f2] = [f2, f1]; }
+            const C = new Set();
+            for (const ci of FC[f1]) {
+                if (FC_set[f2].has(ci)) {
+                    C.add(ci);
+                }
+            }
+            T.clear();
+            const seen = new Set();
+            for (const ci of C) {
+                if (seen.has(ci)) { continue; }
+                for (const fi of CF[ci]) { T.add(fi); }
+                const Q = [ci];
+                seen.add(ci);
+                let qi = 0;
+                while (qi < Q.length) {
+                    const cj = Q[qi++];
+                    const P = CP[cj];
+                    let v1 = P[P.length - 1];
+                    for (const v2 of P) {
+                        const cj = SC_map.get(M.encode([v1, v2]));
+                        if ((cj != undefined) && C.has(cj) && !seen.has(cj)) {
+                            Q.push(cj);
+                            seen.add(cj);
+                            const k = M.encode([v1, v2]);
+                            for (const fi of SF_map.get(k)) { T.add(fi); }
+                        }
+                        v1 = v2;
+                    }
+                }
+            }
+            T.delete(f1);
+            T.delete(f2);
+            BT3.push(M.encode(T));
+        }
+        return BT3;
     },
     EF_EA_Ff_BF_2_BA0: (EF, EA, Ff, BF) => {
         const BI_map = new Map();
