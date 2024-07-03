@@ -10,7 +10,7 @@ import { SOLVER } from "./solver.js";
 window.onload = () => { MAIN.startup(); };  // entry point
 
 const MAIN = {
-    startup: () => {
+    startup: async () => {
         NOTE.clear_log();
         NOTE.start("*** Starting Flat-Folder ***");
         NOTE.time("Initializing interface");
@@ -52,10 +52,19 @@ const MAIN = {
                 rotate_select.appendChild(el);
             }
         }
+        let W = undefined;
+        const wn = navigator.hardwareConcurrency ?? 8;
+        if ((window.Worker != undefined) && (wn != 1)) {
+            NOTE.time(`*** Setting up ${wn} web workers ***`);
+            W = Array(wn).fill()
+                .map(() => new Worker("src/worker.js", {type: "module"}));
+            for (const w of W) { w.onerror = (e) => { debugger; }; }
+            await X.send_work(W, "init", wi => [wi]);
+        }
         document.getElementById("import").onchange = (e) => {
             if (e.target.files.length > 0) {
                 const file_reader = new FileReader();
-                file_reader.onload = MAIN.process_file;
+                file_reader.onload = (e) => MAIN.process_file(e, W);
                 file_reader.readAsText(e.target.files[0]);
             }
         };
@@ -67,7 +76,7 @@ const MAIN = {
         CON.build();
         NOTE.end();
     },
-    process_file: (e) => {
+    process_file: (e, W) => {
         NOTE.clear_log();
         NOTE.start("*** Starting File Import ***");
         const doc = e.target.result;
@@ -129,22 +138,13 @@ const MAIN = {
             };
         }
         document.getElementById("fold_button").onclick = () => {
-            MAIN.compute_cells(FOLD);
+            MAIN.compute_cells(FOLD, W);
         };
         NOTE.lap();
         NOTE.end();
     },
-    compute_cells: async (FOLD) => {
+    compute_cells: (FOLD, W) => {
         NOTE.start();
-        let W;
-        if (window.Worker != undefined) {
-            const wn = 8;
-            NOTE.time(`*** Setting up ${wn} web workers ***`);
-            W = Array(wn).fill()
-                .map(() => new Worker("src/worker.js", {type: "module"}));
-            for (const w of W) { w.onerror = (e) => { debugger; }; }
-            await X.send_work(W, "init", wi => [wi]);
-        }
         NOTE.time("*** Computing cell graph ***");
         const {Vf, EV, EF, FV} = FOLD;
         const L = EV.map((P) => M.expand(P, Vf));
