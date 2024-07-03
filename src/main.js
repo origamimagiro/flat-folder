@@ -213,14 +213,14 @@ const MAIN = {
         NOTE.count(BT3, "initial transitivity", 3);
         NOTE.lap();
         NOTE.time("Computing non-transitivity constraints");
-        const [BT0, BT1, BT2] = await X.BF_EF_ExE_ExF_BT3_2_BT0_BT1_BT2(
+        const [BT0, BT1, BT2] = X.BF_EF_ExE_ExF_BT3_2_BT0_BT1_BT2(
             BF, EF, ExE, ExF, BT3);
         NOTE.count(BT0, "taco-taco", 6);
         NOTE.count(BT1, "taco-tortilla", 3);
         NOTE.count(BT2, "tortilla-tortilla", 2);
         NOTE.lap();
         NOTE.time("Cleaning transitivity constraints");
-        await X.BF_BT0_BT1_BT3_2_clean_BT3(BF, BT0, BT1, BT3);
+        X.BF_BT0_BT1_BT3_2_clean_BT3(BF, BT0, BT1, BT3);
         NOTE.count(BT3, "independent transitivity", 3);
         const BT = BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
         NOTE.lap();
