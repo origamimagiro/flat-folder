@@ -29,7 +29,8 @@ const main = async () => {
     const headers = ["number", "author", "title", "vertices",
         "edges", "faces", "eps", "variables", "taco-taco", "taco-tortilla",
         "tortilla-tortilla", "transitivity", "reduced_trans",
-        "components", "limited", "states", "component_assignments"];
+        "components", "limited", "states", "component_assignments",
+        "setup_sec", "solve_sec"];
     document.getElementById("import").onchange = async (e) => {
         const val = document.getElementById("limit_select").value;
         const lim = (val == "all") ? Infinity : +val;
@@ -69,6 +70,7 @@ const main = async () => {
 };
 
 const process_file = async (fold, lim, W) => {
+    const t0 = performance.now();
     const V  = fold.vertices_coords;
     const EV = fold.edges_vertices;
     const EA = fold.edges_assignment;
@@ -97,11 +99,13 @@ const process_file = async (fold, lim, W) => {
         BF, EF, ExE, ExF, BT3);
     await X.BF_BT0_BT1_BT3_2_clean_BT3(BF, BT0, BT1, BT3);
     const BT = BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
+    const t1 = performance.now();
     const BA0 = X.EF_EA_Ff_BF_2_BA0(EF, EA, Ff, BF);
     const [GB, GA] = SOLVER.solve(BF, BT, BA0, lim);
     const n = (GA == undefined) ? 0 : GA.reduce((s, A) => {
         return s*BigInt(A.length);
     }, BigInt(1));
+    const t2 = performance.now();
     return {
         number: fold.number,
         author: fold.file_author,
@@ -121,6 +125,8 @@ const process_file = async (fold, lim, W) => {
             ? "no limit" : lim),
         states: n,
         component_assignments: `|${GA.map((A) => A.length).join("|")}|`,
+        setup_sec: Math.round((10**6)*(t1 - t0))/(10**9),
+        solve_sec: Math.round((10**6)*(t2 - t1))/(10**9),
     };
 };
 
