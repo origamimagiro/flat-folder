@@ -10,7 +10,7 @@ export const PAR = {
     },
     get_workers: async (wn, path) => {
         if (wn == 1) { return undefined; }
-        // await import("./node_Worker_polyfill/main.js");
+        await import("./node_Worker_polyfill/main.js");
         NOTE.time(`*** Setting up ${wn} web workers ***`);
         const W = Array(wn).fill()
             .map(() => new Worker(path, {type: "module"}));
