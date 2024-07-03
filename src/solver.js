@@ -68,7 +68,8 @@ export const SOLVER = {    // STATE SOLVER
         }
         return B;
     },
-    get_components: (BI, BF, BT, BA, B0) => {
+    get_components: (BI, BF, BT, BA) => {
+        const B0 = BA.map((_, i) => i).filter(i => BA[i] != 0);
         const GB = [];
         const seen = new Set();
         NOTE.start_check("variable", BF);
@@ -174,27 +175,22 @@ export const SOLVER = {    // STATE SOLVER
         }
         return A;
     },
-    solve: (BF, BT, BA0, lim) => {
-        // In:   BF | array for each variable: key
-        //       BT | array for each variable: constraints
-        //      BA0 | array for each variable: known assignment
-        //      lim | upper limit on # solutions to return per group
-        // Out:  GB | array for each independent group:
-        //          |   array of variables in group
-        //       GA | array for each independent group:
-        //          |   array of valid assignments:  (max length lim)
-        //          |     array for each variable in group: an assignment
-        //          | returns [] if no solutions found
-        const BA = BA0.map(a => 0);
+    initial_assignment: (EF, EA, Ff, BF, BT) => {
         const BI = new Map();
-        for (const [i, F] of BF.entries()) {
-            BI.set(F, i);
+        for (const [i, F] of BF.entries()) { BI.set(F, i); }
+        const BA = BF.map(() => 0);
+        for (const [i, a] of EA.entries()) {
+            if ((a == "M") || (a == "V")) {
+                const k = M.encode_order_pair(EF[i]);
+                const [f1, f2] = M.decode(k);
+                const o = ((!Ff[f1] && (a == "M")) ||
+                            (Ff[f1] && (a == "V"))) ? 2 : 1;
+                BA[BI.get(k)] = o;
+            }
         }
-        NOTE.time("Assigning orders based on crease assignment");
-        const B0 = [];
         const BP = new Map();
         let level = [];
-        for (const [i, a] of BA0.entries()) {
+        for (const [i, a] of BA.entries()) {
             if (a != 0) {
                 level.push([i, a]);
                 BP.set(i, []);
@@ -204,10 +200,7 @@ export const SOLVER = {    // STATE SOLVER
         NOTE.start_check("variable", BA);
         while (level.length > 0) {
             NOTE.log(`   - ${level.length} orders assigned at depth ${depth}`);
-            for (const [i, a] of level) {
-                B0.push(i);
-                BA[i] = a;
-            }
+            for (const [i, a] of level) { BA[i] = a; }
             const new_level = [];
             for (const [i, a] of level) {
                 NOTE.check(count);
@@ -235,24 +228,31 @@ export const SOLVER = {    // STATE SOLVER
             level = new_level;
             ++depth;
         }
-        NOTE.annotate(B0, "initially assignable variables");
-        NOTE.lap();
-        NOTE.time("Finding unassigned components");
-        const GB = SOLVER.get_components(BI, BF, BT, BA, B0);
-        NOTE.count(GB.length - 1, "unassigned components");
-        NOTE.lap();
+        return [BI, BA];
+    },
+    solve: (BI, BF, BT, BA, GB, lim) => {
+        // In:   BI | map from variable keys to indices
+        //       BF | array for each variable: key
+        //       BT | array for each variable: constraints
+        //       GB | array for each independent group:
+        //          |   array of variables in group
+        //       BA | array for each variable: known assignment
+        //      lim | upper limit on # solutions to return per group
+        // Out:  GA | array for each independent group:
+        //          |   array of valid assignments:  (max length lim)
+        //          |     array for each variable in group: an assignment
+        //          | returns index of an unsatisfiable group if no solutions found
+        const B0 = BA.map((_, i) => i).filter(i => BA[i] != 0);
         const GA = [[M.bit_encode(B0.map(i => BA[i]))]];
         for (const [i, B] of GB.entries()) {
             if (i == 0) { continue; }
             NOTE.time(`Solving component ${i} with size ${B.length}`);
             const A = SOLVER.guess_vars(B, BI, BF, BT, BA, lim);
             NOTE.count(A.length, "assignments");
-            if (A.length == 0) {
-                return [GB, undefined];
-            }
+            if (A.length == 0) { return i; }
             GA.push(A);
         }
-        return [GB, GA];
+        return GA;
     },
     error_faces: (type, F, BF, BI, BA, BP) => {
         const vars = [];

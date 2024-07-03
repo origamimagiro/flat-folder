@@ -233,12 +233,12 @@ const MAIN = {
     compute_states: (FOLD, CELL, BF, BT, W) => {
         const {EA, EF, Ff} = FOLD;
         const {CF, FC} = CELL;
-        const BA0 = X.EF_EA_Ff_BF_2_BA0(EF, EA, Ff, BF);
         const val = document.getElementById("limit_select").value;
         const lim = (val == "all") ? Infinity : +val;
-        const sol = SOLVER.solve(BF, BT, BA0, lim);
-        if (sol.length == 3) { // solve found unsatisfiable constraint
-            const [type, F, E] = sol;
+        NOTE.time("Assigning orders based on crease assignment");
+        const out = SOLVER.initial_assignment(EF, EA, Ff, BF, BT);
+        if (out.length == 3) {
+            const [type, F, E] = out;
             const str = `Unable to resolve ${CON.names[type]} on faces [${F}]`;
             NOTE.log(`   - ${str}`);
             NOTE.log(`   - Faces participating in conflict: [${E}]`);
@@ -254,17 +254,36 @@ const MAIN = {
             NOTE.lap();
             NOTE.end();
             return;
-        } // solve completed
-        const [GB, GA] = sol;
-        const n = (GA == undefined) ? 0 : GA.reduce((s, A) => {
-            return s*BigInt(A.length);
-        }, BigInt(1));
+        }
+        const [BI, BA] = out;
+        NOTE.annotate(BA.map((_, i) => i).filter(i => BA[i] != 0),
+            "initially assignable variables");
+        NOTE.lap();
+        NOTE.time("Finding unassigned components");
+        const GB = SOLVER.get_components(BI, BF, BT, BA);
+        NOTE.count(GB.length - 1, "unassigned components");
+        NOTE.lap();
+        const GA = SOLVER.solve(BI, BF, BT, BA, GB, lim);
+        const n = ((GA.length == undefined) ? 0
+            : GA.reduce((s, A) => s*BigInt(A.length), BigInt(1)));
         NOTE.time("Solve completed");
         NOTE.count(n, "folded states");
         NOTE.lap();
         const num_states = document.getElementById("num_states");
         num_states.textContent = `(Found ${n} state${(n == 1) ? "" : "s"})`;
-        if (n > 0) {
+        if (n == 0) {
+            const gi = GA;
+            NOTE.log(`   - Unable to resolve component ${gi}`);
+            const F = new Set();
+            for (const bi of GB[gi]) {
+                for (const f of M.decode(BF[bi])) { F.add(f); }
+            }
+            GUI.update_component_error(F, FC);
+            document.getElementById("fold_button").onclick = undefined;
+            for (const id of ["flip_flat", "rotate_flat", "flip_fold", "rotate_fold"]) {
+                document.getElementById(id).onchange = undefined;
+            }
+        } else {
             const GI = GB.map(() => 0);
             NOTE.time("Computing state");
             const edges = X.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);

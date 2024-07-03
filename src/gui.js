@@ -497,6 +497,19 @@ export const GUI = {   // INTERFACE
             c.setAttribute("fill", GUI.COLORS.error[val]);
         }
     },
+    update_component_error: (F, FC) => {
+        const CFnum = new Map();
+        for (const i of F) {
+            const f = document.getElementById(`flat_f${i}`);
+            f.setAttribute("opacity", 0.2);
+            f.setAttribute("fill", "red");
+            for (const j of FC[i]) {
+                const c = document.getElementById(`cell_c${j}`);
+                c.setAttribute("opacity", 0.2);
+                c.setAttribute("fill", "red");
+            }
+        }
+    },
     transform_points: (P, id) => {
         const flip = document.getElementById(`flip_${id}`).checked;
         const ri = (+document.getElementById(`rotate_${id}`).value)/90;

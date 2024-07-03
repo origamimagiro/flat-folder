@@ -99,12 +99,21 @@ const process_file = async (fold, lim, W) => {
         BF, EF, ExE, ExF, BT3);
     await X.BF_BT0_BT1_BT3_2_clean_BT3(BF, BT0, BT1, BT3);
     const BT = BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
+    const out = SOLVER.initial_assignment(EF, EA, Ff, BF, BT);
+    if (out.length == 3) {
+        const [type, F, E] = out;
+        console.log(` - Unable to resolve ${CON.names[type]} on faces [${F}]`);
+        throw new Error();
+    }
+    const [BI, BA] = out;
+    const GB = SOLVER.get_components(BI, BF, BT, BA);
     const t1 = performance.now();
-    const BA0 = X.EF_EA_Ff_BF_2_BA0(EF, EA, Ff, BF);
-    const [GB, GA] = SOLVER.solve(BF, BT, BA0, lim);
-    const n = (GA == undefined) ? 0 : GA.reduce((s, A) => {
-        return s*BigInt(A.length);
-    }, BigInt(1));
+    const GA = SOLVER.solve(BI, BF, BT, BA, GB, lim);
+    if (GA.length == undefined) {
+        console.log(`   - Unable to resolve component ${GA}`);
+        throw new Error();
+    }
+    const n = GA.reduce((s, A) => s*BigInt(A.length), BigInt(1));
     const t2 = performance.now();
     return {
         number: fold.number,
