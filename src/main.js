@@ -6,8 +6,9 @@ import { IO } from "./io.js";
 import { X } from "./conversion.js";
 import { GUI } from "./gui.js";
 import { SOLVER } from "./solver.js";
+import { PAR } from "./parallel.js";
 
-window.onload = () => { MAIN.startup(); };  // entry point
+window.onload = () => MAIN.startup();   // entry point
 
 const MAIN = {
     startup: async () => {
@@ -52,15 +53,9 @@ const MAIN = {
                 rotate_select.appendChild(el);
             }
         }
-        let W = undefined;
-        const wn = navigator.hardwareConcurrency ?? 8;
-        if ((window.Worker != undefined) && (wn != 1)) {
-            NOTE.time(`*** Setting up ${wn} web workers ***`);
-            W = Array(wn).fill()
-                .map(() => new Worker("src/worker.js", {type: "module"}));
-            for (const w of W) { w.onerror = (e) => { debugger; }; }
-            await X.send_work(W, "init", wi => [wi]);
-        }
+        const wn = ((window.Worker == undefined) ? 1
+            : (navigator.hardwareConcurrency ?? 8));
+        const W = await PAR.get_workers(wn, "./src/worker.js");
         document.getElementById("import").onchange = (e) => {
             if (e.target.files.length > 0) {
                 const file_reader = new FileReader();

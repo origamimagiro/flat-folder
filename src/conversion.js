@@ -2,6 +2,7 @@ import { M } from "./math.js";
 import { CON } from "./constraints.js";
 import { NOTE } from "./note.js";
 import { AVL } from "./avl.js";
+import { PAR } from "./parallel.js";
 
 export const X = {     // CONVERSION
     L_2_V_EV_EL: (L) => {
@@ -532,7 +533,7 @@ export const X = {     // CONVERSION
     },
     CF_W_2_BF: async (CF, W) => {
         const BF_set = new Set();
-        const CB = await X.map_workers(W, [CF], "BF", {});
+        const CB = await PAR.map_workers(W, [CF], "BF", {});
         for (const B of CB) { for (const k of B) { BF_set.add(k); } }
         return Array.from(BF_set).sort();
     },
@@ -714,7 +715,7 @@ export const X = {     // CONVERSION
         return BT3;                             // |BT3| = O(|B||F|) <= O(|F|^3)
     },
     FC_CF_BF_W_2_BT3: async (FC, CF, BF, W) => {
-        return await X.map_workers(W, [BF], "BT3", {FC, CF});
+        return await PAR.map_workers(W, [BF], "BT3", {FC, CF});
     },
     EF_SP_SE_CP_FC_CF_BF_2_BT3: (EF, SP, SE, CP, FC, CF, BF) => {
         const FC_set = FC.map(C => new Set(C));
@@ -894,32 +895,5 @@ export const X = {     // CONVERSION
             Rf.push(Ff[fi]);
         }
         return [RP, Rf];
-    },
-    map_workers: async (W, A, type, init_args) => {
-        NOTE.log(` -- Partitioning work`);
-        const wn = W.length;
-        const J = Array(wn).fill().map(() => []);
-        for (let i = 0, ji = 0; i < A[0].length; ++i, ji = (ji + 1) % wn) {
-            const args = [i];
-            for (const a of A) { args.push(a[i]); }
-            J[ji].push(args);
-        }
-        NOTE.log(` -- Initializing workers`);
-        await X.send_work(W, "start", () => init_args);
-        NOTE.log(` -- Assigning jobs to workers`);
-        const R = await X.send_work(W, "map", wi => [J[wi], type]);
-        NOTE.log(` -- Stopping workers`);
-        await X.send_work(W, "stop", () => [type]);
-        NOTE.log(" -- Compiling work");
-        const out = Array(A[0].length).fill();
-        for (const r of R) { for (const [i, x] of r) { out[i] = x; } }
-        return out;
-    },
-    send_work: async (W, type, args_f) => {
-        return await Promise.all(W.map((w, wi) => new Promise((res) => {
-            w.onmessage = (e) => res(e.data);
-            const msg = {type, args: args_f(wi)};
-            w.postMessage(msg);
-        })));
     },
 };
