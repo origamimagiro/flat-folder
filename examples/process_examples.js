@@ -7,7 +7,7 @@ import { cpus } from 'os';
 const main = async () => {
     const lim = 1;              // limit number of solutions to compute
     const dataset = "process";  // folder from which to process files
-    const wn = 1; // cpus().length;
+    const wn = cpus().length;
     await BATCH.startup(wn, "./../src/worker.js");
     const path = "./" + dataset + "/";
     const files = fs.readdirSync(path).filter(f => f.slice(-4) == "fold");
