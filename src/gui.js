@@ -2,6 +2,7 @@ import { M } from "./math.js";
 import { NOTE } from "./note.js";
 import { X } from "./conversion.js";
 import { SVG } from "./svg.js";
+import { PAR } from "./parallel.js";
 
 export const GUI = {   // INTERFACE
     WIDTH: 1,
@@ -205,7 +206,7 @@ export const GUI = {   // INTERFACE
         SVG.draw_segments(G.s_edge, lines, {
             stroke: GUI.COLORS.edge.B, filter: (i) => SD[i][0] == "B"});
     },
-    update_component: (FOLD, CELL, BF, GB, GA, GI) => {
+    update_component: async (FOLD, CELL, COMP, Gn, Gi) => {
         SVG.clear("export");
         const comp_select = document.getElementById("component_select");
         const state_config = document.getElementById("state_config");
@@ -215,12 +216,12 @@ export const GUI = {   // INTERFACE
         const C = [];
         if (c == "none") {
         } else if (c == "all") {
-            for (const [i, _] of GA.entries()) {
+            for (const [i, _] of Gi.entries()) {
                 C.push(i);
             }
         } else {
             C.push(c);
-            const n = GA[c].length;
+            const n = Gn[c];
             comp_select.style.background = GUI.COLORS.rand[c % GUI.COLORS.rand.length];
             state_config.style.display = "inline";
             const state_label = document.getElementById("state_label");
@@ -228,17 +229,17 @@ export const GUI = {   // INTERFACE
             state_label.innerHTML = `${n} State${(n == 1) ? "" : "s"}`;
             state_select.setAttribute("min", 1);
             state_select.setAttribute("max", n);
-            state_select.value = GI[c] + 1;
-            state_select.onchange = (e) => {
+            state_select.value = Gi[c] + 1;
+            state_select.onchange = async (e) => {
                 NOTE.start("Computing new state");
                 let j = +e.target.value;
                 if (j < 1) { j = 1; }
                 if (j > n) { j = n; }
                 state_select.value = j;
-                GI[c] = j - 1;
-                const edges = X.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
-                FOLD.FO = X.edges_Ff_2_FO(edges, FOLD.Ff);
-                CELL.CF = X.CF_edges_2_CD(CELL.CF, edges);
+                Gi[c] = j - 1;
+                const [CD, FO] = await PAR.send_message(COMP, "Gi_2_CD_FO", [Gi]);
+                CELL.CF = CD;
+                FOLD.FO = FO;
                 GUI.update_fold(FOLD, CELL);
                 GUI.update_visible(FOLD, CELL);
                 NOTE.end();
@@ -247,10 +248,10 @@ export const GUI = {   // INTERFACE
         const {Vf_norm, FV} = FOLD;
         const V_ = GUI.transform_points(Vf_norm, "fold");
         const g = SVG.clear("cell_comps");
+        const gBF = await PAR.send_message(COMP, "g_2_gBF", [C]);
         for (let i = 0; i < C.length; ++i) {
             const comp = C[i];
-            const lines = GB[comp].map(b => {
-                const [f1, f2] = M.decode(BF[b]);
+            const lines = gBF[i].map(([f1, f2]) => {
                 const p1 = M.centroid(M.expand(FV[f1], V_));
                 const p2 = M.centroid(M.expand(FV[f2], V_));
                 return [p1, p2];
@@ -261,7 +262,7 @@ export const GUI = {   // INTERFACE
                 "stroke": stroke, "stroke_width": 2});
         }
     },
-    update_cell_face_listeners: (FOLD, CELL, BF, BT) => {
+    update_cell_face_listeners: async (FOLD, CELL, COMP) => {
         const {V, EV, FV, FE, Vf_norm} = FOLD;
         const {P_norm, SP, CP, CS, CF, FC, SE} = CELL;
         GUI.clear_notes(CF, FC);
@@ -284,16 +285,6 @@ export const GUI = {   // INTERFACE
             SE_map.set(M.encode(SP[i]), E);
         }
         const FM = FV.map(F => M.centroid(M.expand(F, V_)));
-        const FB_map = new Map();
-        for (const [i, F] of BF.entries()) {
-            FB_map.set(F, i);
-        }
-        const FB = FC.map(() => []);
-        for (const k of BF) {
-            const [f1, f2] = M.decode(k);
-            FB[f1].push(f2);
-            FB[f2].push(f1);
-        }
         const active = [];
         const flat_fnotes = document.getElementById("flat_fnotes");
         const flat_enotes = document.getElementById("flat_enotes");
@@ -302,13 +293,14 @@ export const GUI = {   // INTERFACE
         for (const [i, C] of FC.entries()) {
             NOTE.check(i);
             const face = document.getElementById(`flat_click${i}`);
-            face.onclick = () => {
+            face.onclick = async () => {
                 NOTE.time(`Clicked face ${i}`);
                 const f = document.getElementById(`flat_f${i}`);
                 const color = f.getAttribute("fill");
                 GUI.clear_notes(CF, FC);
                 if (active.length == 1) {
-                    if (FB_map.get(M.encode_order_pair([i, active[0]])) == undefined) {
+                    const fB_set = X.f_FC_CF_2_fB_set(active[0], FC, CF);
+                    if ((i == active[0]) || !fB_set.has(i)) {
                         active.pop();
                         NOTE.log("   - Clearing selection");
                         NOTE.log("");
@@ -316,8 +308,9 @@ export const GUI = {   // INTERFACE
                     }
                     active.push(i);
                     const [f1, f2] = active;
-                    const ti = FB_map.get(M.encode_order_pair([f1, f2]));
-                    const T = BT[ti];
+                    const [ti, T] = await PAR.send_message(
+                        COMP, "f1_f2_2_T", [f1, f2]);
+                    console.log(ti, T);
                     const SL = [];
                     for (const j of [0, 1, 2]) {
                         const Ti = T[j];
@@ -386,7 +379,7 @@ export const GUI = {   // INTERFACE
                     NOTE.log(`   - bounded by edges [${FE[i]}]`);
                     NOTE.log(`   - overlaps cells [${FC[i]}]`);
                     NOTE.log("");
-                    for (const f of FB[i]) {
+                    for (const f of X.f_FC_CF_2_fB_set(i, FC, CF)) {
                         const el = document.getElementById(`flat_f${f}`);
                         el.setAttribute("fill", GUI.COLORS.B);
                     }
@@ -479,7 +472,7 @@ export const GUI = {   // INTERFACE
             el.setAttribute("fill", GUI.COLORS.active);
         }
     },
-    update_error: (F, E, BF, FC) => {
+    update_error: (F, E, FC) => {
         for (const i of E) {
             const f = document.getElementById(`flat_f${i}`);
             f.setAttribute("opacity", 0.2);
