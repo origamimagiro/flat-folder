@@ -79,9 +79,10 @@ const MAIN = {
         const file_name = document.getElementById("import").value;
         const parts = file_name.split(".");
         const type = parts[parts.length - 1].toLowerCase();
+        const side = document.getElementById("side").value == "+";
         NOTE.time(`Importing from file ${file_name}`);
         const [V, VV, EV, EA, EF, FV, FE] =
-            IO.doc_type_2_V_VV_EV_EA_EF_FV_FE(doc, type);
+            IO.doc_type_side_2_V_VV_EV_EA_EF_FV_FE(doc, type, side);
         if (V == undefined) { return; }
         const VK = X.V_VV_EV_EA_2_VK(V, VV, EV, EA);
         NOTE.annotate(V, "vertices_coords");

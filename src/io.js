@@ -210,7 +210,7 @@ export const IO = {    // INPUT-OUTPUT
         }
         return [V, EV, EA, VV, FV];
     },
-    doc_type_2_V_VV_EV_EA_EF_FV_FE: (doc, type) => {
+    doc_type_side_2_V_VV_EV_EA_EF_FV_FE: (doc, type, side) => {
         let V, VV, EV, EA, FV, EF, FE, eps_i;
         if (type == "fold") {
             [V, EV, EA, VV, FV] = IO.FOLD_2_V_EV_EA_VV_FV(doc);
@@ -244,7 +244,7 @@ export const IO = {    // INPUT-OUTPUT
             }
         };
         if (FV == undefined) {
-            if (document.getElementById("side").value == "+") {
+            if (side) {
                 EA = flip_EA(EA);
             } else {
                 V = flip_Y(V);
@@ -255,7 +255,7 @@ export const IO = {    // INPUT-OUTPUT
                 EA = flip_EA(EA);
                 reverse_FV(FV);
             }
-            if (document.getElementById("side").value == "-") {
+            if (!side) {
                 EA = flip_EA(EA);
                 reverse_FV(FV);
                 V = flip_Y(V);
