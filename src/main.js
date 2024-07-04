@@ -151,6 +151,13 @@ const MAIN = {
             GUI.update_text(FOLD, CELL);
             NOTE.end();
         };
+        for (const [id, log] of [["flip", "Flipping"], ["rotate", "Rotating"]]) {
+            document.getElementById(`${id}_fold`).onchange = () => {
+                NOTE.start(`${log} model`);
+                GUI.update_cell(FOLD, CELL);
+                NOTE.end();
+            };
+        }
         const val = document.getElementById("limit_select").value;
         const lim = (val == "all") ? Infinity : +val;
         const [type, out] = await PAR.send_message(COMP, "solve", [lim]);
