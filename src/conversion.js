@@ -538,12 +538,6 @@ export const X = {     // CONVERSION
         }
         return Array.from(BF_set).sort();       // |BF| = O(|F|^2)
     },
-    CF_W_2_BF: async (CF, W) => {
-        const BF_set = new Set();
-        const CB = await PAR.map_workers(W, [CF], "BF", {});
-        for (const B of CB) { for (const k of B) { BF_set.add(k); } }
-        return Array.from(BF_set).sort();
-    },
     EF_SP_SE_CP_CF_2_BF: (EF, SP, SE, CP, CF) => {
         const SF_map = new Map();
         for (const [i, vs] of SP.entries()) {
@@ -722,7 +716,27 @@ export const X = {     // CONVERSION
         return BT3;                             // |BT3| = O(|B||F|) <= O(|F|^3)
     },
     FC_CF_BF_W_2_BT3: async (FC, CF, BF, W) => {
-        return await PAR.map_workers(W, [BF], "BT3", {FC, CF});
+        const P = W.map((_, wi) => new Promise(res => res([wi, undefined])));
+        await Promise.all(W.map(w => PAR.send_message(w, "BT3_start", [FC, CF])));
+        const BT3 = BF.map(() => undefined);
+        const load = 100;
+        let i = 0, j = 0;
+        NOTE.start_check("variable", BF);
+        while (j < BF.length) {
+            NOTE.check(j);
+            const [wi, R] = await Promise.any(P);
+            if (R != undefined) {
+                for (const [bi, bF] of R) { BT3[bi] = bF; ++j; }
+            }
+            const J = [];
+            for (let k = 0; (k < load) && (i < BF.length); ++k, ++i) {
+                J.push([i, BF[i]]);
+            }
+            P[wi] = ((J.length == 0) ? (new Promise(res => {}))
+                : PAR.send_message(W[wi], "BT3", [J]));
+        }
+        await Promise.all(W.map(w => PAR.send_message(w, "BT3_stop", [])));
+        return BT3;
     },
     EF_SP_SE_CP_FC_CF_BF_2_BT3: (EF, SP, SE, CP, FC, CF, BF) => {
         const FC_set = FC.map(C => new Set(C));
