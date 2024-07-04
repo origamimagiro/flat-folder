@@ -310,7 +310,6 @@ export const GUI = {   // INTERFACE
                     const [f1, f2] = active;
                     const [ti, T] = await PAR.send_message(
                         COMP, "f1_f2_2_T", [f1, f2]);
-                    console.log(ti, T);
                     const SL = [];
                     for (const j of [0, 1, 2]) {
                         const Ti = T[j];
