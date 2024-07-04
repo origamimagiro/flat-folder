@@ -8,12 +8,18 @@ onmessage = (e) => {
     const d = e.data;
     let out;
     switch (d.type) {
+        case "init":
+            NOTE.log = (str) => {
+                if (!NOTE.show) { return; }
+                postMessage({type: "note", arg: str});
+            };
+            id = d.args[0];
+            break;
         case "map": out = actions[d.args.pop()](...d.args); break;
-        case "init": id = d.args[0]; break;
         case "start": for (const [k, v] of Object.entries(d.args)) { G[k] = v; } break;
         case "stop": for (const k of Object.keys(G)) { delete G[k]; } break;
     }
-    postMessage(out);
+    postMessage({type: "end", arg: out});
 };
 
 const actions = {

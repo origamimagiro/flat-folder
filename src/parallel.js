@@ -1,13 +1,18 @@
 import { NOTE } from "./note.js";
 
 export const PAR = {
-    send_work: async (W, type, args_f) => {
-        return await Promise.all(W.map((w, wi) => new Promise((res) => {
-            w.onmessage = (e) => res(e.data);
-            const msg = {type, args: args_f(wi)};
-            w.postMessage(msg);
-        })));
+    send_message: async (w, type, args) => {
+        return new Promise((res) => {
+            w.onmessage = (e) => {
+                if (e.data.type == "note") { NOTE.log(e.data.arg); return; }
+                res(e.data.arg);
+            };
+            w.postMessage({type, args});
+        });
     },
+    send_work: async (W, type, args_f) => await Promise.all(
+        W.map((w, wi) => PAR.send_message(w, type, args_f(wi)))
+    ),
     get_workers: async (wn, path) => {
         if (wn == 1) { return undefined; }
         if (typeof window == undefined) {
@@ -21,7 +26,7 @@ export const PAR = {
         return W;
     },
     map_workers: async (W, A, type, init_args) => {
-        NOTE.log(` -- Partitioning work`);
+        NOTE.log(` -- Partitioning work among ${W.length} workers`);
         const wn = W.length;
         const J = Array(wn).fill().map(() => []);
         for (let i = 0, ji = 0; i < A[0].length; ++i, ji = (ji + 1) % wn) {

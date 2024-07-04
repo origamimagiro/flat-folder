@@ -419,6 +419,13 @@ export const X = {     // CONVERSION
         });
         return [EF, FE];
     },
+    f_FC_CF_2_fB_set: (f, FC, CF) => {
+        const fB = new Set();
+        for (const c of FC[f]) {
+            for (const f of CF[c]) { fB.add(f); }
+        }
+        return fB;
+    },
     EF_FV_SP_SE_CP_SC_2_CF_FC: (EF, FV, SP, SE, CP, SC) => {
         const SF_map = new Map();
         for (const [i, vs] of SP.entries()) {

@@ -74,11 +74,11 @@ export const IO = {    // INPUT-OUTPUT
         return lines;
     },
     CP_2_L: (doc) => {
-        const map = ["", "B", "M", "V", "F"];
+        const map = ["U", "B", "M", "V", "F"];
         const L = doc.split("\n").map(line => {
             line = line.trim();
             const [a, x1, y1, x2, y2] = line.split(" ").map(t => t.trim());
-            return [[+x1, +y1], [+x2, +y2], map[+a]];
+            return [[+x1, +y1], [+x2, +y2], map[+a] ?? "U"];
         });
         while (L[L.length - 1][2] == "") {
             L.pop();
