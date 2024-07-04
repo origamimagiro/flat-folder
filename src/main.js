@@ -38,7 +38,7 @@ const MAIN = {
             }
         }
         const limit_select = document.getElementById("limit_select");
-        for (const val of ["all", 1000, 100, 10, 1]) {
+        for (const val of ["all", 10000, 1000, 100, 10, 1]) {
             const el = document.createElement("option");
             el.setAttribute("value", val);
             el.textContent = val;
