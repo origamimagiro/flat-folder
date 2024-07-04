@@ -284,7 +284,7 @@ const MAIN = {
             NOTE.time("Computing state");
             const edges = X.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
             FOLD.FO = X.edges_Ff_2_FO(edges, Ff);
-            CELL.CD = X.CF_edges_2_CD(CF, edges);
+            CELL.CF = X.CF_edges_2_CD(CF, edges);
             document.getElementById("fold_controls").style.display = "inline";
             document.getElementById("state_controls").style.display = "block";
             for (const [id, log] of [["flip", "Flipping"], ["rotate", "Rotating"]]) {

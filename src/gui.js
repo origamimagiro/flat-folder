@@ -107,10 +107,10 @@ export const GUI = {   // INTERFACE
         if (!visible) { return; }
         const flip = document.getElementById("flip_flat").checked;
         const {V, Vf_norm, Ff, FV} = FOLD;
-        const {P_norm, CP, CD} = CELL;
+        const {P_norm, CP, CF} = CELL;
         const visFC = [];
-        for (let i = 0; i < CD.length; ++i) {
-            const S = CD[i];
+        for (let i = 0; i < CF.length; ++i) {
+            const S = CF[i];
             if (S.length == 0) { continue; }
             const [t, b] = [S[0], S[S.length - 1]];
             if (flip != Ff[t]) {
@@ -136,12 +136,13 @@ export const GUI = {   // INTERFACE
         for (const id of ["f", "c", "s", "text", "notes", "comps", "click"]) {
             G[id] = SVG.append("g", svg, {id: `cell_${id}`});
         }
+        const {Vf_norm, FV} = FOLD;
         if (CELL == undefined) {
-            const P = GUI.transform_points(FOLD.Vf_norm, "fold");
-            const F = FOLD.FV.map(f => M.expand(f, P));
+            const P = GUI.transform_points(Vf_norm, "fold");
+            const F = FV.map(f => M.expand(f, P));
             SVG.draw_polygons(G.f, F, {opacity: 0.05});
         } else {
-            const {P_norm, SP, SE, CP, SC, CF, FC} = CELL;
+            const {P_norm, SP, CP, CF} = CELL;
             const P = GUI.transform_points(P_norm, "fold");
             const cells = CP.map(f => M.expand(f, P));
             const lines = SP.map(l => M.expand(l, P));
@@ -177,13 +178,13 @@ export const GUI = {   // INTERFACE
     update_fold: (FOLD, CELL) => {
         SVG.clear("export");
         const {Ff, EF} = FOLD;
-        const {P, P_norm, CP, CD, SP, SC, SE} = CELL;
+        const {P, P_norm, CP, CF, SP, SC, SE} = CELL;
         const svg = SVG.clear("fold");
         const scale = document.getElementById("scale").checked;
         const P_ = GUI.transform_points(
             scale ? M.center_points_on(P, [0.5, 0.5]) : P_norm, "fold");
         const flip = document.getElementById("flip_fold").checked;
-        const Ctop = CD.map(S => flip ? S[0] : S[S.length - 1]);
+        const Ctop = CF.map(S => flip ? S[0] : S[S.length - 1]);
         const SD = X.Ctop_SC_SE_EF_Ff_2_SD(Ctop, SC, SE, EF, Ff);
         const [RP, Rf] = X.Ctop_CP_SC_SD_Ff_P_2_RP_Rf(Ctop, CP, SC, SD, Ff, P_);
         const regions = RP.map(V => M.expand(V, P_));
@@ -237,7 +238,7 @@ export const GUI = {   // INTERFACE
                 GI[c] = j - 1;
                 const edges = X.BF_GB_GA_GI_2_edges(BF, GB, GA, GI);
                 FOLD.FO = X.edges_Ff_2_FO(edges, FOLD.Ff);
-                CELL.CD = X.CF_edges_2_CD(CELL.CF, edges);
+                CELL.CF = X.CF_edges_2_CD(CELL.CF, edges);
                 GUI.update_fold(FOLD, CELL);
                 GUI.update_visible(FOLD, CELL);
                 NOTE.end();
