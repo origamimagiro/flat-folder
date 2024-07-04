@@ -75,14 +75,11 @@ export const IO = {    // INPUT-OUTPUT
     },
     CP_2_L: (doc) => {
         const map = ["U", "B", "M", "V", "F"];
-        const L = doc.split("\n").map(line => {
+        const L = doc.split("\n").filter(line => line.length > 0).map(line => {
             line = line.trim();
             const [a, x1, y1, x2, y2] = line.split(" ").map(t => t.trim());
-            return [[+x1, +y1], [+x2, +y2], map[+a] ?? "U"];
+            return [[+x1, +y1], [+x2, +y2], map[+a]];
         });
-        while (L[L.length - 1][2] == "") {
-            L.pop();
-        }
         return L;
     },
     SVGstyle_2_A: (sty) => {

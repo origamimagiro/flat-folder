@@ -85,7 +85,6 @@ const MAIN = {
                 ) => [M[a], x1, y1, x2, y2].join(" ")).join("\n");
             type = "cp";
         }
-        console.log(doc);
         const side = document.getElementById("side").value == "+";
         NOTE.time(`Importing from file ${file_name}`);
         const FOLD = await PAR.send_message(COMP,
