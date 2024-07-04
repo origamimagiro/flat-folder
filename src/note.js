@@ -4,7 +4,7 @@ export const NOTE = {  // ANNOTATION
     console: ((typeof document == "undefined")
         ? undefined : document.getElementById("console")),
     start: (label) => {
-        TIME.start_main()
+        TIME.start_main();
         if (label != undefined) {
             NOTE.time(label);
         }

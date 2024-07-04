@@ -74,6 +74,7 @@ const MAIN = {
     process_file: (e, W) => {
         NOTE.clear_log();
         NOTE.start("*** Starting File Import ***");
+        NOTE.time(`Using ${(W == undefined) ? 0 : W.length} web workers`);
         const doc = e.target.result;
         const file_name = document.getElementById("import").value;
         const parts = file_name.split(".");
