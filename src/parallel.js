@@ -12,7 +12,7 @@ export const PAR = {
     },
     get_workers: async (wn, path) => {
         if (wn == 1) { return undefined; }
-        if (typeof window == undefined) {
+        if ((typeof process !== 'undefined') && (process.release.name === 'node')) {
             await import("./node_Worker_polyfill/main.js");
         }
         NOTE.time(`*** Setting up ${wn} web workers ***`);

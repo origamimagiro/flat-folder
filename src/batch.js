@@ -70,7 +70,7 @@ export const BATCH = {
             const fold = JSON.parse(data);
             fold.number = file_2_number(file);
             NOTE.show = true;
-            NOTE.time(`Processing file: ${fold.file_title}`);
+            NOTE.time(`Processing file #${fold.number}: ${fold.file_title}`);
             NOTE.show = false;
             try {
                 const D = await BATCH.process_file(fold, lim);
@@ -120,6 +120,7 @@ export const BATCH = {
         }
         const [BI, BA] = out;
         const GB = SOLVER.get_components(BI, BF, BT, BA);
+        NOTE.count(GB.length - 1, "unassigned components");
         const t1 = performance.now();
         const GA = SOLVER.solve(BI, BF, BT, BA, GB, lim);
         if (GA.length == undefined) {
@@ -127,6 +128,7 @@ export const BATCH = {
             throw new Error();
         }
         const n = GA.reduce((s, A) => s*BigInt(A.length), BigInt(1));
+        NOTE.count(n, "folded states");
         const t2 = performance.now();
         return {
             number: fold.number,
