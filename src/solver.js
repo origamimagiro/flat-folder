@@ -43,24 +43,21 @@ export const SOLVER = {    // STATE SOLVER
             for (const type of CON.types) {
                 for (const F of SOLVER.unpack_cons(C, type, f1, f2)) {
                     const I = SOLVER.infer(type, F, BI, BA);
-                    if (I == CON.state.dead) { continue; }
-                    if (Array.isArray(I)) {
-                        for (const [j, s] of I) {
-                            if (BA[j] == 0) {
-                                B.push(j);
-                                BA[j] = s;
-                            } else {
-                                if (BA[j] != s) {
-                                    I = false;
-                                    break;
-                                }
+                    if (I == CON.state.conflict) {
+                        for (const j of B) { BA[j] = 0; }
+                        return [];
+                    }
+                    if (!Array.isArray(I)) { continue; }
+                    for (const [j, s] of I) {
+                        if (BA[j] == 0) {
+                            B.push(j);
+                            BA[j] = s;
+                        } else {
+                            if (BA[j] != s) {
+                                I = false;
+                                break;
                             }
                         }
-                    } else if (I == CON.state.conflict) {
-                        for (const j of B) { // reset BA
-                            BA[j] = 0;
-                        }
-                        return [];
                     }
                 }
             }
