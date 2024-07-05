@@ -95,19 +95,18 @@ const actions = {
         for (const [i, F] of BF.entries()) { FB_map.set(F, i); }
         NOTE.annotate(BF, "variables_faces");
         NOTE.lap();
+        NOTE.time("Computing non-transitivity constraints");
+        const [BT0, BT1, BT2] = X.BF_EF_ExE_ExF_2_BT0_BT1_BT2(BF, EF, ExE, ExF);
+        NOTE.count(BT0, "taco-taco", 6);
+        NOTE.count(BT1, "taco-tortilla", 3);
+        NOTE.count(BT2, "tortilla-tortilla", 2);
+        NOTE.lap();
         NOTE.time("Computing transitivity constraints");
         const BT3 = ((W == undefined) ?
             X.EF_SP_SE_CP_FC_CF_BF_2_BT3(EF, SP, SE, CP, FC, CF, BF) :
             (await X.FC_CF_BF_W_2_BT3(FC, CF, BF, W))
         );
         NOTE.count(BT3, "initial transitivity", 3);
-        NOTE.lap();
-        NOTE.time("Computing non-transitivity constraints");
-        const [BT0, BT1, BT2] = X.BF_EF_ExE_ExF_BT3_2_BT0_BT1_BT2(
-            BF, EF, ExE, ExF, BT3);
-        NOTE.count(BT0, "taco-taco", 6);
-        NOTE.count(BT1, "taco-tortilla", 3);
-        NOTE.count(BT2, "tortilla-tortilla", 2);
         NOTE.lap();
         NOTE.time("Cleaning transitivity constraints");
         X.BF_BT0_BT1_BT3_2_clean_BT3(BF, BT0, BT1, BT3);

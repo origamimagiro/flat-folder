@@ -106,13 +106,12 @@ export const BATCH = {
         const ExE = X.SE_2_ExE(SE);
         const ExF = X.SE_CF_SC_2_ExF(SE, CF, SC);
         const BF = X.EF_SP_SE_CP_CF_2_BF(EF, SP, SE, CP, CF);
+        const [BT0, BT1, BT2] = X.BF_EF_ExE_ExF_2_BT0_BT1_BT2(BF, EF, ExE, ExF);
         const BT3 = ((BATCH.W == undefined) ?
             X.EF_SP_SE_CP_FC_CF_BF_2_BT3(EF, SP, SE, CP, FC, CF, BF) :
             (await X.FC_CF_BF_W_2_BT3(FC, CF, BF, BATCH.W))
         );
         const init_trans = NOTE.count_subarrays(BT3)/3;
-        const [BT0, BT1, BT2] = X.BF_EF_ExE_ExF_BT3_2_BT0_BT1_BT2(
-            BF, EF, ExE, ExF, BT3);
         X.BF_BT0_BT1_BT3_2_clean_BT3(BF, BT0, BT1, BT3);
         const BT = BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
         const out = SOLVER.initial_assignment(EF, EA, Ff, BF, BT);
