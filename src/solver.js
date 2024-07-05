@@ -2,6 +2,7 @@ import { M } from "./math.js";
 import { NOTE } from "./note.js";
 import { CON } from "./constraints.js";
 
+const flip = [[0, 1, 2], [0, 2, 1]];
 export const SOLVER = {    // STATE SOLVER
     infer: (type, F, BI, BA) => {
         // In: type | constraint type
@@ -13,15 +14,14 @@ export const SOLVER = {    // STATE SOLVER
         const pairs = CON.type_F_2_pairs(type, F);
         const tuple = pairs.map(([x, y]) => {
             const a = BA[BI.get(M.encode_order_pair([x, y]))];
-            return ((x < y) || (a == 0)) ? a : ((a == 1) ? 2 : 1);
+            return flip[+(y < x)][a];
         });
         const I = CON.implied[type].get(tuple.join(""));
         if (!Array.isArray(I)) { return I; } // I in [0, 1, 2]
         return I.map(([i, a]) => {      // flip infered orders as necessary
             const [x, y] = pairs[i];
             const bi = BI.get(M.encode_order_pair([x, y]));
-            if (y < x) { a = ((a == 1) ? 2 : 1); }
-            return [bi, a];
+            return [bi, flip[+(y < x)][a]];
         });
     },
     propagate: (bi, a, BI, BF, BT, BA) => {
