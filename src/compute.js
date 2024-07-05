@@ -25,7 +25,7 @@ const actions = {
         postMessage({type: "end"});
     },
     clear: () => {
-        for (const k of Object.keys(G)) { delete G[k]; } 
+        for (const k of Object.keys(G)) { delete G[k]; }
         postMessage({type: "end"});
     },
     doc_type_side_2_fold: (doc, type, side) => {
