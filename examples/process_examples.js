@@ -14,6 +14,7 @@ const main = async () => {
     const lines = await BATCH.process_files(files, lim,
         async f => fs.readFileSync(path + f), f => f.slice(0, 3));
     fs.writeFileSync("./data.csv", lines.join("\n"));
+    BATCH.shutdown();
 };
 
 main();

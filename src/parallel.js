@@ -22,4 +22,7 @@ export const PAR = {
         await Promise.all(W.map((w, wi) => PAR.send_message(w, "init", [wi])));
         return W;
     },
+    end_workers: async (W) => {
+        for (const w of W) { w.terminate(); }
+    },
 };

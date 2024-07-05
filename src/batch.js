@@ -54,6 +54,9 @@ export const BATCH = {
         CON.build();
         if (wn != 1) { BATCH.W = await PAR.get_workers(wn, path); }
     },
+    shutdown: () => {
+        if (BATCH.W != undefined) { PAR.end_workers(BATCH.W); }
+    },
     headers: [
         "number", "author", "title", "vertices",
         "edges", "faces", "eps", "variables", "taco-taco", "taco-tortilla",
