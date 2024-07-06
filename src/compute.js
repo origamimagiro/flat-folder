@@ -29,6 +29,7 @@ const actions = {
         postMessage({type: "end"});
     },
     doc_type_side_2_fold: (doc, type, side) => {
+        NOTE.start("*** Beginning import ***");
         const [V, VV, EV, EA, EF, FV, FE] =
             IO.doc_type_side_2_V_VV_EV_EA_EF_FV_FE(doc, type, side);
         if (V == undefined) { return; }
@@ -48,7 +49,7 @@ const actions = {
         postMessage({type: "end", arg: G.FOLD});
     },
     get_cell: async () => {
-        NOTE.time("*** Computing cell graph ***");
+        NOTE.start("*** Computing cell graph ***");
         const {Vf, EV, EF, FV} = G.FOLD;
         const L = EV.map((P) => M.expand(P, Vf));
         NOTE.time("Constructing points and segments from edges");
@@ -80,7 +81,7 @@ const actions = {
     solve: async (lim) => {
         const {EA, EF, Ff} = G.FOLD;
         const {P, P_norm, SP, SE, CP, CS, SC, CF, FC} = G.CELL;
-        NOTE.time("*** Computing constraints ***");
+        NOTE.start("*** Computing constraints ***");
         NOTE.time("Computing edge-edge overlaps");
         const ExE = X.SE_2_ExE(SE);
         NOTE.count(ExE, "edge-edge adjacencies");
@@ -146,6 +147,7 @@ const actions = {
         }
         const Gn = GA.map(A => A.length);
         NOTE.time("Solve completed");
+        NOTE.lap();
         G.SOLVE = {BF, FB_map, BT, GB, GA};
         postMessage({type: "end", arg: ["success", Gn]});
     },

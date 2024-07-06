@@ -129,7 +129,6 @@ const MAIN = {
         document.getElementById("fold_button").onclick = () => {
             MAIN.compute(FOLD, COMP);
         };
-        NOTE.lap();
         NOTE.end();
     },
     compute: async (FOLD, COMP) => {
@@ -145,7 +144,6 @@ const MAIN = {
         }
         NOTE.time("Updating cell");
         GUI.update_cell(FOLD, CELL);
-        NOTE.lap();
         document.getElementById("text").onchange = (e) => {
             NOTE.start("Toggling Text");
             GUI.update_text(FOLD, CELL);
@@ -172,7 +170,6 @@ const MAIN = {
             NOTE.count(0, "folded states");
             const num_states = document.getElementById("num_states");
             num_states.textContent = `(Found 0 states)`;
-            NOTE.lap();
             NOTE.end();
             return;
         }
@@ -188,17 +185,14 @@ const MAIN = {
             NOTE.count(0, "folded states");
             const num_states = document.getElementById("num_states");
             num_states.textContent = `(Found 0 states)`;
-            NOTE.lap();
             NOTE.end();
             return;
         }
         const Gn = out;
         NOTE.time("Updating cell-face listeners");
         await GUI.update_cell_face_listeners(FOLD, CELL, COMP);
-        NOTE.lap();
         const n = Gn.reduce((s, gn) => s*BigInt(gn), BigInt(1));
         NOTE.count(n, "folded states");
-        NOTE.lap();
         const num_states = document.getElementById("num_states");
         num_states.textContent = `(Found ${n} state${(n == 1) ? "" : "s"})`;
         const Gi = Gn.map(() => 0);
@@ -266,7 +260,6 @@ const MAIN = {
         GUI.update_fold(FOLD, CELL);
         NOTE.time("Drawing component");
         GUI.update_component(FOLD, CELL, COMP, Gn, Gi);
-        NOTE.lap();
         NOTE.end();
     },
 };

@@ -63,7 +63,10 @@ export const NOTE = {  // ANNOTATION
     },
     scroll: () => {
         if (NOTE.console) {
-            NOTE.console.scrollTop = NOTE.console.scrollHeight;
+            const c = NOTE.console;
+            if ((c.scrollHeight - c.scrollTop - c.clientHeight) < c.clientHeight/2) {
+                c.scrollTop = c.scrollHeight;
+            }
         }
     },
     clear_log: () => {
