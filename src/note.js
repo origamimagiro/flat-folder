@@ -64,6 +64,9 @@ export const NOTE = {  // ANNOTATION
     scroll: () => {
         if (NOTE.console) {
             const c = NOTE.console;
+            // clientHeight is 8 rows, so this will auto scroll if
+            // console was scrolled within 3 rows of the bottom
+            // when the new line appeared.
             if ((c.scrollHeight - c.scrollTop - c.clientHeight) < c.clientHeight/2) {
                 c.scrollTop = c.scrollHeight;
             }

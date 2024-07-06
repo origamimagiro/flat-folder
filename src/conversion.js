@@ -10,8 +10,10 @@ export const X = {     // CONVERSION
         let nV = 0, nE = 0, count = 0;
         const k = 3;    // decrease eps until feature #s repeat sufficiently
         let V_ = [], EV_ = [], EL_ = [], k_ = 1, i_ = 1;
+        NOTE.start_check("epsilon");
         for (const i of Array(50).fill().map((_, j) => j + 3)) {
             const eps = d/(2**i);
+            NOTE.check(2**i);
             if (eps < M.FLOAT_EPS) { break; }
             try {
                 const [V, EV, EL] = X.L_eps_2_V_EV_EL(L, eps);
