@@ -199,22 +199,21 @@ export const SOLVER = {    // STATE SOLVER
             const new_level = [];
             for (const [i, a] of level) {
                 NOTE.check(count);
-                count += 1;
+                ++count;
                 const [f1, f2] = M.decode(BF[i]);
                 const C = BT[i];
                 for (const type of CON.types) {
-                    for (const F of SOLVER.unpack_cons(C, type, f1, f2)) {
+                    const CF = SOLVER.unpack_cons(C, type, f1, f2);
+                    for (const [ci, F] of CF.entries()) {
                         const I = SOLVER.infer(type, F, BI, BA);
                         if (I == CON.state.conflict) {
-                            const E = SOLVER.error_faces(type, F, BF, BI, BA, BP);
+                            const E = SOLVER.error_faces(type, F, BF, BT, BI, BA, BP);
                             return [type, F, E]; // constraint unsatisfiable
                         }
-                        if (!Array.isArray(I)) {
-                            continue;
-                        }
+                        if (!Array.isArray(I)) { continue; }
                         for (const [i_, a_] of I) {
                             if (BP[i_] != undefined) { continue; }
-                            BP[i_] = [type, F];
+                            BP[i_] = [type, i, ci];
                             new_level.push([i_, a_]);
                         }
                     }
@@ -249,7 +248,7 @@ export const SOLVER = {    // STATE SOLVER
         }
         return GA;
     },
-    error_faces: (type, F, BF, BI, BA, BP) => {
+    error_faces: (type, F, BF, BT, BI, BA, BP) => {
         const vars = [];
         for (const pair of CON.type_F_2_pairs(type, F)) {
             vars.push(BI.get(M.encode_order_pair(pair)));
@@ -262,7 +261,9 @@ export const SOLVER = {    // STATE SOLVER
             if (a != 0) {
                 const par = BP[i];
                 if (par.length > 0) {
-                    [type, F] = par;
+                    [type, bi, ci] = par;
+                    const [f1, f2] = M.decode(BF[bi]);
+                    const F = SOLVER.unpack_cons(BT[bi], type, f1, f2)[ci];
                     for (const pair of CON.type_F_2_pairs(type, F)) {
                         const i_ = BI.get(M.encode_order_pair(pair));
                         if (!seen.has(i_)) {
