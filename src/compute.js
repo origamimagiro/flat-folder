@@ -92,14 +92,14 @@ const actions = {
         NOTE.lap();
         NOTE.time("Computing variables");
         const BF = X.EF_SP_SE_CP_CF_2_BF(EF, SP, SE, CP, CF);
-        const FB_map = new Map();
-        for (const [i, F] of BF.entries()) { FB_map.set(F, i); }
+        const BI = new Map();
+        for (const [i, F] of BF.entries()) { BI.set(F, i); }
         NOTE.annotate(BF, "variables_faces");
         NOTE.lap();
         NOTE.time("Computing non-transitivity constraints");
         const [BT0, BT1, BT2] = X.BF_EF_ExE_ExF_2_BT0_BT1_BT2(BF, EF, ExE, ExF);
         NOTE.count(BT0, "taco-taco", 6);
-        NOTE.count(BT1, "taco-tortilla", 3);
+        NOTE.count(BT1, "taco-tortilla", 2);
         NOTE.count(BT2, "tortilla-tortilla", 2);
         NOTE.lap();
         NOTE.time("Computing transitivity constraints");
@@ -110,21 +110,22 @@ const actions = {
         NOTE.count(BT3, "initial transitivity", 3);
         NOTE.lap();
         NOTE.time("Cleaning transitivity constraints");
-        X.BF_BT0_BT1_BT3_2_clean_BT3(BF, BT0, BT1, BT3);
+        X.BF_BT0_BT1_BT3_2_clean_BT3(BF, BT0, BT1, BT3, BI);
         NOTE.count(BT3, "independent transitivity", 3);
         const BT = BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
         NOTE.lap();
         NOTE.time("*** Computing states ***");
         NOTE.time("Assigning orders based on crease assignment");
-        const out = SOLVER.initial_assignment(EF, EA, Ff, BF, BT);
-        if (out.length == 3) {
+        const out = SOLVER.initial_assignment(EF, EA, Ff, BF, BT, BI);
+        if ((out.length == 3) && (out[0].length == undefined)) {
+            const [type, F, E] = out;
             const str = `Unable to resolve ${CON.names[type]} on faces [${F}]`;
             NOTE.log(`   - ${str}`);
             NOTE.log(`   - Faces participating in conflict: [${E}]`);
             postMessage({type: "end", arg: ["assign_error", out]});
             return;
         }
-        const [BI, BA] = out;
+        const BA = out;
         NOTE.annotate(BA.map((_, i) => i).filter(i => BA[i] != 0),
             "initially assignable variables");
         NOTE.lap();
@@ -148,7 +149,7 @@ const actions = {
         const Gn = GA.map(A => A.length);
         NOTE.time("Solve completed");
         NOTE.lap();
-        G.SOLVE = {BF, FB_map, BT, GB, GA};
+        G.SOLVE = {BF, BI, BT, GB, GA};
         postMessage({type: "end", arg: ["success", Gn]});
     },
     Gi_2_CD_FO: (Gi) => {
@@ -162,8 +163,8 @@ const actions = {
         postMessage({type: "end", arg: [CD, FO]});
     },
     f1_f2_2_T: (f1, f2) => {
-        const {FB_map, BT} = G.SOLVE;
-        const bi = FB_map.get(M.encode_order_pair([f1, f2]));
+        const {BI, BT} = G.SOLVE;
+        const bi = BI.get(M.encode_order_pair([f1, f2]));
         postMessage({type: "end", arg: [bi, BT[bi]]});
     },
     g_2_gBF: (g) => {

@@ -10,7 +10,7 @@ export const CON = {      // CONSTRAINTS
         ([A,B,C,D]) => [[A,B],[C,D],[C,B],[A,D],[A,C],[B,D]], // 0: taco-taco
             // Faces A, B, C, D that all overlap,
             // with A-B and C-D adjacent via edges that properly intersect.
-        ([A,B,C]) => [[A,B],[A,C],[C,B]],           // 1: taco-tortilla
+        ([A,B,C]) => [[A,C],[C,B]],                 // 1: taco-tortilla
             // Faces A, B, C that all overlap,
             // with A-B adjacent via an edge that properly intersects C.
         ([A,B,C,D]) => [[A,C],[B,D]],               // 2: tortilla-tortilla
@@ -26,7 +26,7 @@ export const CON = {      // CONSTRAINTS
          "121112", "121222", "122111", "122212",
          "211121", "211222", "212111", "212221",
          "221222", "222111", "222212", "222221"],
-        ["112", "121", "212", "221"],               // 1: taco-tortilla
+        ["12", "21"],                               // 1: taco-tortilla
         ["11", "22"],                               // 2: tortilla-tortilla
         ["112", "121", "122", "211", "212", "221"], // 3: transitivity
     ],

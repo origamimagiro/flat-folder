@@ -160,8 +160,8 @@ const MAIN = {
         const lim = (val == "all") ? Infinity : +val;
         const [type, out] = await PAR.send_message(COMP, "solve", [lim]);
         if (type == "assign_error") {
-            const [type, F, E] = out[0];
-            GUI.update_error(F, E, FC);
+            const [type, F, E] = out;
+            GUI.update_error(F, E, CELL.FC);
             document.getElementById("fold_button").onclick = undefined;
             for (const id of ["flip_flat", "rotate_flat", "flip_fold", "rotate_fold"]) {
                 document.getElementById(id).onchange = undefined;

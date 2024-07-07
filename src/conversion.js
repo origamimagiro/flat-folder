@@ -674,16 +674,20 @@ export const X = {     // CONVERSION
         }
         return BT;
     },
-    BF_BT0_BT1_BT3_2_clean_BT3: (BF, BT0, BT1, BT3) => {
+    BF_BT0_BT1_BT3_2_clean_BT3: (BF, BT0, BT1, BT3, BI) => {
+        const BT1_x = BF.map(() => [[]]);
+        for (const T of BT1) {
+            for (const [a, b, c] of T) {
+                BT1_x[BI.get(M.encode_order_pair([a, b]))][0].push(c);
+            }
+        }
         const T3 = new Set();
         NOTE.start_check("variable", BF);
         for (const [i, k] of BF.entries()) {
             NOTE.check(i);
-            for (const f3 of M.decode(BT3[i])) {
-                T3.add(f3);
-            }
+            for (const f3 of M.decode(BT3[i])) { T3.add(f3); }
             const [f1, f2] = M.decode(k);
-            for (const T of [BT0[i], BT1[i]]) {
+            for (const T of [BT0[i], BT1[i], BT1_x[i]]) {
                 for (const F of T) {
                     for (const f of F) {
                         T3.delete(f);

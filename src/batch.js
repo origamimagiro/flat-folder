@@ -106,21 +106,23 @@ export const BATCH = {
         const ExE = X.SE_2_ExE(SE);
         const ExF = X.SE_CF_SC_2_ExF(SE, CF, SC);
         const BF = X.EF_SP_SE_CP_CF_2_BF(EF, SP, SE, CP, CF);
+        const BI = new Map();
+        for (const [i, F] of BF.entries()) { BI.set(F, i); }
         const [BT0, BT1, BT2] = X.BF_EF_ExE_ExF_2_BT0_BT1_BT2(BF, EF, ExE, ExF);
         const BT3 = ((BATCH.W == undefined) ?
             X.EF_SP_SE_CP_FC_CF_BF_2_BT3(EF, SP, SE, CP, FC, CF, BF) :
             (await X.FC_CF_BF_W_2_BT3(FC, CF, BF, BATCH.W))
         );
         const init_trans = NOTE.count_subarrays(BT3)/3;
-        X.BF_BT0_BT1_BT3_2_clean_BT3(BF, BT0, BT1, BT3);
+        X.BF_BT0_BT1_BT3_2_clean_BT3(BF, BT0, BT1, BT3, BI);
         const BT = BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
-        const out = SOLVER.initial_assignment(EF, EA, Ff, BF, BT);
-        if (out.length == 3) {
+        const out = SOLVER.initial_assignment(EF, EA, Ff, BF, BT, BI);
+        if ((out.length == 3) && (out[0].length == undefined)) {
             const [type, F, E] = out;
             console.log(` - Unable to resolve ${CON.names[type]} on faces [${F}]`);
             throw new Error();
         }
-        const [BI, BA] = out;
+        const BA = out;
         const GB = SOLVER.get_components(BI, BF, BT, BA);
         NOTE.count(GB.length - 1, "unassigned components");
         const t1 = performance.now();
@@ -142,7 +144,7 @@ export const BATCH = {
             eps: eps,
             variables: BF.length,
             "taco-taco": NOTE.count_subarrays(BT0)/6,
-            "taco-tortilla": NOTE.count_subarrays(BT1)/3,
+            "taco-tortilla": NOTE.count_subarrays(BT1)/2,
             "tortilla-tortilla": NOTE.count_subarrays(BT2)/2,
             transitivity: init_trans,
             reduced_trans: NOTE.count_subarrays(BT3)/3,

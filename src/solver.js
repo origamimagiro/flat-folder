@@ -172,9 +172,7 @@ export const SOLVER = {    // STATE SOLVER
         }
         return A;
     },
-    initial_assignment: (EF, EA, Ff, BF, BT) => {
-        const BI = new Map();
-        for (const [i, F] of BF.entries()) { BI.set(F, i); }
+    initial_assignment: (EF, EA, Ff, BF, BT, BI) => {
         const BA = BF.map(() => 0);
         for (const [i, a] of EA.entries()) {
             if ((a == "M") || (a == "V")) {
@@ -225,7 +223,7 @@ export const SOLVER = {    // STATE SOLVER
             level = new_level;
             ++depth;
         }
-        return [BI, BA];
+        return BA;
     },
     solve: (BI, BF, BT, BA, GB, lim) => {
         // In:   BI | map from variable keys to indices
