@@ -597,29 +597,25 @@ export const X = {     // CONVERSION
         }
         return Array.from(BF_set).sort();
     },
-    check_overlap: (p, BF_map) => {
-        return (BF_map.has(M.encode_order_pair(p)) ? 1 : 0);
+    check_overlap: (p, BI) => {
+        return (BI.has(M.encode_order_pair(p)) ? 1 : 0);
     },
-    add_constraint: (T, BF_map, BT) => {
+    add_constraint: (T, BI, BT) => {
         if (T != undefined) {
             const [type, F] = T;
             const pairs = CON.type_F_2_pairs(type, F);
             for (const p of pairs) {
-                const i = BF_map.get(M.encode_order_pair(p));
+                const i = BI.get(M.encode_order_pair(p));
                 if (i == undefined) { debugger; }
                 BT[type][i].push(F);
             }
         }
     },
-    BF_EF_ExE_ExF_2_BT0_BT1_BT2: (BF, EF, ExE, ExF) => {
+    BF_BI_EF_ExE_ExF_2_BT0_BT1_BT2: (BF, BI, EF, ExE, ExF) => {
         const BT0 = BF.map(() => []); // taco-taco
         const BT1 = BF.map(() => []); // taco-tortilla
         const BT2 = BF.map(() => []); // tortilla-tortilla
         const BT = [BT0, BT1, BT2];
-        const BF_map = new Map();
-        for (const [i, F] of BF.entries()) {
-            BF_map.set(F, i);
-        }
         NOTE.time("Computing from edge-edge intersections");
         NOTE.start_check("edge-edge intersection", ExE);
         for (const [i, k] of ExE.entries()) {
@@ -629,9 +625,9 @@ export const X = {     // CONVERSION
             const [f1, f2] = EF[e1];
             const [f3, f4] = EF[e2];
             // note that all of f1, f2, f3, f4 must be unique
-            const f1f2 = X.check_overlap([f1, f2], BF_map);
-            const f1f3 = X.check_overlap([f1, f3], BF_map);
-            const f1f4 = X.check_overlap([f1, f4], BF_map);
+            const f1f2 = X.check_overlap([f1, f2], BI);
+            const f1f3 = X.check_overlap([f1, f3], BI);
+            const f1f4 = X.check_overlap([f1, f4], BI);
             let cons;
             const choice = (f1f2 << 2) | (f1f3 << 1) | f1f4;
             switch (choice) {
@@ -653,7 +649,7 @@ export const X = {     // CONVERSION
                     cons = [CON.T.taco_taco, [f1, f2, f3, f4]]; break;
                 default: break;
             }
-            X.add_constraint(cons, BF_map, BT);
+            X.add_constraint(cons, BI, BT);
         }
         NOTE.time("Computing from edge-face intersections");
         NOTE.start_check("edge-face intersection", ExF);
@@ -663,39 +659,90 @@ export const X = {     // CONVERSION
             if (EF[e].length != 2) { continue; }
             const [f1, f2] = EF[e];
             if ((f1 == f3) || (f2 == f3)) { continue; }
-            const f1f2 = X.check_overlap([f1, f2], BF_map);
+            const f1f2 = X.check_overlap([f1, f2], BI);
             let cons;
             if (f1f2 == 1) {
                 cons = [CON.T.taco_tortilla, [f1, f2, f3]];
             } else {
                 cons = [CON.T.tortilla_tortilla, [f1, f2, f3, f3]];
             }
-            X.add_constraint(cons, BF_map, BT);
+            X.add_constraint(cons, BI, BT);
         }
         return BT;
     },
-    BF_BT0_BT1_BT3_2_clean_BT3: (BF, BT0, BT1, BT3, BI) => {
+    FC_BF_BI_BT0_BT1_BT3_2_clean_BT3: (FC, BF, BI, BT0, BT1, BT3) => {
         const BT1_x = BF.map(() => [[]]);
         for (const T of BT1) {
             for (const [a, b, c] of T) {
                 BT1_x[BI.get(M.encode_order_pair([a, b]))][0].push(c);
             }
         }
-        const T3 = new Set();
+        const BT3_x = BT3.map(() => new Set());
         NOTE.start_check("variable", BF);
         for (const [i, k] of BF.entries()) {
             NOTE.check(i);
-            for (const f3 of M.decode(BT3[i])) { T3.add(f3); }
             const [f1, f2] = M.decode(k);
             for (const T of [BT0[i], BT1[i], BT1_x[i]]) {
                 for (const F of T) {
                     for (const f of F) {
-                        T3.delete(f);
+                        BT3_x[i].add(f);
                     }
                 }
             }
-            BT3[i] = M.encode(T3);
-            T3.clear();
+        }
+        const FG = FC.map(() => new Map());
+        for (const T of BT1) {                  // construct connectivity graphs
+            for (const [a, b, c] of T) {
+                const G = FG[c];
+                if (!G.has(a)) { G.set(a, []); }
+                if (!G.has(b)) { G.set(b, []); }
+                G.get(a).push(b);
+                G.get(b).push(a);
+            }
+        }
+        const CC = [];
+        for (const [c, G] of FG.entries()) {    // find connected components
+            const seen = new Set();
+            for (const [F, _] of G) {
+                if (seen.has(F)) { continue; }
+                seen.add(F);
+                const C = [F];
+                let i = 0;
+                while (i < C.length) {
+                    for (const f of G.get(C[i])) {
+                        if (seen.has(f)) { continue; }
+                        seen.add(f);
+                        C.push(f);
+                    }
+                    ++i;
+                }
+                CC.push([c, C]);
+            }
+        }
+        NOTE.start_check("component", CC);      // find implied transitivity
+        for (const [ci, [c, C]] of CC.entries()) {
+            NOTE.check(ci);
+            const K = C.map(a => BI.get(M.encode_order_pair([a, c])));
+            for (let i = 0; i < C.length - 1; ++i) {
+                const a = C[i];
+                const kca = K[i];
+                if (kca == undefined) { continue; }
+                for (let j = i + 1; j < C.length; ++j) {
+                    const b = C[j];
+                    const kbc = K[j];
+                    if (kbc == undefined) { continue; }
+                    const kab = BI.get(M.encode_order_pair([a, b]));
+                    if (kab == undefined) { continue; }
+                    BT3_x[kca].add(b);
+                    BT3_x[kbc].add(a);
+                    BT3_x[kab].add(c);
+                }
+            }
+        }
+        for (let i = 0; i < BT3_x.length; ++i) { // remove implied transitivity
+            const F = new Set(M.decode(BT3[i]));
+            for (const f of BT3_x[i]) { F.delete(f); }
+            BT3[i] = M.encode(F);
         }
     },
     FC_CF_BF_2_BT3: (FC, CF, BF) => {            // O(|B|kt) <= O(|F|^5)
