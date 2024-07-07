@@ -183,12 +183,12 @@ export const SOLVER = {    // STATE SOLVER
                 BA[BI.get(k)] = o;
             }
         }
-        const BP = new Map();
+        const BP = BA.map(() => undefined);
         let level = [];
         for (const [i, a] of BA.entries()) {
             if (a != 0) {
                 level.push([i, a]);
-                BP.set(i, []);
+                BP[i] = [];
             }
         }
         let [count, depth] = [0, 0];
@@ -213,8 +213,8 @@ export const SOLVER = {    // STATE SOLVER
                             continue;
                         }
                         for (const [i_, a_] of I) {
-                            if (BP.has(i_)) { continue; }
-                            BP.set(i_, [type, F]);
+                            if (BP[i_] != undefined) { continue; }
+                            BP[i_] = [type, F];
                             new_level.push([i_, a_]);
                         }
                     }
@@ -260,7 +260,7 @@ export const SOLVER = {    // STATE SOLVER
             seen.add(i);
             const a = BA[i];
             if (a != 0) {
-                const par = BP.get(i);
+                const par = BP[i];
                 if (par.length > 0) {
                     [type, F] = par;
                     for (const pair of CON.type_F_2_pairs(type, F)) {
