@@ -6,7 +6,7 @@ import { X } from "./conversion.js";
 import { SOLVER } from "./solver.js";
 import { PAR } from "./parallel.js";
 
-let wn;
+let W;
 const G = {};
 onmessage = (e) => {
     const d = e.data;
@@ -14,12 +14,14 @@ onmessage = (e) => {
 };
 
 const actions = {
-    setup: async (n) => {
-        wn = n;
+    setup: async (wn) => {
         NOTE.log = (str) => {
             if (!NOTE.show) { return; }
             postMessage({type: "note", arg: str});
         };
+        if ((wn != undefined) && (wn > 1)) {
+            const W = await PAR.get_workers(wn, "./worker.js");
+        }
         NOTE.time("Computing constraint implication maps");
         CON.build();
         postMessage({type: "end"});
@@ -111,10 +113,8 @@ const actions = {
             NOTE.lap();
             NOTE.time("Computing transitivity constraints");
             let BT3;
-            if ((wn != undefined) && (wn > 1)) {
-                const W = await PAR.get_workers(wn, "./worker.js");
+            if (W != undefined) {
                 BT3 = await X.FC_CF_BF_BT3x_W_2_BT3(FC, CF, BF, BT3x, W);
-                await PAR.end_workers(W);
             } else {
                 BT3 = X.EF_SP_SE_CP_FC_CF_BF_2_BT3(EF, SP, SE, CP, FC, CF, BF);
             }
