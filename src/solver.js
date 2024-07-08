@@ -244,11 +244,11 @@ export const SOLVER = {    // STATE SOLVER
     clean_dead: (BF, BI, BA, BT, BP) => {
         const level = [];
         let tn = 0;
+        const type = CON.T.transitivity;
         NOTE.start_check("variable", BA);
         for (const [i, k] of BF.entries()) { // remove dead transitivity
             NOTE.check(i);
             const [f1, f2] = M.decode(k);
-            const type = CON.T.transitivity;
             const T = M.decode(BT[i][type]);
             const T_ = [];
             for (const [ci, f3] of T.entries()) {

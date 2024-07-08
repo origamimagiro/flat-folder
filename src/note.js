@@ -50,6 +50,7 @@ export const NOTE = {  // ANNOTATION
     count: (A, label, div = 1) => {
         const n = Array.isArray(A) ? NOTE.count_subarrays(A)/div : A;
         NOTE.log(`   - Found ${n} ${label}`);
+        return n;
     },
     log: (str) => {
         if (NOTE.show) {

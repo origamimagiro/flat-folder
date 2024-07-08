@@ -670,22 +670,23 @@ export const X = {     // CONVERSION
         }
         return BT;
     },
-    FC_BF_BI_BT0_BT1_BT3_2_clean_BT3: (FC, BF, BI, BT0, BT1, BT3) => {
-        const BT1_x = BF.map(() => [[]]);
+    FC_BF_BI_BT0_BT1_2_BT3x: (FC, BF, BI, BT0, BT1) => {
+        const BT1x = BF.map(() => [[]]);
         for (const T of BT1) {
             for (const [a, b, c] of T) {
-                BT1_x[BI.get(M.encode_order_pair([a, b]))][0].push(c);
+                BT1x[BI.get(M.encode_order_pair([a, b]))][0].push(c);
             }
         }
-        const BT3_x = BT3.map(() => new Set());
+        const BT3x = BF.map(() => new Set());
         NOTE.start_check("variable", BF);
         for (const [i, k] of BF.entries()) {
             NOTE.check(i);
             const [f1, f2] = M.decode(k);
-            for (const T of [BT0[i], BT1[i], BT1_x[i]]) {
+            for (const T of [BT0[i], BT1[i], BT1x[i]]) {
                 for (const F of T) {
                     for (const f of F) {
-                        BT3_x[i].add(f);
+                        if ((f == f1) || (f == f2)) { continue; }
+                        BT3x[i].add(f);
                     }
                 }
             }
@@ -733,17 +734,16 @@ export const X = {     // CONVERSION
                     if (kbc == undefined) { continue; }
                     const kab = BI.get(M.encode_order_pair([a, b]));
                     if (kab == undefined) { continue; }
-                    BT3_x[kca].add(b);
-                    BT3_x[kbc].add(a);
-                    BT3_x[kab].add(c);
+                    BT3x[kca].add(b);
+                    BT3x[kbc].add(a);
+                    BT3x[kab].add(c);
                 }
             }
         }
-        for (let i = 0; i < BT3_x.length; ++i) { // remove implied transitivity
-            const F = new Set(M.decode(BT3[i]));
-            for (const f of BT3_x[i]) { F.delete(f); }
-            BT3[i] = M.encode(F);
+        for (let i = 0; i < BT3x.length; ++i) {
+            BT3x[i] = M.encode(BT3x[i]);
         }
+        return BT3x;
     },
     FC_CF_BF_2_BT3: (FC, CF, BF) => {            // O(|B|kt) <= O(|F|^5)
         const BT3 = [];                          // k is max cells in a face,
@@ -768,7 +768,7 @@ export const X = {     // CONVERSION
         }
         return BT3;                             // |BT3| = O(|B||F|) <= O(|F|^3)
     },
-    FC_CF_BF_W_2_BT3: async (FC, CF, BF, W) => {
+    FC_CF_BF_BT3x_W_2_BT3: async (FC, CF, BF, BT3x, W) => {
         const P = W.map((_, wi) => new Promise(res => res([wi, undefined])));
         await Promise.all(W.map(w => PAR.send_message(w, "BT3_start", [FC, CF])));
         const BT3 = BF.map(() => undefined);
@@ -783,7 +783,7 @@ export const X = {     // CONVERSION
             }
             const J = [];
             for (let k = 0; (k < load) && (i < BF.length); ++k, ++i) {
-                J.push([i, BF[i]]);
+                J.push([i, BF[i], BT3x[i]]);
             }
             P[wi] = ((J.length == 0) ? (new Promise(res => {}))
                 : PAR.send_message(W[wi], "BT3", [J]));

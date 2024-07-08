@@ -82,43 +82,46 @@ const actions = {
         const {EA, EF, Ff} = G.FOLD;
         const {P, P_norm, SP, SE, CP, CS, SC, CF, FC} = G.CELL;
         NOTE.start("*** Computing constraints ***");
-        NOTE.time("Computing edge-edge overlaps");
-        const ExE = X.SE_2_ExE(SE);
-        NOTE.count(ExE, "edge-edge adjacencies");
-        NOTE.lap();
-        NOTE.time("Computing edge-face overlaps");
-        const ExF = X.SE_CF_SC_2_ExF(SE, CF, SC);
-        NOTE.count(ExF, "edge-face adjacencies");
-        NOTE.lap();
         NOTE.time("Computing variables");
         const BF = X.EF_SP_SE_CP_CF_2_BF(EF, SP, SE, CP, CF);
         const BI = new Map();
         for (const [i, F] of BF.entries()) { BI.set(F, i); }
         NOTE.annotate(BF, "variables_faces");
         NOTE.lap();
-        NOTE.time("Computing non-transitivity constraints");
-        const [BT0, BT1, BT2] = X.BF_BI_EF_ExE_ExF_2_BT0_BT1_BT2(
-            BF, BI, EF, ExE, ExF);
-        NOTE.count(BT0, "taco-taco", 6);
-        NOTE.count(BT1, "taco-tortilla", 2);
-        NOTE.count(BT2, "tortilla-tortilla", 2);
-        NOTE.lap();
-        NOTE.time("Computing transitivity constraints");
-        let BT3;
-        if ((wn != undefined) && (wn > 1)) {
-            const W = await PAR.get_workers(wn, "./worker.js");
-            BT3 = await X.FC_CF_BF_W_2_BT3(FC, CF, BF, W);
-            await PAR.end_workers(W);
-        } else {
-            BT3 = X.EF_SP_SE_CP_FC_CF_BF_2_BT3(EF, SP, SE, CP, FC, CF, BF);
+        let BT
+        {
+            NOTE.time("Computing edge-edge overlaps");
+            const ExE = X.SE_2_ExE(SE);
+            NOTE.count(ExE, "edge-edge adjacencies");
+            NOTE.lap();
+            NOTE.time("Computing edge-face overlaps");
+            const ExF = X.SE_CF_SC_2_ExF(SE, CF, SC);
+            NOTE.count(ExF, "edge-face adjacencies");
+            NOTE.lap();
+            NOTE.time("Computing non-transitivity constraints");
+            const [BT0, BT1, BT2] = X.BF_BI_EF_ExE_ExF_2_BT0_BT1_BT2(
+                BF, BI, EF, ExE, ExF);
+            NOTE.count(BT0, "taco-taco", 6);
+            NOTE.count(BT1, "taco-tortilla", 2);
+            NOTE.count(BT2, "tortilla-tortilla", 2);
+            NOTE.lap();
+            NOTE.time("Computing excluded transitivity constraints");
+            const BT3x = X.FC_BF_BI_BT0_BT1_2_BT3x(FC, BF, BI, BT0, BT1);
+            NOTE.count(BT3x, "exluded transitivity", 3);
+            NOTE.lap();
+            NOTE.time("Computing transitivity constraints");
+            let BT3;
+            if ((wn != undefined) && (wn > 1)) {
+                const W = await PAR.get_workers(wn, "./worker.js");
+                BT3 = await X.FC_CF_BF_BT3x_W_2_BT3(FC, CF, BF, BT3x, W);
+                await PAR.end_workers(W);
+            } else {
+                BT3 = X.EF_SP_SE_CP_FC_CF_BF_2_BT3(EF, SP, SE, CP, FC, CF, BF);
+            }
+            NOTE.count(BT3, "independent transitivity", 3);
+            NOTE.lap();
+            BT = BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
         }
-        NOTE.count(BT3, "initial transitivity", 3);
-        NOTE.lap();
-        NOTE.time("Cleaning transitivity constraints");
-        X.FC_BF_BI_BT0_BT1_BT3_2_clean_BT3(FC, BF, BI, BT0, BT1, BT3);
-        NOTE.count(BT3, "independent transitivity", 3);
-        const BT = BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
-        NOTE.lap();
         NOTE.time("*** Computing states ***");
         NOTE.time("Assigning orders based on crease assignment");
         const out = SOLVER.initial_assignment(EF, EA, Ff, BF, BT, BI);
