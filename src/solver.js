@@ -310,7 +310,7 @@ export const SOLVER = {    // STATE SOLVER
             if (a != 0) {
                 const par = BP[i];
                 if (par.length > 0) {
-                    [type, bi, ci] = par;
+                    const [type, bi, ci] = par;
                     const [f1, f2] = M.decode(BF[bi]);
                     const F = SOLVER.unpack_cons(BT[bi], type, f1, f2)[ci];
                     for (const pair of CON.type_F_2_pairs(type, F)) {
