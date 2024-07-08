@@ -315,20 +315,28 @@ export const GUI = {   // INTERFACE
                         const Ti = T[j];
                         SL.push(Ti.map((t) => `[${t.join(",")}]`));
                     }
-                    SL.push(Array.from(T[3]).map(x => M.decode(x)));
+                    const S = new Set();
+                    const bC = [];
+                    const C1 = new Set(FC[f1]);
+                    for (const c of FC[f2]) {
+                        if (C1.has(c)) { bC.push(c); }
+                    }
+                    for (const c of bC) {
+                        for (const f3 of CF[c]) { S.add(f3); }
+                    }
+                    S.delete(f1);
+                    S.delete(f2);
+                    T[3] = Array.from(S);
+                    SL.push(`[${T[3].join(",")}`);
                     NOTE.log(`   - variable ${ti} between faces [${f1},${f2}]`);
                     NOTE.log(`   - taco-taco: [${SL[0]}]`);
                     NOTE.log(`   - taco-tortilla: [${SL[1]}]`);
                     NOTE.log(`   - tortilla-tortilla: [${SL[2]}]`);
                     NOTE.log(`   - transitivity: [${SL[3]}]`);
                     NOTE.log("");
-                    for (const j of [3, 1]) {
-                        const Tj = (j == 1) ? T[j] : M.decode(T[j]);
-                        for (const F of Tj) {
-                            const f3 = (j == 1) ? F[2] : F;
-                            const el = document.getElementById(`flat_f${f3}`);
-                            el.setAttribute("fill", GUI.COLORS.TF[j]);
-                        }
+                    for (const f3 of T[3]) {
+                        const el = document.getElementById(`flat_f${f3}`);
+                        el.setAttribute("fill", GUI.COLORS.TF[3]);
                     }
                     const L = [new Set(), new Set(), new Set()];
                     for (const j of [0, 1, 2]) {
@@ -355,12 +363,9 @@ export const GUI = {   // INTERFACE
                             el.setAttribute("fill", GUI.COLORS.active);
                         }
                     }
-                    const C1 = new Set(FC[f1]);
-                    for (const c of FC[f2]) {
-                        if (C1.has(c)) {
-                            const el = document.getElementById(`cell_c${c}`);
-                            el.setAttribute("fill", GUI.COLORS.TF[3]);
-                        }
+                    for (const c of bC) {
+                        const el = document.getElementById(`cell_c${c}`);
+                        el.setAttribute("fill", GUI.COLORS.TF[3]);
                     }
                     for (const f of active) {
                         const el = document.getElementById(`flat_f${f}`);

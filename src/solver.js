@@ -186,14 +186,31 @@ export const SOLVER = {    // STATE SOLVER
         const BP = BA.map(() => undefined);
         let level = [];
         for (const [i, a] of BA.entries()) {
-            if (a != 0) {
-                level.push([i, a]);
-                BP[i] = [];
-            }
+            if (a != 0) { level.push([i, a]); BP[i] = []; }
         }
+        const types = CON.types.map(t => t);
+        types.pop();
+        NOTE.log(`   - First pass, no transitivity`);
+        let out = SOLVER.flood_by_constraints(level, BF, BI, BA, BT, BP, types);
+        if (Array.isArray(out) && (out.length == 3)) { return out; }
+        NOTE.log(`   - Cleaning transitivity`);
+        out = SOLVER.clean_dead(BF, BI, BA, BT, BP);
+        if (Array.isArray(out) && (out.length == 3)) { return out; }
+        const new_level = out[1];
+        NOTE.log(`   - Found ${out[0]/3} middle transitivity`);
+        NOTE.log(`   - Second pass, with transitivity`);
+        out = SOLVER.flood_by_constraints(new_level, BF, BI, BA, BT, BP, CON.types);
+        if (Array.isArray(out) && (out.length == 3)) { return out; }
+        NOTE.log(`   - Cleaning transitivity`);
+        out = SOLVER.clean_dead(BF, BI, BA, BT, BP);
+        if (Array.isArray(out) && (out.length == 3)) { return out; }
+        NOTE.log(`   - Found ${out[0]/3} final transitivity`);
+        return BA;
+    },
+    flood_by_constraints: (level, BF, BI, BA, BT, BP, constraints) => {
         let [count, depth] = [0, 0];
         NOTE.start_check("variable", BA);
-        while (level.length > 0) {
+        while (level.length > 0) {      // second pass, all constraints
             NOTE.log(`   - ${level.length} orders assigned at depth ${depth}`);
             for (const [i, a] of level) { BA[i] = a; }
             const new_level = [];
@@ -202,7 +219,7 @@ export const SOLVER = {    // STATE SOLVER
                 ++count;
                 const [f1, f2] = M.decode(BF[i]);
                 const C = BT[i];
-                for (const type of CON.types) {
+                for (const type of constraints) {
                     const CF = SOLVER.unpack_cons(C, type, f1, f2);
                     for (const [ci, F] of CF.entries()) {
                         const I = SOLVER.infer(type, F, BI, BA);
@@ -210,7 +227,8 @@ export const SOLVER = {    // STATE SOLVER
                             const E = SOLVER.error_faces(type, F, BF, BT, BI, BA, BP);
                             return [type, F, E]; // constraint unsatisfiable
                         }
-                        if (!Array.isArray(I)) { continue; }
+                        if (I == CON.state.alive) { continue; }
+                        if (I == CON.state.dead) { continue; }
                         for (const [i_, a_] of I) {
                             if (BP[i_] != undefined) { continue; }
                             BP[i_] = [type, i, ci];
@@ -222,7 +240,38 @@ export const SOLVER = {    // STATE SOLVER
             level = new_level;
             ++depth;
         }
-        return BA;
+    },
+    clean_dead: (BF, BI, BA, BT, BP) => {
+        const level = [];
+        let tn = 0;
+        NOTE.start_check("variable", BA);
+        for (const [i, k] of BF.entries()) { // remove dead transitivity
+            NOTE.check(i);
+            const [f1, f2] = M.decode(k);
+            const type = CON.T.transitivity;
+            const T = M.decode(BT[i][type]);
+            const T_ = [];
+            for (const [ci, f3] of T.entries()) {
+                const F = [f1, f2, f3];
+                const I = SOLVER.infer(type, F, BI, BA);
+                if (I == CON.state.conflict) {
+                    const E = SOLVER.error_faces(type, F, BF, BT, BI, BA, BP);
+                    return [type, F, E]; // constraint unsatisfiable
+                }
+                if (I == CON.state.dead) { continue; }
+                if (I == CON.state.alive) { T_.push(f3); continue; }
+                if (Array.isArray(I)) {
+                    for (const [i_, a_] of I) {
+                        if (BP[i_] != undefined) { continue; }
+                        BP[i_] = [type, i, ci];
+                        level.push([i_, a_]);
+                    }
+                }
+            }
+            BT[i][type] = M.encode(T_);
+            tn += T_.length;
+        }
+        return [tn, level];
     },
     solve: (BI, BF, BT, BA, GB, lim) => {
         // In:   BI | map from variable keys to indices
