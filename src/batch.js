@@ -12,12 +12,13 @@ if("window" in globalThis) {
     window.onload = () => BATCH.main();   // entry point
 }
 
+let wn;
 export const BATCH = {
-    W: undefined,
     main: async () => {
-        const wn = ((window.Worker == undefined) ? 1
+        wn = ((window.Worker == undefined) ? 1
             : (navigator.hardwareConcurrency ?? 8));
-        await BATCH.startup(wn, "./src/worker.js");
+        NOTE.time("Computing constraint implication maps");
+        CON.build();
         const limit_select = document.getElementById("limit_select");
         for (const val of ["all", 10000, 1000, 100, 10, 1]) {
             const el = document.createElement("option");
@@ -48,14 +49,6 @@ export const BATCH = {
             button.setAttribute("type", "button");
             button.setAttribute("value", "csv");
         };
-    },
-    startup: async (wn = 1, path) => {
-        NOTE.time("Computing constraint implication maps");
-        CON.build();
-        if (wn != 1) { BATCH.W = await PAR.get_workers(wn, path); }
-    },
-    shutdown: () => {
-        if (BATCH.W != undefined) { PAR.end_workers(BATCH.W); }
     },
     headers: [
         "number", "author", "title", "vertices",
@@ -110,10 +103,14 @@ export const BATCH = {
         for (const [i, F] of BF.entries()) { BI.set(F, i); }
         const [BT0, BT1, BT2] = X.BF_BI_EF_ExE_ExF_2_BT0_BT1_BT2(
             BF, BI, EF, ExE, ExF);
-        const BT3 = ((BATCH.W == undefined) ?
-            X.EF_SP_SE_CP_FC_CF_BF_2_BT3(EF, SP, SE, CP, FC, CF, BF) :
-            (await X.FC_CF_BF_W_2_BT3(FC, CF, BF, BATCH.W))
-        );
+        let BT3;
+        if ((wn != undefined) && (wn > 1)) {
+            const W = await PAR.get_workers(wn, "./src/worker.js");
+            BT3 = await X.FC_CF_BF_W_2_BT3(FC, CF, BF, W);
+            await PAR.end_workers(W);
+        } else {
+            BT3 = X.EF_SP_SE_CP_FC_CF_BF_2_BT3(EF, SP, SE, CP, FC, CF, BF);
+        }
         const init_trans = NOTE.count_subarrays(BT3)/3;
         X.FC_BF_BI_BT0_BT1_BT3_2_clean_BT3(FC, BF, BI, BT0, BT1, BT3);
         const BT = BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
