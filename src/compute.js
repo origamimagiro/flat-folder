@@ -20,7 +20,7 @@ const actions = {
             postMessage({type: "note", arg: str});
         };
         if ((wn != undefined) && (wn > 1)) {
-            const W = await PAR.get_workers(wn, "./worker.js");
+            W = await PAR.get_workers(wn, "./worker.js");
         }
         NOTE.time("Computing constraint implication maps");
         CON.build();
