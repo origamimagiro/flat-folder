@@ -107,18 +107,20 @@ const actions = {
             NOTE.count(BT1, "taco-tortilla", 2);
             NOTE.count(BT2, "tortilla-tortilla", 2);
             NOTE.lap();
-            NOTE.time("Computing excluded transitivity constraints");
+            NOTE.time("Computing excluded (possible) transitivity constraints");
             const BT3x = X.FC_BF_BI_BT0_BT1_2_BT3x(FC, BF, BI, BT0, BT1);
-            NOTE.count(BT3x, "exluded transitivity", 3);
+            NOTE.count(BT3x, "exluded (possible) transitivity", 3);
             NOTE.lap();
             NOTE.time("Computing transitivity constraints");
-            let BT3;
+            let BT3, nx;
             if (W != undefined) {
-                BT3 = await X.FC_CF_BF_BT3x_W_2_BT3(FC, CF, BF, BT3x, W);
+                [BT3, nx] = await X.FC_CF_BF_BT3x_W_2_BT3(FC, CF, BF, BT3x, W);
             } else {
-                BT3 = X.EF_SP_SE_CP_FC_CF_BF_2_BT3(EF, SP, SE, CP, FC, CF, BF);
+                [BT3, nx] = X.EF_SP_SE_CP_FC_CF_BF_BT3x_2_BT3(
+                    EF, SP, SE, CP, FC, CF, BF, BT3x);
             }
-            NOTE.count(BT3, "independent transitivity", 3);
+            const ni = NOTE.count(BT3, "independent transitivity", 3);
+            NOTE.log(`   - Found ${nx + ni} total transitivity`);
             NOTE.lap();
             BT = BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
         }

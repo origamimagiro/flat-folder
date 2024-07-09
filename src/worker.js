@@ -33,17 +33,17 @@ const actions = {
             const [f1, f2] = M.decode(k);
             const C = G.FC[f1];
             const T = new Set();
+            const X = new Set();
             const S = new Set(M.decode(bT3x));
             for (const c of G.FC[f2]) {
                 if (!C.has(c)) { continue; }
                 for (const f3 of G.CF[c]) {
-                    if (S.has(f3)) { continue; }
-                    T.add(f3);
+                    if ((f3 == f1) || (f3 == f2)) { continue; }
+                    if (S.has(f3)) { X.add(f3); }
+                    else           { T.add(f3); }
                 }
             }
-            T.delete(f1);
-            T.delete(f2);
-            return [i, M.encode(T)];
+            return [i, M.encode(T), X.size];
         });
         postMessage({type: "end", arg: [id, out]});
     },

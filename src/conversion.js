@@ -671,18 +671,12 @@ export const X = {     // CONVERSION
         return BT;
     },
     FC_BF_BI_BT0_BT1_2_BT3x: (FC, BF, BI, BT0, BT1) => {
-        const BT1x = BF.map(() => [[]]);
-        for (const T of BT1) {
-            for (const [a, b, c] of T) {
-                BT1x[BI.get(M.encode_order_pair([a, b]))][0].push(c);
-            }
-        }
         const BT3x = BF.map(() => new Set());
         NOTE.start_check("variable", BF);
         for (const [i, k] of BF.entries()) {
             NOTE.check(i);
             const [f1, f2] = M.decode(k);
-            for (const T of [BT0[i], BT1[i], BT1x[i]]) {
+            for (const T of [BT0[i], BT1[i]]) {
                 for (const F of T) {
                     for (const f of F) {
                         if ((f == f1) || (f == f2)) { continue; }
@@ -692,7 +686,9 @@ export const X = {     // CONVERSION
             }
         }
         const FG = FC.map(() => new Map());
-        for (const T of BT1) {                  // construct connectivity graphs
+        NOTE.start_check("taco-tortilla", BT1);
+        for (const [i, T] of BT1.entries()) {    // construct connectivity graphs
+            NOTE.check(i);
             for (const [a, b, c] of T) {
                 const G = FG[c];
                 if (!G.has(a)) { G.set(a, []); }
@@ -702,7 +698,9 @@ export const X = {     // CONVERSION
             }
         }
         const CC = [];
+        NOTE.start_check("face", FG);
         for (const [c, G] of FG.entries()) {    // find connected components
+            NOTE.check(c);
             const seen = new Set();
             for (const [F, _] of G) {
                 if (seen.has(F)) { continue; }
@@ -736,7 +734,7 @@ export const X = {     // CONVERSION
                     if (kab == undefined) { continue; }
                     BT3x[kca].add(b);
                     BT3x[kbc].add(a);
-                    BT3x[kab].add(c);
+                    BT3x[kab].add(c);   // possible a,b,c do not all overlap
                 }
             }
         }
@@ -745,41 +743,48 @@ export const X = {     // CONVERSION
         }
         return BT3x;
     },
-    FC_CF_BF_2_BT3: (FC, CF, BF) => {            // O(|B|kt) <= O(|F|^5)
+    FC_CF_BF_BT3x_2_BT3: (FC, CF, BF, BT3x) => { // O(|B|kt) <= O(|F|^5)
         const BT3 = [];                          // k is max cells in a face,
         const FC_sets = FC.map(C => new Set(C)); // t is max faces in a cell
-        const T = new Set();                     // k = O(|C|) <= O(|F|^2)
+        let nx = 0;                              // k = O(|C|) <= O(|F|^2)
         NOTE.start_check("variable", BF);        // t = O(|F|)
         for (const [i, k] of BF.entries()) {     // |B| = O(|F|^2)
             NOTE.check(i);
             const [f1, f2] = M.decode(k);
             const C = FC_sets[f1];
+            const S = new Set(M.decode(BT3x[i]));
+            const X = new Set();
+            const T = new Set();
             for (const c of FC[f2]) {
                 if (C.has(c)) {
                     for (const f3 of CF[c]) {
-                        T.add(f3);
+                        if ((f3 == f1) || (f3 == f2)) { continue; }
+                        if (S.has(f3)) { X.add(f3); }
+                        else           { T.add(f3); }
                     }
                 }
             }
-            T.delete(f1);
-            T.delete(f2);
+            nx += X.size;
             BT3.push(M.encode(T));
-            T.clear();
         }
-        return BT3;                             // |BT3| = O(|B||F|) <= O(|F|^3)
+        return [BT3, nx/3];     // |BT3| = O(|B||F|) <= O(|F|^3)
     },
     FC_CF_BF_BT3x_W_2_BT3: async (FC, CF, BF, BT3x, W) => {
         const P = W.map((_, wi) => new Promise(res => res([wi, undefined])));
         await Promise.all(W.map(w => PAR.send_message(w, "BT3_start", [FC, CF])));
         const BT3 = BF.map(() => undefined);
         const load = 100;
-        let i = 0, j = 0;
+        let i = 0, j = 0, nx = 0;
         NOTE.start_check("variable", BF);
         while (j < BF.length) {
             NOTE.check(j);
             const [wi, R] = await Promise.any(P);
             if (R != undefined) {
-                for (const [bi, bF] of R) { BT3[bi] = bF; ++j; }
+                for (const [bi, bF, filt] of R) {
+                    BT3[bi] = bF;
+                    ++j;
+                    nx += filt;
+                }
             }
             const J = [];
             for (let k = 0; (k < load) && (i < BF.length); ++k, ++i) {
@@ -789,9 +794,9 @@ export const X = {     // CONVERSION
                 : PAR.send_message(W[wi], "BT3", [J]));
         }
         await Promise.all(W.map(w => PAR.send_message(w, "BT3_stop", [])));
-        return BT3;
+        return [BT3, nx/3];
     },
-    EF_SP_SE_CP_FC_CF_BF_2_BT3: (EF, SP, SE, CP, FC, CF, BF) => {
+    EF_SP_SE_CP_FC_CF_BF_BT3x_2_BT3: (EF, SP, SE, CP, FC, CF, BF, BT3x) => {
         const FC_set = FC.map(C => new Set(C));
         const CF_set = CF.map(F => new Set(F));
         const SC_map = new Map();
@@ -818,7 +823,7 @@ export const X = {     // CONVERSION
             SF_map.set(M.encode([v2, v1]), F2);
         }
         const BT3 = [];
-        const T = new Set();
+        let nx = 0;
         NOTE.start_check("variable", BF);
         for (const [i, k] of BF.entries()) {
             NOTE.check(i);
@@ -830,11 +835,17 @@ export const X = {     // CONVERSION
                     C.add(ci);
                 }
             }
-            T.clear();
+            const S = new Set(M.decode(BT3x[i]));
+            const X = new Set();
+            const T = new Set();
             const seen = new Set();
             for (const ci of C) {
                 if (seen.has(ci)) { continue; }
-                for (const fi of CF[ci]) { T.add(fi); }
+                for (const f3 of CF[ci]) {
+                    if ((f3 == f1) || (f3 == f2)) { continue; }
+                    if (S.has(f3)) { X.add(f3); }
+                    else           { T.add(f3); }
+                }
                 const Q = [ci];
                 seen.add(ci);
                 let qi = 0;
@@ -848,17 +859,20 @@ export const X = {     // CONVERSION
                             Q.push(cj);
                             seen.add(cj);
                             const k = M.encode([v1, v2]);
-                            for (const fi of SF_map.get(k)) { T.add(fi); }
+                            for (const f3 of SF_map.get(k)) {
+                                if ((f3 == f1) || (f3 == f2)) { continue; }
+                                if (S.has(f3)) { X.add(f3); }
+                                else           { T.add(f3); }
+                            }
                         }
                         v1 = v2;
                     }
                 }
             }
-            T.delete(f1);
-            T.delete(f2);
+            nx += X.size;
             BT3.push(M.encode(T));
         }
-        return BT3;
+        return [BT3, nx/3];
     },
     BF_GB_GA_GI_2_edges: (BF, GB, GA, GI) => {
         const edges = [];

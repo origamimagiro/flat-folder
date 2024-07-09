@@ -113,15 +113,15 @@ export const BATCH = {
             num.BT1 = NOTE.count_subarrays(BT1)/2;
             num.BT2 = NOTE.count_subarrays(BT2)/2;
             const BT3x = X.FC_BF_BI_BT0_BT1_2_BT3x(FC, BF, BI, BT0, BT1);
-            const ex_trans = NOTE.count_subarrays(BT3x)/3;
-            let BT3;
+            let BT3, nx;
             if (W != undefined) {
-                BT3 = await X.FC_CF_BF_BT3x_W_2_BT3(FC, CF, BF, BT3x, W);
+                [BT3, nx] = await X.FC_CF_BF_BT3x_W_2_BT3(FC, CF, BF, BT3x, W);
             } else {
-                BT3 = X.EF_SP_SE_CP_FC_CF_BF_2_BT3(EF, SP, SE, CP, FC, CF, BF);
+                [BT3, nx] = X.EF_SP_SE_CP_FC_CF_BF_BT3x_2_BT3(
+                    EF, SP, SE, CP, FC, CF, BF, BT3x);
             }
             num.red_trans = NOTE.count_subarrays(BT3)/3;
-            num.tot_trans = ex_trans + num.red_trans;
+            num.tot_trans = nx + num.red_trans;
             BT = BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
         }
         const out = SOLVER.initial_assignment(EF, EA, Ff, BF, BT, BI);
