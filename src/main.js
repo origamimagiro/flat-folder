@@ -158,6 +158,8 @@ const MAIN = {
         }
         const val = document.getElementById("limit_select").value;
         const lim = (val == "all") ? Infinity : +val;
+        await PAR.send_message(COMP, "build_variables", []);
+        await PAR.send_message(COMP, "build_constraints", []);
         const [type, out] = await PAR.send_message(COMP, "solve", [lim]);
         if (type == "assign_error") {
             const [type, F, E] = out;

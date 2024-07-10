@@ -80,53 +80,59 @@ const actions = {
         G.CELL = {P, P_norm, SP, SE, CP, CS, SC, CF, FC, eps: eps_i};
         postMessage({type: "end", arg: G.CELL});
     },
-    solve: async (lim) => {
-        const {EA, EF, Ff} = G.FOLD;
-        const {P, P_norm, SP, SE, CP, CS, SC, CF, FC} = G.CELL;
+    build_variables: () => {
+        const {EF} = G.FOLD;
+        const {SP, SE, CP, CF} = G.CELL;
         NOTE.start("*** Computing constraints ***");
         NOTE.time("Computing variables");
-        const BF = X.EF_SP_SE_CP_CF_2_BF(EF, SP, SE, CP, CF);
-        const BI = new Map();
-        for (const [i, F] of BF.entries()) { BI.set(F, i); }
-        NOTE.annotate(BF, "variables_faces");
+        G.BF = X.EF_SP_SE_CP_CF_2_BF(EF, SP, SE, CP, CF);
+        G.BI = new Map();
+        for (const [i, F] of G.BF.entries()) { G.BI.set(F, i); }
+        NOTE.annotate(G.BF, "variables_faces");
         NOTE.lap();
-        let BT
-        {
-            NOTE.time("Computing edge-edge overlaps");
-            const ExE = X.SE_2_ExE(SE);
-            NOTE.count(ExE, "edge-edge adjacencies");
-            NOTE.lap();
-            NOTE.time("Computing edge-face overlaps");
-            const ExF = X.SE_CF_SC_2_ExF(SE, CF, SC);
-            NOTE.count(ExF, "edge-face adjacencies");
-            NOTE.lap();
-            NOTE.time("Computing non-transitivity constraints");
-            const [BT0, BT1, BT2] = X.BF_BI_EF_ExE_ExF_2_BT0_BT1_BT2(
-                BF, BI, EF, ExE, ExF);
-            NOTE.count(BT0, "taco-taco", 6);
-            NOTE.count(BT1, "taco-tortilla", 2);
-            NOTE.count(BT2, "tortilla-tortilla", 2);
-            NOTE.lap();
-            NOTE.time("Computing excluded (possible) transitivity constraints");
-            const BT3x = X.FC_BF_BI_BT0_BT1_2_BT3x(FC, BF, BI, BT0, BT1);
-            NOTE.count(BT3x, "exluded (possible) transitivity", 3);
-            NOTE.lap();
-            NOTE.time("Computing transitivity constraints");
-            let BT3, nx;
-            if (W != undefined) {
-                [BT3, nx] = await X.FC_CF_BF_BT3x_W_2_BT3(FC, CF, BF, BT3x, W);
-            } else {
-                [BT3, nx] = X.EF_SP_SE_CP_FC_CF_BF_BT3x_2_BT3(
-                    EF, SP, SE, CP, FC, CF, BF, BT3x);
-            }
-            const ni = NOTE.count(BT3, "independent transitivity", 3);
-            NOTE.log(`   - Found ${nx + ni} total transitivity`);
-            NOTE.lap();
-            BT = BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
+        postMessage({type: "end", arg: ["success"]});
+    },
+    build_constraints: async () => {
+        const {EF} = G.FOLD;
+        const {SP, SE, CP, SC, CF, FC} = G.CELL;
+        NOTE.time("Computing edge-edge overlaps");
+        const ExE = X.SE_2_ExE(SE);
+        NOTE.count(ExE, "edge-edge adjacencies");
+        NOTE.lap();
+        NOTE.time("Computing edge-face overlaps");
+        const ExF = X.SE_CF_SC_2_ExF(SE, CF, SC);
+        NOTE.count(ExF, "edge-face adjacencies");
+        NOTE.lap();
+        NOTE.time("Computing non-transitivity constraints");
+        const [BT0, BT1, BT2] = X.BF_BI_EF_ExE_ExF_2_BT0_BT1_BT2(
+            G.BF, G.BI, EF, ExE, ExF);
+        NOTE.count(BT0, "taco-taco", 6);
+        NOTE.count(BT1, "taco-tortilla", 2);
+        NOTE.count(BT2, "tortilla-tortilla", 2);
+        NOTE.lap();
+        NOTE.time("Computing excluded (possible) transitivity constraints");
+        const BT3x = X.FC_BF_BI_BT0_BT1_2_BT3x(FC, G.BF, G.BI, BT0, BT1);
+        NOTE.count(BT3x, "exluded (possible) transitivity", 3);
+        NOTE.lap();
+        NOTE.time("Computing transitivity constraints");
+        let BT3, nx;
+        if (W != undefined) {
+            [BT3, nx] = await X.FC_CF_BF_BT3x_W_2_BT3(FC, CF, G.BF, BT3x, W);
+        } else {
+            [BT3, nx] = X.EF_SP_SE_CP_FC_CF_BF_BT3x_2_BT3(
+                EF, SP, SE, CP, FC, CF, G.BF, BT3x);
         }
+        const ni = NOTE.count(BT3, "independent transitivity", 3);
+        NOTE.log(`   - Found ${nx + ni} total transitivity`);
+        NOTE.lap();
+        G.BT = G.BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
+        postMessage({type: "end", arg: ["success"]});
+    },
+    solve: (lim) => {
+        const {EA, EF, Ff} = G.FOLD;
         NOTE.time("*** Computing states ***");
         NOTE.time("Assigning orders based on crease assignment");
-        const out = SOLVER.initial_assignment(EF, EA, Ff, BF, BT, BI);
+        const out = SOLVER.initial_assignment(EF, EA, Ff, G.BF, G.BT, G.BI);
         if ((out.length == 3) && (out[0].length == undefined)) {
             const [type, F, E] = out;
             const str = `Unable to resolve ${CON.names[type]} on faces [${F}]`;
@@ -138,17 +144,19 @@ const actions = {
         const BA = out;
         NOTE.annotate(BA.map((_, i) => i).filter(i => BA[i] != 0),
             "initially assignable variables");
+        const np = G.BT.reduce((a, T) => a + T[3].length, 0);
+        NOTE.log(`  - Pruned to ${np/3} active transitivity`);
         NOTE.lap();
         NOTE.time("Finding unassigned components");
-        const GB = SOLVER.get_components(BI, BF, BT, BA);
-        NOTE.count(GB.length - 1, "unassigned components");
+        G.GB = SOLVER.get_components(G.BI, G.BF, G.BT, BA);
+        NOTE.count(G.GB.length - 1, "unassigned components");
         NOTE.lap();
-        const GA = SOLVER.solve(BI, BF, BT, BA, GB, lim);
-        if (GA.length == undefined) {
-            const gi = GA;
+        G.GA = SOLVER.solve(G.BI, G.BF, G.BT, BA, G.GB, lim);
+        if (G.GA.length == undefined) {
+            const gi = G.GA;
             const F = new Set();
-            for (const bi of GB[gi]) {
-                for (const f of M.decode(BF[bi])) { F.add(f); }
+            for (const bi of G.GB[gi]) {
+                for (const f of M.decode(G.BF[bi])) { F.add(f); }
             }
             postMessage({
                 type: "end",
@@ -156,30 +164,26 @@ const actions = {
             });
             return;
         }
-        const Gn = GA.map(A => A.length);
+        const Gn = G.GA.map(A => A.length);
         NOTE.time("Solve completed");
         NOTE.lap();
-        G.SOLVE = {BF, BI, BT, GB, GA};
         postMessage({type: "end", arg: ["success", Gn]});
     },
     Gi_2_CD_FO: (Gi) => {
         const {Ff} = G.FOLD;
         const {CF} = G.CELL;
-        const {BF, GB, GA} = G.SOLVE;
         NOTE.time("Computing state");
-        const edges = X.BF_GB_GA_GI_2_edges(BF, GB, GA, Gi);
+        const edges = X.BF_GB_GA_GI_2_edges(G.BF, G.GB, G.GA, Gi);
         const CD = X.CF_edges_2_CD(CF, edges);
         const FO = X.edges_Ff_2_FO(edges, Ff);
         postMessage({type: "end", arg: [CD, FO]});
     },
     f1_f2_2_T: (f1, f2) => {
-        const {BI, BT} = G.SOLVE;
-        const bi = BI.get(M.encode_order_pair([f1, f2]));
-        postMessage({type: "end", arg: [bi, BT[bi]]});
+        const bi = G.BI.get(M.encode_order_pair([f1, f2]));
+        postMessage({type: "end", arg: [bi, G.BT[bi]]});
     },
     g_2_gBF: (g) => {
-        const {BF, GB} = G.SOLVE;
-        const gBF = g.map(gi => GB[gi].map(b => M.decode(BF[b])));
+        const gBF = g.map(gi => G.GB[gi].map(b => M.decode(G.BF[b])));
         postMessage({type: "end", arg: gBF});
     },
 };

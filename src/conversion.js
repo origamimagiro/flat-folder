@@ -753,6 +753,7 @@ export const X = {     // CONVERSION
             const [f1, f2] = M.decode(k);
             const C = FC_sets[f1];
             const S = new Set(M.decode(BT3x[i]));
+            BT3x[i] = undefined;
             const X = new Set();
             const T = new Set();
             for (const c of FC[f2]) {
@@ -780,15 +781,16 @@ export const X = {     // CONVERSION
             NOTE.check(j);
             const [wi, R] = await Promise.any(P);
             if (R != undefined) {
-                for (const [bi, bF, filt] of R) {
+                for (const [bi, bF, nxi] of R) {
                     BT3[bi] = bF;
                     ++j;
-                    nx += filt;
+                    nx += nxi;
                 }
             }
             const J = [];
             for (let k = 0; (k < load) && (i < BF.length); ++k, ++i) {
                 J.push([i, BF[i], BT3x[i]]);
+                BT3x[i] = undefined;
             }
             P[wi] = ((J.length == 0) ? (new Promise(res => {}))
                 : PAR.send_message(W[wi], "BT3", [J]));
@@ -836,6 +838,7 @@ export const X = {     // CONVERSION
                 }
             }
             const S = new Set(M.decode(BT3x[i]));
+            BT3x[i] = undefined;
             const X = new Set();
             const T = new Set();
             const seen = new Set();
