@@ -268,6 +268,8 @@ export const SOLVER = {    // STATE SOLVER
             }
             BT[i][type] = M.encode(T_);
             tn += T_.length;
+            T.length = 0;
+            T_.length = 0;
         }
         return [tn, level];
     },

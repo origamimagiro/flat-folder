@@ -24,6 +24,8 @@ const actions = {
         postMessage({type: "end"});
     },
     BT3_stop: () => {
+        G.FC.length = 0;
+        G.CF.length = 0;
         delete G.FC;
         delete G.CF;
         postMessage({type: "end"});

@@ -698,10 +698,11 @@ export const X = {     // CONVERSION
             }
         }
         const CC = [];
+        const seen = new Set();
         NOTE.start_check("face", FG);
         for (const [c, G] of FG.entries()) {    // find connected components
             NOTE.check(c);
-            const seen = new Set();
+            seen.clear();
             for (const [F, _] of G) {
                 if (seen.has(F)) { continue; }
                 seen.add(F);
@@ -717,7 +718,9 @@ export const X = {     // CONVERSION
                 }
                 CC.push([c, C]);
             }
+            G.clear();
         }
+        FG.length = 0;
         NOTE.start_check("component", CC);      // find implied transitivity
         for (const [ci, [c, C]] of CC.entries()) {
             NOTE.check(ci);
@@ -737,7 +740,11 @@ export const X = {     // CONVERSION
                     BT3x[kab].add(c);   // possible a,b,c do not all overlap
                 }
             }
+            C.length = 0;
+            K.length = 0;
+            CC[ci] = undefined;
         }
+        CC.length = 0;
         for (let i = 0; i < BT3x.length; ++i) {
             BT3x[i] = M.encode(BT3x[i]);
         }
@@ -826,12 +833,17 @@ export const X = {     // CONVERSION
         }
         const BT3 = [];
         let nx = 0;
+        const C = new Set();
+        const X = new Set();
+        const T = new Set();
         NOTE.start_check("variable", BF);
         for (const [i, k] of BF.entries()) {
             NOTE.check(i);
             let [f1, f2] = M.decode(k);
             if (FC[f1].length > FC[f2].length) { [f1, f2] = [f2, f1]; }
-            const C = new Set();
+            C.clear();
+            X.clear();
+            T.clear();
             for (const ci of FC[f1]) {
                 if (FC_set[f2].has(ci)) {
                     C.add(ci);
@@ -839,8 +851,6 @@ export const X = {     // CONVERSION
             }
             const S = new Set(M.decode(BT3x[i]));
             BT3x[i] = undefined;
-            const X = new Set();
-            const T = new Set();
             const seen = new Set();
             for (const ci of C) {
                 if (seen.has(ci)) { continue; }
