@@ -260,12 +260,10 @@ export const SOLVER = {    // STATE SOLVER
                 }
                 if (I == CON.state.dead) { continue; }
                 if (I == CON.state.alive) { T_.push(f3); continue; }
-                if (Array.isArray(I)) {
-                    for (const [i_, a_] of I) {
-                        if (BP[i_] != undefined) { continue; }
-                        BP[i_] = [type, i, ci];
-                        level.push([i_, a_]);
-                    }
+                for (const [i_, a_] of I) {
+                    if (BP[i_] != undefined) { continue; }
+                    BP[i_] = [type, i, ci];
+                    level.push([i_, a_]);
                 }
             }
             BT[i][type] = M.encode(T_);

@@ -106,6 +106,7 @@ const actions = {
         NOTE.time("Computing non-transitivity constraints");
         const [BT0, BT1, BT2] = X.BF_BI_EF_ExE_ExF_2_BT0_BT1_BT2(
             G.BF, G.BI, EF, ExE, ExF);
+        ExE.length = 0; ExF.length = 0;
         NOTE.count(BT0, "taco-taco", 6);
         NOTE.count(BT1, "taco-tortilla", 2);
         NOTE.count(BT2, "tortilla-tortilla", 2);
@@ -122,10 +123,12 @@ const actions = {
             [BT3, nx] = X.EF_SP_SE_CP_FC_CF_BF_BT3x_2_BT3(
                 EF, SP, SE, CP, FC, CF, G.BF, BT3x);
         }
+        BT3x.length = 0;
         const ni = NOTE.count(BT3, "independent transitivity", 3);
         NOTE.log(`   - Found ${nx + ni} total transitivity`);
         NOTE.lap();
         G.BT = G.BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
+        BT0.length = 0; BT1.length = 0; BT2.length = 0; BT3.length = 0;
         postMessage({type: "end", arg: ["success"]});
     },
     solve: (lim) => {
@@ -152,6 +155,7 @@ const actions = {
         NOTE.count(G.GB.length - 1, "unassigned components");
         NOTE.lap();
         G.GA = SOLVER.solve(G.BI, G.BF, G.BT, BA, G.GB, lim);
+        BA.length = 0;
         if (G.GA.length == undefined) {
             const gi = G.GA;
             const F = new Set();
