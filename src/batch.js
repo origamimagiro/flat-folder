@@ -15,11 +15,6 @@ if("window" in globalThis) {
 let W;
 export const BATCH = {
     main: async () => {
-        const wn = ((window.Worker == undefined) ? 1
-            : (navigator.hardwareConcurrency ?? 8));
-        if ((wn != undefined) && (wn > 1)) {
-            W = await PAR.get_workers(wn, "./src/worker.js");
-        }
         NOTE.time("Computing constraint implication maps");
         CON.build();
         const limit_select = document.getElementById("limit_select");
@@ -29,11 +24,20 @@ export const BATCH = {
             el.textContent = val;
             limit_select.appendChild(el);
         }
+        const thread_select = document.getElementById("thread_select");
+        for (const val of ["all", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
+            const el = document.createElement("option");
+            el.setAttribute("value", val);
+            el.textContent = val;
+            thread_select.appendChild(el);
+        }
         document.getElementById("import").onchange = async (e) => {
             const files = e.target.files;
             const val = document.getElementById("limit_select").value;
             const lim = (val == "all") ? Infinity : +val;
-            const lines = await BATCH.process_files(files, lim,
+            const thr = document.getElementById("thread_select").value;
+            const max_t = (thr == "all") ? Infinity : +thr;
+            const lines = await BATCH.process_files(files, lim, max_t,
                 async f => await new Promise((res) => {
                     const file_reader = new FileReader();
                     file_reader.onload = async (e) => res(e.target.result);
@@ -53,17 +57,16 @@ export const BATCH = {
             button.setAttribute("value", "csv");
         };
     },
-    headers: [
-        "number", "author", "title", "vertices",
-        "edges", "faces", "eps", "variables", "taco-taco", "taco-tortilla",
-        "tortilla-tortilla", "transitivity", "reduced_trans",
-        "components", "limited", "states", "component_assignments",
-        "setup_sec", "solve_sec"
-    ],
-    process_files: async (files, lim, file_2_data, file_2_number) => {
+    process_files: async (files, lim, max_t, file_2_data, file_2_number) => {
         NOTE.clear_log();
         NOTE.start();
-        const lines = [BATCH.headers.join(",")];
+        const wn = ((window.Worker == undefined) ? 1
+            : Math.min((navigator.hardwareConcurrency ?? 8), max_t));
+        if ((wn != undefined) && (wn > 1)) {
+            W = await PAR.get_workers(wn, "./src/worker.js");
+        }
+        const headers = [];
+        const lines = [];
         for (const file of files) {
             const data = await file_2_data(file);
             const fold = JSON.parse(data);
@@ -72,15 +75,21 @@ export const BATCH = {
             NOTE.time(`Processing file #${fold.number}: ${fold.file_title}`);
             NOTE.show = false;
             try {
-                const D = await BATCH.process_file(fold, lim);
-                lines.push(BATCH.headers.map(f => D[f]).join(","));
+                const D = await BATCH.process_file(fold, lim, max_t);
+                if (headers.length == 0) {
+                    for (const key of Object.keys(D)) { headers.push(key); }
+                    lines.push(headers.join(","));
+                }
+                const L = [];
+                for (const val of Object.values(D)) { L.push(val); }
+                lines.push(L.join(","));
             } catch { console.log(" -- error, skipping"); }
         }
         NOTE.show = true;
         NOTE.end();
         return lines;
     },
-    process_file: async (fold, lim) => {
+    process_file: async (fold, lim, max_t) => {
         const t0 = performance.now();
         const V  = fold.vertices_coords;
         const EV = fold.edges_vertices;
@@ -112,7 +121,13 @@ export const BATCH = {
             num.BT0 = NOTE.count_subarrays(BT0)/6;
             num.BT1 = NOTE.count_subarrays(BT1)/2;
             num.BT2 = NOTE.count_subarrays(BT2)/2;
-            const BT3x = X.FC_BF_BI_BT0_BT1_2_BT3x(FC, BF, BI, BT0, BT1);
+            let BT3x;
+            if (W != undefined) {
+                BT3x = await X.FC_BF_BI_BT0_BT1_W_2_BT3x(
+                    FC, BF, BI, BT0, BT1, W);
+            } else {
+                BT3x = X.FC_BF_BI_BT0_BT1_2_BT3x(FC, BF, BI, BT0, BT1);
+            }
             let BT3, nx;
             if (W != undefined) {
                 [BT3, nx] = await X.FC_CF_BF_BT3x_W_2_BT3(FC, CF, BF, BT3x, W);

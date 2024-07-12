@@ -14,16 +14,19 @@ onmessage = (e) => {
 };
 
 const actions = {
-    setup: async (wn) => {
+    setup: async () => {
         NOTE.log = (str) => {
             if (!NOTE.show) { return; }
             postMessage({type: "note", arg: str});
         };
+        NOTE.time("Computing constraint implication maps");
+        CON.build();
+        postMessage({type: "end"});
+    },
+    init_workers: async (wn) => {
         if ((wn != undefined) && (wn > 1)) {
             W = await PAR.get_workers(wn, "./worker.js");
         }
-        NOTE.time("Computing constraint implication maps");
-        CON.build();
         postMessage({type: "end"});
     },
     clear: () => {
@@ -112,7 +115,13 @@ const actions = {
         NOTE.count(BT2, "tortilla-tortilla", 2);
         NOTE.lap();
         NOTE.time("Computing excluded (possible) transitivity constraints");
-        const BT3x = X.FC_BF_BI_BT0_BT1_2_BT3x(FC, G.BF, G.BI, BT0, BT1);
+        let BT3x;
+        if (W != undefined) { // large copy, so limit parallelism to <= 3
+            BT3x = await X.FC_BF_BI_BT0_BT1_W_2_BT3x(
+                FC, G.BF, G.BI, BT0, BT1, W.filter((_, i) => i < 3));
+        } else {
+            BT3x = X.FC_BF_BI_BT0_BT1_2_BT3x(FC, G.BF, G.BI, BT0, BT1);
+        }
         NOTE.count(BT3x, "exluded (possible) transitivity", 3);
         NOTE.lap();
         NOTE.time("Computing transitivity constraints");

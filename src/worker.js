@@ -18,6 +18,38 @@ const actions = {
         id = id_;
         postMessage({type: "end"});
     },
+    BT3x_start: (BI) => {
+        G.BI = BI;
+        postMessage({type: "end"});
+    },
+    BT3x_stop: () => {
+        G.BI.length = 0;
+        delete G.BI;
+        postMessage({type: "end"});
+    },
+    BT3x: (J) => {
+        const out = J.map(([ci, c, C]) => {
+            const cB = [];
+            const K = C.map(a => G.BI.get(M.encode_order_pair([a, c])));
+            for (let i = 0; i < C.length - 1; ++i) {
+                const a = C[i];
+                const kca = K[i];
+                if (kca == undefined) { continue; }
+                for (let j = i + 1; j < C.length; ++j) {
+                    const b = C[j];
+                    const kbc = K[j];
+                    if (kbc == undefined) { continue; }
+                    const kab = G.BI.get(M.encode_order_pair([a, b]));
+                    if (kab == undefined) { continue; }
+                    cB.push([a, b, kab, kbc, kca]);
+                }
+            }
+            C.length = 0;
+            K.length = 0;
+            return [ci, c, cB];
+        });
+        postMessage({type: "end", arg: [id, out]});
+    },
     BT3_start: (FC, CF) => {
         G.FC = FC.map(C => new Set(C));
         G.CF = CF;

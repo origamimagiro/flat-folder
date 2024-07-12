@@ -42,6 +42,13 @@ const MAIN = {
             el.textContent = val;
             limit_select.appendChild(el);
         }
+        const thread_select = document.getElementById("thread_select");
+        for (const val of ["all", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
+            const el = document.createElement("option");
+            el.setAttribute("value", val);
+            el.textContent = val;
+            thread_select.appendChild(el);
+        }
         for (const id of ["flat", "fold"]) {
             const rotate_select = SVG.clear(`rotate_${id}`);
             for (const val of [0, 90, 180, 270]) {
@@ -51,13 +58,10 @@ const MAIN = {
                 rotate_select.appendChild(el);
             }
         }
-        const wn = ((window.Worker == undefined) ? 1
-            : (navigator.hardwareConcurrency ?? 8));
         NOTE.time("*** Setting up computing worker ***");
         const COMP = new Worker("./src/compute.js", {type: "module"});
         COMP.onerror = (e) => { debugger; }
-        await PAR.send_message(COMP, "setup", [wn]);
-        NOTE.time("*** Computing worker setup complete ***");
+        await PAR.send_message(COMP, "setup", []);
         document.getElementById("import").onchange = (e) => {
             if (e.target.files.length > 0) {
                 const file_reader = new FileReader();
@@ -133,6 +137,14 @@ const MAIN = {
     },
     compute: async (FOLD, COMP) => {
         NOTE.start();
+        const thr = document.getElementById("thread_select").value;
+        const max_t = (thr == "all") ? Infinity : +thr;
+        const wn = ((window.Worker == undefined) ? 1
+            : Math.min((navigator.hardwareConcurrency ?? 8), max_t));
+        if (wn > 1) {
+            await PAR.send_message(COMP, "init_workers", [wn]);
+            NOTE.time("*** Computing worker setup complete ***");
+        }
         const CELL = await PAR.send_message(COMP, "get_cell", []);
         if (CELL == undefined) {
             const num_states = document.getElementById("num_states");
