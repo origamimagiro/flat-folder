@@ -266,6 +266,7 @@ export const SOLVER = {    // STATE SOLVER
                     level.push([i_, a_]);
                 }
             }
+            delete BT[i][type];
             BT[i][type] = M.encode(T_);
             tn += T_.length;
             T.length = 0;
@@ -289,7 +290,7 @@ export const SOLVER = {    // STATE SOLVER
         const GA = [[M.bit_encode(B0.map(i => BA[i]))]];
         for (const [i, B] of GB.entries()) {
             if (i == 0) { continue; }
-            NOTE.time(`Solving component ${i} with size ${B.length}`);
+            NOTE.time(`Solving component ${i}/${GB.length - 1} with size ${B.length}`);
             const A = SOLVER.guess_vars(B, BI, BF, BT, BA, lim);
             NOTE.count(A.length, "assignments");
             if (A.length == 0) { return i; }

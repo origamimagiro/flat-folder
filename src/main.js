@@ -8,6 +8,7 @@ import { PAR } from "./parallel.js";
 
 window.onload = () => MAIN.startup();   // entry point
 
+let FOLD, CELL, COMP;
 const MAIN = {
     startup: async () => {
         NOTE.clear_log();
@@ -59,7 +60,7 @@ const MAIN = {
             }
         }
         NOTE.time("*** Setting up computing worker ***");
-        const COMP = new Worker("./src/compute.js", {type: "module"});
+        COMP = new Worker("./src/compute.js", {type: "module"});
         COMP.onerror = (e) => { debugger; }
         await PAR.send_message(COMP, "setup", []);
         document.getElementById("import").onchange = (e) => {
@@ -91,7 +92,7 @@ const MAIN = {
         }
         const side = document.getElementById("side").value == "+";
         NOTE.time(`Importing from file ${file_name}`);
-        const FOLD = await PAR.send_message(COMP,
+        FOLD = await PAR.send_message(COMP,
             "doc_type_side_2_fold", [doc, type, side]);
         for (const input of ["text", "flip_flat", "flip_fold", "visible", "scale"]) {
             document.getElementById(input).checked = false;
@@ -131,47 +132,49 @@ const MAIN = {
             };
         }
         document.getElementById("fold_button").onclick = () => {
-            MAIN.compute(FOLD, COMP);
+            MAIN.compute();
         };
         NOTE.end();
     },
-    compute: async (FOLD, COMP) => {
-        NOTE.start();
-        const thr = document.getElementById("thread_select").value;
-        const max_t = (thr == "all") ? Infinity : +thr;
-        const wn = ((window.Worker == undefined) ? 1
-            : Math.min((navigator.hardwareConcurrency ?? 8), max_t));
-        if (wn > 1) {
-            await PAR.send_message(COMP, "init_workers", [wn]);
-            NOTE.time("*** Computing worker setup complete ***");
-        }
-        const CELL = await PAR.send_message(COMP, "get_cell", []);
-        if (CELL == undefined) {
-            const num_states = document.getElementById("num_states");
-            const error = "(Precision Error: could not find stable graph)"
-            num_states.textContent = error;
-            NOTE.time(error);
-            NOTE.end();
-            return;
-        }
-        NOTE.time("Updating cell");
-        GUI.update_cell(FOLD, CELL);
-        document.getElementById("text").onchange = (e) => {
-            NOTE.start("Toggling Text");
-            GUI.update_text(FOLD, CELL);
-            NOTE.end();
-        };
-        for (const [id, log] of [["flip", "Flipping"], ["rotate", "Rotating"]]) {
-            document.getElementById(`${id}_fold`).onchange = () => {
-                NOTE.start(`${log} model`);
-                GUI.update_cell(FOLD, CELL);
-                NOTE.end();
-            };
-        }
+    compute: async () => {
         const val = document.getElementById("limit_select").value;
         const lim = (val == "all") ? Infinity : +val;
-        await PAR.send_message(COMP, "build_variables", []);
-        await PAR.send_message(COMP, "build_constraints", []);
+        NOTE.start(`*** Starting solve with limit ${lim} ***`);
+        const solved = await PAR.send_message(COMP, "solved", []);
+        if (solved) {
+            NOTE.log("   - Using information from previous solve");
+        } else {
+            CELL = await PAR.send_message(COMP, "get_cell", []);
+            if (CELL == undefined) {
+                const num_states = document.getElementById("num_states");
+                const error = "(Precision Error: could not find stable graph)"
+                num_states.textContent = error;
+                NOTE.time(error);
+                NOTE.end();
+                return;
+            }
+            NOTE.time("Updating cell");
+            GUI.update_cell(FOLD, CELL);
+            document.getElementById("text").onchange = (e) => {
+                NOTE.start("Toggling Text");
+                GUI.update_text(FOLD, CELL);
+                NOTE.end();
+            };
+            for (const [id, log] of [["flip", "Flipping"], ["rotate", "Rotating"]]) {
+                document.getElementById(`${id}_fold`).onchange = () => {
+                    NOTE.start(`${log} model`);
+                    GUI.update_cell(FOLD, CELL);
+                    NOTE.end();
+                };
+            }
+            await PAR.send_message(COMP, "build_variables", []);
+            const thr = document.getElementById("thread_select").value;
+            const max_t = (thr == "all") ? Infinity : +thr;
+            const wn = ((window.Worker == undefined) ? 1
+                : Math.min((navigator.hardwareConcurrency ?? 8), max_t));
+            await PAR.send_message(COMP, "build_constraints", [wn]);
+            await PAR.send_message(COMP, "presolve", []);
+        }
         const [type, out] = await PAR.send_message(COMP, "solve", [lim]);
         if (type == "assign_error") {
             const [type, F, E] = out;

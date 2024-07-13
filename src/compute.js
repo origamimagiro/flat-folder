@@ -23,12 +23,6 @@ const actions = {
         CON.build();
         postMessage({type: "end"});
     },
-    init_workers: async (wn) => {
-        if ((wn != undefined) && (wn > 1)) {
-            W = await PAR.get_workers(wn, "./worker.js");
-        }
-        postMessage({type: "end"});
-    },
     clear: () => {
         for (const k of Object.keys(G)) { delete G[k]; }
         postMessage({type: "end"});
@@ -52,6 +46,9 @@ const actions = {
         NOTE.lap();
         G.FOLD = {V, Vf, Vf_norm, VK, EV, EA, EF, FV, FE, Ff};
         postMessage({type: "end", arg: G.FOLD});
+    },
+    solved: () => {
+        postMessage({type: "end", arg: G.GA != undefined});
     },
     get_cell: async () => {
         NOTE.start("*** Computing cell graph ***");
@@ -93,9 +90,9 @@ const actions = {
         for (const [i, F] of G.BF.entries()) { G.BI.set(F, i); }
         NOTE.annotate(G.BF, "variables_faces");
         NOTE.lap();
-        postMessage({type: "end", arg: ["success"]});
+        postMessage({type: "end", arg: []});
     },
-    build_constraints: async () => {
+    build_constraints: async (wn) => {
         const {EF} = G.FOLD;
         const {SP, SE, CP, SC, CF, FC} = G.CELL;
         NOTE.time("Computing edge-edge overlaps");
@@ -114,23 +111,22 @@ const actions = {
         NOTE.count(BT1, "taco-tortilla", 2);
         NOTE.count(BT2, "tortilla-tortilla", 2);
         NOTE.lap();
+        const W = (wn > 1) ? (await PAR.get_workers(wn, "./worker.js")) : undefined;
         NOTE.time("Computing excluded (possible) transitivity constraints");
-        let BT3x;
-        if (W != undefined) { // large copy, so limit parallelism to <= 3
-            BT3x = await X.FC_BF_BI_BT0_BT1_W_2_BT3x(
-                FC, G.BF, G.BI, BT0, BT1, W.filter((_, i) => i < 3));
-        } else {
-            BT3x = X.FC_BF_BI_BT0_BT1_2_BT3x(FC, G.BF, G.BI, BT0, BT1);
-        }
+        const BT3x = ((W != undefined)
+            ? (await X.FC_BF_BI_BT0_BT1_W_2_BT3x(FC, G.BF, G.BI, BT0, BT1, W))
+            : X.FC_BF_BI_BT0_BT1_2_BT3x(FC, G.BF, G.BI, BT0, BT1)
+        );
         NOTE.count(BT3x, "exluded (possible) transitivity", 3);
         NOTE.lap();
         NOTE.time("Computing transitivity constraints");
-        let BT3, nx;
+        const [BT3, nx] = ((W != undefined)
+            ? (await X.FC_CF_BF_BT3x_W_2_BT3(FC, CF, G.BF, BT3x, W))
+            : X.EF_SP_SE_CP_FC_CF_BF_BT3x_2_BT3(EF, SP, SE, CP, FC, CF, G.BF, BT3x)
+        );
         if (W != undefined) {
-            [BT3, nx] = await X.FC_CF_BF_BT3x_W_2_BT3(FC, CF, G.BF, BT3x, W);
-        } else {
-            [BT3, nx] = X.EF_SP_SE_CP_FC_CF_BF_BT3x_2_BT3(
-                EF, SP, SE, CP, FC, CF, G.BF, BT3x);
+            PAR.end_workers(W);
+            NOTE.time("*** Workers terminated ***");
         }
         BT3x.length = 0;
         const ni = NOTE.count(BT3, "independent transitivity", 3);
@@ -138,9 +134,9 @@ const actions = {
         NOTE.lap();
         G.BT = G.BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
         BT0.length = 0; BT1.length = 0; BT2.length = 0; BT3.length = 0;
-        postMessage({type: "end", arg: ["success"]});
+        postMessage({type: "end", arg: []});
     },
-    solve: (lim) => {
+    presolve: () => {
         const {EA, EF, Ff} = G.FOLD;
         NOTE.time("*** Computing states ***");
         NOTE.time("Assigning orders based on crease assignment");
@@ -153,18 +149,21 @@ const actions = {
             postMessage({type: "end", arg: ["assign_error", out]});
             return;
         }
-        const BA = out;
-        NOTE.annotate(BA.map((_, i) => i).filter(i => BA[i] != 0),
+        G.BA = out;
+        NOTE.annotate(G.BA.map((_, i) => i).filter(i => G.BA[i] != 0),
             "initially assignable variables");
         const np = G.BT.reduce((a, T) => a + T[3].length, 0);
         NOTE.log(`  - Pruned to ${np/3} active transitivity`);
         NOTE.lap();
         NOTE.time("Finding unassigned components");
-        G.GB = SOLVER.get_components(G.BI, G.BF, G.BT, BA);
+        G.GB = SOLVER.get_components(G.BI, G.BF, G.BT, G.BA);
         NOTE.count(G.GB.length - 1, "unassigned components");
         NOTE.lap();
+        postMessage({type: "end", arg: []});
+    },
+    solve: (lim) => {
+        const BA = G.BA.map(a => a);
         G.GA = SOLVER.solve(G.BI, G.BF, G.BT, BA, G.GB, lim);
-        BA.length = 0;
         if (G.GA.length == undefined) {
             const gi = G.GA;
             const F = new Set();
