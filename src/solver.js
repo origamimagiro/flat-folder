@@ -172,17 +172,20 @@ export const SOLVER = {    // STATE SOLVER
         }
         return A;
     },
-    initial_assignment: (EF, EA, Ff, BF, BT, BI) => {
-        const BA = BF.map(() => 0);
+    EF_EA_Ff_BF_BI_2_BA0: (EF, EA, Ff, BF, BI) => {
+        const BA0 = BF.map(() => 0);
         for (const [i, a] of EA.entries()) {
             if ((a == "M") || (a == "V")) {
                 const k = M.encode_order_pair(EF[i]);
                 const [f1, f2] = M.decode(k);
                 const o = ((!Ff[f1] && (a == "M")) ||
                             (Ff[f1] && (a == "V"))) ? 2 : 1;
-                BA[BI.get(k)] = o;
+                BA0[BI.get(k)] = o;
             }
         }
+        return BA0;
+    },
+    initial_assignment: (BA, BF, BT, BI) => {
         const BP = BA.map(() => undefined);
         let level = [];
         for (const [i, a] of BA.entries()) {

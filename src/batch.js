@@ -139,7 +139,8 @@ export const BATCH = {
             num.tot_trans = nx + num.red_trans;
             BT = BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
         }
-        const out = SOLVER.initial_assignment(EF, EA, Ff, BF, BT, BI);
+        const BA0 = SOLVER.EF_EA_Ff_BF_BI_2_BA0(EF, EA, Ff, BF, BI);
+        const out = SOLVER.initial_assignment(BA0, BF, BT, BI);
         if ((out.length == 3) && (out[0].length == undefined)) {
             const [type, F, E] = out;
             console.log(` - Unable to resolve ${CON.names[type]} on faces [${F}]`);

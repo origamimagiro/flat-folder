@@ -140,7 +140,8 @@ const actions = {
         const {EA, EF, Ff} = G.FOLD;
         NOTE.time("*** Computing states ***");
         NOTE.time("Assigning orders based on crease assignment");
-        const out = SOLVER.initial_assignment(EF, EA, Ff, G.BF, G.BT, G.BI);
+        const BA0 = SOLVER.EF_EA_Ff_BF_BI_2_BA0(EF, EA, Ff, G.BF, G.BI);
+        const out = SOLVER.initial_assignment(BA0, G.BF, G.BT, G.BI);
         if ((out.length == 3) && (out[0].length == undefined)) {
             const [type, F, E] = out;
             const str = `Unable to resolve ${CON.names[type]} on faces [${F}]`;
