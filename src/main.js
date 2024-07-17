@@ -92,6 +92,8 @@ const MAIN = {
         }
         const side = document.getElementById("side").value == "+";
         NOTE.time(`Importing from file ${file_name}`);
+        await PAR.send_message(COMP, "clear", []);
+        CELL = undefined;
         FOLD = await PAR.send_message(COMP,
             "doc_type_side_2_fold", [doc, type, side]);
         for (const input of ["text", "flip_flat", "flip_fold", "visible", "scale"]) {
