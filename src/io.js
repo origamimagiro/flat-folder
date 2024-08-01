@@ -204,6 +204,11 @@ export const IO = {    // INPUT-OUTPUT
             FV = ex["faces_vertices"];
             M.sort_faces(FV, V);
             VV = X.V_FV_2_VV(V, FV);
+        } else {
+            let EL, eps_i;
+            const L = EV.map((e) => M.expand(e, V));
+            [V, EV, EL, eps_i] = X.L_2_V_EV_EL(L);
+            EA = EL.map(l => EA[l]);
         }
         return [V, EV, EA, VV, FV];
     },
