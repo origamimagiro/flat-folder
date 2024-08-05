@@ -175,23 +175,23 @@ const MAIN = {
             const wn = ((window.Worker == undefined) ? 1
                 : Math.min((navigator.hardwareConcurrency ?? 8), max_t));
             await PAR.send_message(COMP, "build_constraints", [wn]);
-            await PAR.send_message(COMP, "presolve", []);
+            const [type, out] = await PAR.send_message(COMP, "presolve", []);
+            if (type == "assign_error") {
+                const [type, F, E] = out;
+                GUI.update_error(F, E, CELL.FC);
+                document.getElementById("fold_button").onclick = undefined;
+                for (const id of ["flip_flat", "rotate_flat", "flip_fold", "rotate_fold"]) {
+                    document.getElementById(id).onchange = undefined;
+                }
+                NOTE.time("Solve completed");
+                NOTE.count(0, "folded states");
+                const num_states = document.getElementById("num_states");
+                num_states.textContent = `(Found 0 states)`;
+                NOTE.end();
+                return;
+            }
         }
         const [type, out] = await PAR.send_message(COMP, "solve", [lim]);
-        if (type == "assign_error") {
-            const [type, F, E] = out;
-            GUI.update_error(F, E, CELL.FC);
-            document.getElementById("fold_button").onclick = undefined;
-            for (const id of ["flip_flat", "rotate_flat", "flip_fold", "rotate_fold"]) {
-                document.getElementById(id).onchange = undefined;
-            }
-            NOTE.time("Solve completed");
-            NOTE.count(0, "folded states");
-            const num_states = document.getElementById("num_states");
-            num_states.textContent = `(Found 0 states)`;
-            NOTE.end();
-            return;
-        }
         if (type == "component_error") {
             const [gi, F] = out;
             NOTE.log(`   - Unable to resolve component ${gi}`);

@@ -160,7 +160,7 @@ const actions = {
         G.GB = SOLVER.get_components(G.BI, G.BF, G.BT, G.BA);
         NOTE.count(G.GB.length - 1, "unassigned components");
         NOTE.lap();
-        postMessage({type: "end", arg: []});
+        postMessage({type: "end", arg: ["ok", []]});
     },
     solve: (lim) => {
         const BA = G.BA.map(a => a);
