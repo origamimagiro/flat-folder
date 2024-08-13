@@ -196,18 +196,21 @@ export const SOLVER = {    // STATE SOLVER
         NOTE.log(`   - First pass, no transitivity`);
         let out = SOLVER.flood_by_constraints(level, BF, BI, BA, BT, BP, types);
         if (Array.isArray(out) && (out.length == 3)) { return out; }
-        NOTE.log(`   - Cleaning transitivity`);
-        out = SOLVER.clean_dead(BF, BI, BA, BT, BP);
-        if (Array.isArray(out) && (out.length == 3)) { return out; }
-        const new_level = out[1];
-        NOTE.log(`   - Found ${out[0]/3} middle transitivity`);
-        NOTE.log(`   - Second pass, with transitivity`);
-        out = SOLVER.flood_by_constraints(new_level, BF, BI, BA, BT, BP, CON.types);
-        if (Array.isArray(out) && (out.length == 3)) { return out; }
-        NOTE.log(`   - Cleaning transitivity`);
-        out = SOLVER.clean_dead(BF, BI, BA, BT, BP);
-        if (Array.isArray(out) && (out.length == 3)) { return out; }
-        NOTE.log(`   - Found ${out[0]/3} final transitivity`);
+        // ***
+        // clean_dead needs to remap parent pointers (since indices change)
+        // ***
+        // NOTE.log(`   - Cleaning transitivity`);
+        // out = SOLVER.clean_dead(BF, BI, BA, BT, BP);
+        // if (Array.isArray(out) && (out.length == 3)) { return out; }
+        // const new_level = out[1];
+        // NOTE.log(`   - Found ${out[0]/3} middle transitivity`);
+        // NOTE.log(`   - Second pass, with transitivity`);
+        // out = SOLVER.flood_by_constraints(new_level, BF, BI, BA, BT, BP, CON.types);
+        // if (Array.isArray(out) && (out.length == 3)) { return out; }
+        // NOTE.log(`   - Cleaning transitivity`);
+        // out = SOLVER.clean_dead(BF, BI, BA, BT, BP);
+        // if (Array.isArray(out) && (out.length == 3)) { return out; }
+        // NOTE.log(`   - Found ${out[0]/3} final transitivity`);
         return BA;
     },
     flood_by_constraints: (level, BF, BI, BA, BT, BP, constraints) => {
