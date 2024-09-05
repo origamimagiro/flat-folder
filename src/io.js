@@ -235,7 +235,6 @@ export const IO = {    // INPUT-OUTPUT
             NOTE.time(`Used eps: ${2**eps_i} | ${eps}`);
             EA = EL.map(l => L[l[0]][2]);
         }
-        V = M.normalize_points(V);
         const flip_EA = (EA) => {
             return EA.map((a) => (a == "M") ? "V" : ((a == "V") ? "M" : a));
         };

@@ -40,11 +40,10 @@ const actions = {
         NOTE.annotate(FV, "faces_vertices");
         NOTE.annotate(FE, "faces_edges");
         const [Vf, Ff] = X.V_FV_EV_EA_2_Vf_Ff(V, FV, EV, EA);
-        const Vf_norm = M.normalize_points(Vf);
         NOTE.annotate(Vf, "vertices_coords_folded");
         NOTE.annotate(Ff, "faces_flip");
         NOTE.lap();
-        G.FOLD = {V, Vf, Vf_norm, VK, EV, EA, EF, FV, FE, Ff};
+        G.FOLD = {V, Vf, VK, EV, EA, EF, FV, FE, Ff};
         postMessage({type: "end", arg: G.FOLD});
     },
     solved: () => {
@@ -59,7 +58,6 @@ const actions = {
         if (P.length == 0) { postMessage([undefined, [], []]); return; }
         const eps = M.min_line_length(L)/(2**eps_i);
         NOTE.time(`Used eps: ${2**eps_i} | ${eps}`);
-        const P_norm = M.normalize_points(P);
         NOTE.annotate(P, "points_coords");
         NOTE.annotate(SP, "segments_points");
         NOTE.annotate(SE, "segments_edges");
@@ -77,7 +75,7 @@ const actions = {
         const [CF, FC] = X.EF_FV_SP_SE_CP_SC_2_CF_FC(EF, FV, SP, SE, CP, SC);
         NOTE.count(CF, "face-cell adjacencies");
         NOTE.lap();
-        G.CELL = {P, P_norm, SP, SE, CP, CS, SC, CF, FC, eps: eps_i};
+        G.CELL = {P, SP, SE, CP, CS, SC, CF, FC, eps: eps_i};
         postMessage({type: "end", arg: G.CELL});
     },
     build_variables: () => {
