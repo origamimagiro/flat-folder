@@ -191,10 +191,8 @@ export const SOLVER = {    // STATE SOLVER
         for (const [i, a] of BA.entries()) {
             if (a != 0) { level.push([i, a]); BP[i] = []; }
         }
-        const types = CON.types.map(t => t);
-        types.pop();
-        NOTE.log(`   - First pass, no transitivity`);
-        let out = SOLVER.flood_by_constraints(level, BF, BI, BA, BT, BP, types);
+        // NOTE.log(`   - First pass, no transitivity`);
+        let out = SOLVER.flood_by_constraints(level, BF, BI, BA, BT, BP, CON.types);
         if (Array.isArray(out) && (out.length == 3)) { return out; }
         // ***
         // clean_dead needs to remap parent pointers (since indices change)
