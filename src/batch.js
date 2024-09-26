@@ -6,13 +6,11 @@ import { IO }     from "./io.js";
 import { X }      from "./conversion.js";
 import { GUI }    from "./gui.js";
 import { SOLVER } from "./solver.js";
-import { PAR }    from "./parallel.js";
 
 if("window" in globalThis) {
     window.onload = () => BATCH.main();   // entry point
 }
 
-let W;
 export const BATCH = {
     main: async () => {
         NOTE.time("Computing constraint implication maps");
@@ -24,20 +22,11 @@ export const BATCH = {
             el.textContent = val;
             limit_select.appendChild(el);
         }
-        const thread_select = document.getElementById("thread_select");
-        for (const val of ["all", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
-            const el = document.createElement("option");
-            el.setAttribute("value", val);
-            el.textContent = val;
-            thread_select.appendChild(el);
-        }
         document.getElementById("import").onchange = async (e) => {
             const files = e.target.files;
             const val = document.getElementById("limit_select").value;
             const lim = (val == "all") ? Infinity : +val;
-            const thr = document.getElementById("thread_select").value;
-            const max_t = (thr == "all") ? Infinity : +thr;
-            const lines = await BATCH.process_files(files, lim, max_t,
+            const lines = await BATCH.process_files(files, lim,
                 async f => await new Promise((res) => {
                     const file_reader = new FileReader();
                     file_reader.onload = async (e) => res(e.target.result);
@@ -57,14 +46,9 @@ export const BATCH = {
             button.setAttribute("value", "csv");
         };
     },
-    process_files: async (files, lim, max_t, file_2_data, file_2_number) => {
+    process_files: async (files, lim, file_2_data, file_2_number) => {
         NOTE.clear_log();
         NOTE.start();
-        const wn = ((window.Worker == undefined) ? 1
-            : Math.min((navigator.hardwareConcurrency ?? 8), max_t));
-        if ((wn != undefined) && (wn > 1)) {
-            W = await PAR.get_workers(wn, "./src/worker.js");
-        }
         const headers = [];
         const lines = [];
         for (const file of files) {
@@ -75,7 +59,7 @@ export const BATCH = {
             NOTE.time(`Processing file #${fold.number}: ${fold.file_title}`);
             NOTE.show = false;
             try {
-                const D = await BATCH.process_file(fold, lim, max_t);
+                const D = await BATCH.process_file(fold, lim);
                 if (headers.length == 0) {
                     for (const key of Object.keys(D)) { headers.push(key); }
                     lines.push(headers.join(","));
@@ -83,13 +67,13 @@ export const BATCH = {
                 const L = [];
                 for (const val of Object.values(D)) { L.push(val); }
                 lines.push(L.join(","));
-            } catch { console.log(" -- error, skipping"); }
+            } catch (e) { console.log(" -- error, skipping"); }
         }
         NOTE.show = true;
         NOTE.end();
         return lines;
     },
-    process_file: async (fold, lim, max_t) => {
+    process_file: async (fold, lim) => {
         const t0 = performance.now();
         const V  = fold.vertices_coords;
         const EV = fold.edges_vertices;
@@ -111,46 +95,29 @@ export const BATCH = {
         const BF = X.EF_SP_SE_CP_CF_2_BF(EF, SP, SE, CP, CF);
         const BI = new Map();
         const num = {};
-        let BT;
-        {
-            for (const [i, F] of BF.entries()) { BI.set(F, i); }
-            const ExE = X.SE_2_ExE(SE);
-            const ExF = X.SE_CF_SC_2_ExF(SE, CF, SC);
-            const [BT0, BT1, BT2] = X.BF_BI_EF_ExE_ExF_2_BT0_BT1_BT2(
-                BF, BI, EF, ExE, ExF);
-            num.BT0 = NOTE.count_subarrays(BT0)/6;
-            num.BT1 = NOTE.count_subarrays(BT1)/2;
-            num.BT2 = NOTE.count_subarrays(BT2)/2;
-            let BT3x;
-            if (W != undefined) {
-                BT3x = await X.FC_BF_BI_BT0_BT1_W_2_BT3x(
-                    FC, BF, BI, BT0, BT1, W);
-            } else {
-                BT3x = X.FC_BF_BI_BT0_BT1_2_BT3x(FC, BF, BI, BT0, BT1);
-            }
-            let BT3, nx;
-            if (W != undefined) {
-                [BT3, nx] = await X.FC_CF_BF_BT3x_W_2_BT3(FC, CF, BF, BT3x, W);
-            } else {
-                [BT3, nx] = X.EF_SP_SE_CP_FC_CF_BF_BT3x_2_BT3(
-                    EF, SP, SE, CP, FC, CF, BF, BT3x);
-            }
-            num.red_trans = NOTE.count_subarrays(BT3)/3;
-            num.tot_trans = nx + num.red_trans;
-            BT = BF.map((F,i) => [BT0[i], BT1[i], BT2[i], BT3[i]]);
-        }
+        for (const [i, F] of BF.entries()) { BI.set(F, i); }
+        const ExE = X.SE_2_ExE(SE);
+        const ExF = X.SE_CF_SC_2_ExF(SE, CF, SC);
+        const [BT0, BT1, BT2] = X.BF_BI_EF_ExE_ExF_2_BT0_BT1_BT2(
+            BF, BI, EF, ExE, ExF);
+        num.BT0 = NOTE.count_subarrays(BT0)/6;
+        num.BT1 = NOTE.count_subarrays(BT1)/2;
+        num.BT2 = NOTE.count_subarrays(BT2)/2;
+        const CC = X.FC_BF_BI_BT1_2_CC(FC, BF, BI, BT1);
+        const BT = BF.map((F,i) => [BT0[i], BT1[i], BT2[i]]);
         const BA0 = SOLVER.EF_EA_Ff_BF_BI_2_BA0(EF, EA, Ff, BF, BI);
-        const out = SOLVER.initial_assignment(BA0, BF, BT, BI);
+        const trans_count = {all: 0, reduced: 0};
+        const out = SOLVER.initial_assignment(BA0, BF, BT, BI, FC, CF, CC, trans_count);
         if ((out.length == 3) && (out[0].length == undefined)) {
             const [type, F, E] = out;
             console.log(` - Unable to resolve ${CON.names[type]} on faces [${F}]`);
             throw new Error();
         }
         const BA = out;
-        const GB = SOLVER.get_components(BI, BF, BT, BA);
+        const GB = SOLVER.get_components(BI, BF, BT, BA, FC, CF, CC, trans_count);
         NOTE.count(GB.length - 1, "unassigned components");
         const t1 = performance.now();
-        const GA = SOLVER.solve(BI, BF, BT, BA, GB, lim);
+        const GA = SOLVER.solve(BI, BF, BT, BA, GB, FC, CF, CC, lim);
         if (GA.length == undefined) {
             console.log(`   - Unable to resolve component ${GA}`);
             throw new Error();
@@ -170,8 +137,8 @@ export const BATCH = {
             "taco-taco": num.BT0,
             "taco-tortilla": num.BT1,
             "tortilla-tortilla": num.BT2,
-            transitivity: num.tot_trans,
-            reduced_trans: num.red_trans,
+            transitivity: trans_count.all/3,
+            "reduced-trans": trans_count.reduced/3,
             components: GB.length,
             limited: (GA.reduce((s, A) => (s && (A.length != lim)), true)
                 ? "no limit" : lim),

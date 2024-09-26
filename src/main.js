@@ -43,13 +43,6 @@ const MAIN = {
             el.textContent = val;
             limit_select.appendChild(el);
         }
-        const thread_select = document.getElementById("thread_select");
-        for (const val of ["all", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
-            const el = document.createElement("option");
-            el.setAttribute("value", val);
-            el.textContent = val;
-            thread_select.appendChild(el);
-        }
         for (const id of ["flat", "fold"]) {
             const rotate_select = SVG.clear(`rotate_${id}`);
             for (const val of [0, 90, 180, 270]) {
@@ -170,11 +163,7 @@ const MAIN = {
                 };
             }
             await PAR.send_message(COMP, "build_variables", []);
-            const thr = document.getElementById("thread_select").value;
-            const max_t = (thr == "all") ? Infinity : +thr;
-            const wn = ((window.Worker == undefined) ? 1
-                : Math.min((navigator.hardwareConcurrency ?? 8), max_t));
-            await PAR.send_message(COMP, "build_constraints", [wn]);
+            await PAR.send_message(COMP, "build_constraints", []);
             const [type, out] = await PAR.send_message(COMP, "presolve", []);
             if (type == "assign_error") {
                 const [type, F, E] = out;

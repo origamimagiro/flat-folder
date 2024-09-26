@@ -1,6 +1,7 @@
 import { M } from "./math.js";
 import { NOTE } from "./note.js";
 import { CON } from "./constraints.js";
+import { X } from "./conversion.js";
 
 const flip = [[0, 1, 2], [0, 2, 1]];
 export const SOLVER = {    // STATE SOLVER
@@ -24,13 +25,15 @@ export const SOLVER = {    // STATE SOLVER
             return [bi, flip[+(y < x)][a]];
         });
     },
-    propagate: (bi, a, BI, BF, BT, BA) => {
+    propagate: (bi, a, BI, BF, BT, BA, FC, CF, CC) => {
         // In:  bi | variable index to be assigned
         //       a | proposed assignment
         //      BI | map from variable keys to indices
         //      BF | array of variable keys
         //      BT | array of variable constraints
         //      BA | array of variable assignments
+        //      FC | faces 2 cells
+        //      CF | cells 2 faces
         // Out:  B | array of variable indices assigned after assigning a to i
         //         | if assigning i to a impossible, returns empty array
         const B = [bi];
@@ -41,7 +44,8 @@ export const SOLVER = {    // STATE SOLVER
             const [f1, f2] = M.decode(BF[i]);
             const C = BT[i];
             for (const type of CON.types) {
-                for (const F of SOLVER.unpack_cons(C, type, f1, f2)) {
+                const TF = SOLVER.unpack_cons(C, type, f1, f2, FC, CF, CC);
+                for (const F of TF) {
                     const I = SOLVER.infer(type, F, BI, BA);
                     if (I == CON.state.conflict) {
                         for (const j of B) { BA[j] = 0; }
@@ -60,12 +64,13 @@ export const SOLVER = {    // STATE SOLVER
                         }
                     }
                 }
+                if (type == CON.T.transitivity) { TF.length = 0; }
             }
             ++idx;
         }
         return B;
     },
-    get_components: (BI, BF, BT, BA) => {
+    get_components: (BI, BF, BT, BA, FC, CF, CC, trans_count) => {
         const B0 = BA.map((_, i) => i).filter(i => BA[i] != 0);
         const GB = [];
         const seen = new Set();
@@ -80,7 +85,9 @@ export const SOLVER = {    // STATE SOLVER
                     const C = BT[bi_];
                     const [f1, f2] = M.decode(BF[bi_]);
                     for (const type of CON.types) {
-                        for (const F of SOLVER.unpack_cons(C, type, f1, f2)) {
+                        const TF = SOLVER.unpack_cons(C, type, f1, f2,
+                            FC, CF, CC, trans_count);
+                        for (const F of TF) {
                             const I = SOLVER.infer(type, F, BI, BA);
                             if (I == CON.state.dead) { continue; }
                             const vars = CON.type_F_2_pairs(type, F).map(
@@ -94,6 +101,7 @@ export const SOLVER = {    // STATE SOLVER
                                 NOTE.check(seen.size);
                             }
                         }
+                        if (type == CON.T.transitivity) { TF.length = 0; }
                     }
                     ++si;
                 }
@@ -104,14 +112,12 @@ export const SOLVER = {    // STATE SOLVER
         GB.unshift(B0);
         return GB;
     },
-    unpack_cons: (C, type, f1, f2) => {
-        if (type == CON.T.transitivity) {
-            return M.decode(C[type]).map(f3 => [f1, f2, f3]);
-        } else {
-            return C[type];
-        }
-    },
-    guess_vars: (G, BI, BF, BT, BA, lim) => {
+    unpack_cons: (C, type, f1, f2, FC, CF, CC, trans_count) => (
+        (type == CON.T.transitivity)
+        ? X.FC_CF_CC_Bf_2_Bt3(FC, CF, CC, [f1, f2], trans_count).map(f3 => [f1, f2, f3])
+        : C[type]
+    ),
+    guess_vars: (G, BI, BF, BT, BA, FC, CF, CC, lim) => {
         const guesses = [];
         const A = [];
         const sol = G.map(() => 0);
@@ -135,7 +141,7 @@ export const SOLVER = {    // STATE SOLVER
                     BA[i] = 0;
                 }
                 if (a == 1) {
-                    const B = SOLVER.propagate(G[idx], 2, BI, BF, BT, BA);
+                    const B = SOLVER.propagate(G[idx], 2, BI, BF, BT, BA, FC, CF, CC);
                     if (B.length > 0) {
                         guesses.push(B);
                         backtracking = false;
@@ -157,7 +163,7 @@ export const SOLVER = {    // STATE SOLVER
                     backtracking = true;
                 } else {
                     if (BA[G[idx]] == 0) { // variable not yet set
-                        const B = SOLVER.propagate(G[idx], 1, BI, BF, BT, BA);
+                        const B = SOLVER.propagate(G[idx], 1, BI, BF, BT, BA, FC, CF, CC);
                         if (B.length > 0) {
                             guesses.push(B);
                         } else {
@@ -185,106 +191,63 @@ export const SOLVER = {    // STATE SOLVER
         }
         return BA0;
     },
-    initial_assignment: (BA, BF, BT, BI) => {
+    initial_assignment: (BA, BF, BT, BI, FC, CF, CC, trans_count) => {
         const BP = BA.map(() => undefined);
-        let level = [];
+        let level = new Map(), new_level = new Map();
         for (const [i, a] of BA.entries()) {
-            if (a != 0) { level.push([i, a]); BP[i] = []; }
+            if (a != 0) { level.set(i, a); BP[i] = []; }
         }
-        // NOTE.log(`   - First pass, no transitivity`);
-        let out = SOLVER.flood_by_constraints(level, BF, BI, BA, BT, BP, CON.types);
-        if (Array.isArray(out) && (out.length == 3)) { return out; }
-        // ***
-        // clean_dead needs to remap parent pointers (since indices change)
-        // ***
-        // NOTE.log(`   - Cleaning transitivity`);
-        // out = SOLVER.clean_dead(BF, BI, BA, BT, BP);
-        // if (Array.isArray(out) && (out.length == 3)) { return out; }
-        // const new_level = out[1];
-        // NOTE.log(`   - Found ${out[0]/3} middle transitivity`);
-        // NOTE.log(`   - Second pass, with transitivity`);
-        // out = SOLVER.flood_by_constraints(new_level, BF, BI, BA, BT, BP, CON.types);
-        // if (Array.isArray(out) && (out.length == 3)) { return out; }
-        // NOTE.log(`   - Cleaning transitivity`);
-        // out = SOLVER.clean_dead(BF, BI, BA, BT, BP);
-        // if (Array.isArray(out) && (out.length == 3)) { return out; }
-        // NOTE.log(`   - Found ${out[0]/3} final transitivity`);
-        return BA;
-    },
-    flood_by_constraints: (level, BF, BI, BA, BT, BP, constraints) => {
-        let [count, depth] = [0, 0];
+        let count = 0, depth = 0;
         NOTE.start_check("variable", BA);
-        while (level.length > 0) {      // second pass, all constraints
-            NOTE.log(`   - ${level.length} orders assigned at depth ${depth}`);
+        while (level.size > 0) {
+            NOTE.log(`   - ${level.size} orders assigned at depth ${depth}`);
             for (const [i, a] of level) { BA[i] = a; }
-            const new_level = [];
+            new_level.clear();
             for (const [i, a] of level) {
                 NOTE.check(count);
                 ++count;
                 const [f1, f2] = M.decode(BF[i]);
                 const C = BT[i];
-                for (const type of constraints) {
-                    const CF = SOLVER.unpack_cons(C, type, f1, f2);
-                    for (const [ci, F] of CF.entries()) {
+                for (const type of CON.types) {
+                    const TF = SOLVER.unpack_cons(C, type, f1, f2,
+                        FC, CF, CC, trans_count);
+                    for (const [ci, F] of TF.entries()) {
                         const I = SOLVER.infer(type, F, BI, BA);
                         if (I == CON.state.conflict) {
-                            const E = SOLVER.error_faces(type, F, BF, BT, BI, BA, BP);
+                            const E = SOLVER.error_faces(type, F, BF, BT, BI, BA, BP, FC, CF, CC);
                             return [type, F, E]; // constraint unsatisfiable
                         }
                         if (I == CON.state.alive) { continue; }
                         if (I == CON.state.dead) { continue; }
                         for (const [i_, a_] of I) {
-                            if (BP[i_] != undefined) { continue; }
-                            BP[i_] = [type, i, ci];
-                            new_level.push([i_, a_]);
+                            const a__ = new_level.get(i_);
+                            if (a__ == undefined) {
+                                BP[i_] = [type, i, ci];
+                                new_level.set(i_, a_);
+                            } else if (a_ != a__) {
+                                console.log("XXXXXXXXXX");
+                                const E = SOLVER.error_faces(type, F, BF, BT, BI, BA, BP, FC, CF, CC);
+                                return [type, F, E]; // constraint unsatisfiable
+                            }
                         }
                     }
+                    if (type == CON.T.transitivity) { TF.length = 0; }
                 }
             }
-            level = new_level;
+            [level, new_level] = [new_level, level];
             ++depth;
         }
+        return BA;
     },
-    clean_dead: (BF, BI, BA, BT, BP) => {
-        const level = [];
-        let tn = 0;
-        const type = CON.T.transitivity;
-        NOTE.start_check("variable", BA);
-        for (const [i, k] of BF.entries()) { // remove dead transitivity
-            NOTE.check(i);
-            const [f1, f2] = M.decode(k);
-            const T = M.decode(BT[i][type]);
-            const T_ = [];
-            for (const [ci, f3] of T.entries()) {
-                const F = [f1, f2, f3];
-                const I = SOLVER.infer(type, F, BI, BA);
-                if (I == CON.state.conflict) {
-                    const E = SOLVER.error_faces(type, F, BF, BT, BI, BA, BP);
-                    return [type, F, E]; // constraint unsatisfiable
-                }
-                if (I == CON.state.dead) { continue; }
-                if (I == CON.state.alive) { T_.push(f3); continue; }
-                for (const [i_, a_] of I) {
-                    if (BP[i_] != undefined) { continue; }
-                    BP[i_] = [type, i, ci];
-                    level.push([i_, a_]);
-                }
-            }
-            delete BT[i][type];
-            BT[i][type] = M.encode(T_);
-            tn += T_.length;
-            T.length = 0;
-            T_.length = 0;
-        }
-        return [tn, level];
-    },
-    solve: (BI, BF, BT, BA, GB, lim) => {
+    solve: (BI, BF, BT, BA, GB, FC, CF, CC, lim) => {
         // In:   BI | map from variable keys to indices
         //       BF | array for each variable: key
         //       BT | array for each variable: constraints
+        //       BA | array for each variable: known assignment
         //       GB | array for each independent group:
         //          |   array of variables in group
-        //       BA | array for each variable: known assignment
+        //       FC | faces 2 cells
+        //       CF | cells 2 faces
         //      lim | upper limit on # solutions to return per group
         // Out:  GA | array for each independent group:
         //          |   array of valid assignments:  (max length lim)
@@ -295,14 +258,14 @@ export const SOLVER = {    // STATE SOLVER
         for (const [i, B] of GB.entries()) {
             if (i == 0) { continue; }
             NOTE.time(`Solving component ${i}/${GB.length - 1} with size ${B.length}`);
-            const A = SOLVER.guess_vars(B, BI, BF, BT, BA, lim);
+            const A = SOLVER.guess_vars(B, BI, BF, BT, BA, FC, CF, CC, lim);
             NOTE.count(A.length, "assignments");
             if (A.length == 0) { return i; }
             GA.push(A);
         }
         return GA;
     },
-    error_faces: (type, F, BF, BT, BI, BA, BP) => {
+    error_faces: (type, F, BF, BT, BI, BA, BP, FC, CF, CC) => {
         const vars = [];
         for (const pair of CON.type_F_2_pairs(type, F)) {
             vars.push(BI.get(M.encode_order_pair(pair)));
@@ -317,7 +280,7 @@ export const SOLVER = {    // STATE SOLVER
                 if (par.length > 0) {
                     const [type, bi, ci] = par;
                     const [f1, f2] = M.decode(BF[bi]);
-                    const F = SOLVER.unpack_cons(BT[bi], type, f1, f2)[ci];
+                    const F = SOLVER.unpack_cons(BT[bi], type, f1, f2, FC, CF, CC)[ci];
                     for (const pair of CON.type_F_2_pairs(type, F)) {
                         const i_ = BI.get(M.encode_order_pair(pair));
                         if (!seen.has(i_)) {

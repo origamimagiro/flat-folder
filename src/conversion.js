@@ -670,310 +670,70 @@ export const X = {     // CONVERSION
         }
         return BT;
     },
-    FC_BF_BI_BT0_BT1_2_BT3x: (FC, BF, BI, BT0, BT1) => {
-        const BT3x = BF.map(() => new Set());
-        NOTE.start_check("variable", BF);
-        for (const [i, k] of BF.entries()) {
-            NOTE.check(i);
-            const [f1, f2] = M.decode(k);
-            for (const T of [BT0[i], BT1[i]]) {
-                for (const F of T) {
-                    for (const f of F) {
-                        if ((f == f1) || (f == f2)) { continue; }
-                        BT3x[i].add(f);
-                    }
-                }
-            }
-        }
+    FC_BF_BI_BT1_2_CC: (FC, BF, BI, BT1) => {
         const FG = FC.map(() => new Map());
         NOTE.start_check("taco-tortilla", BT1);
         for (const [i, T] of BT1.entries()) {    // construct connectivity graphs
             NOTE.check(i);
             for (const [a, b, c] of T) {
                 const G = FG[c];
-                if (!G.has(a)) { G.set(a, []); }
-                if (!G.has(b)) { G.set(b, []); }
-                G.get(a).push(b);
-                G.get(b).push(a);
+                if (!G.has(a)) { G.set(a, new Set()); }
+                if (!G.has(b)) { G.set(b, new Set()); }
+                G.get(a).add(b);
+                G.get(b).add(a);
             }
         }
         const CC = [];
-        const seen = new Set();
         NOTE.start_check("face", FG);
         for (const [c, G] of FG.entries()) {    // find connected components
             NOTE.check(c);
-            seen.clear();
+            const C = new Map();
+            let ci = 0;
             for (const [F, _] of G) {
-                if (seen.has(F)) { continue; }
-                seen.add(F);
-                const C = [F];
+                if (C.get(F) != undefined) { continue; }
+                const Q = [F];
+                C.set(F, ci);
                 let i = 0;
-                while (i < C.length) {
-                    for (const f of G.get(C[i])) {
-                        if (seen.has(f)) { continue; }
-                        seen.add(f);
-                        C.push(f);
+                while (i < Q.length) {
+                    for (const f of G.get(Q[i])) {
+                        if (C.get(f) != undefined) { continue; }
+                        Q.push(f);
+                        C.set(f, ci);
                     }
                     ++i;
                 }
-                CC.push([c, C]);
+                ++ci;
             }
-            G.clear();
+            CC.push(C);
         }
-        FG.length = 0;
-        NOTE.start_check("component", CC);      // find implied transitivity
-        for (const [ci, [c, C]] of CC.entries()) {
-            NOTE.check(ci);
-            const K = C.map(a => BI.get(M.encode_order_pair([a, c])));
-            for (let i = 0; i < C.length - 1; ++i) {
-                const a = C[i];
-                const kca = K[i];
-                if (kca == undefined) { continue; }
-                for (let j = i + 1; j < C.length; ++j) {
-                    const b = C[j];
-                    const kbc = K[j];
-                    if (kbc == undefined) { continue; }
-                    const kab = BI.get(M.encode_order_pair([a, b]));
-                    if (kab == undefined) { continue; }
-                    BT3x[kca].add(b);
-                    BT3x[kbc].add(a);
-                    BT3x[kab].add(c);   // possible a,b,c do not all overlap
-                }
-            }
-            C.length = 0;
-            K.length = 0;
-            CC[ci] = undefined;
-        }
-        CC.length = 0;
-        for (let i = 0; i < BT3x.length; ++i) {
-            BT3x[i] = M.encode(BT3x[i]);
-        }
-        return BT3x;
+        return CC;
     },
-    FC_BF_BI_BT0_BT1_W_2_BT3x: async (FC, BF, BI, BT0, BT1, W) => {
-        const BT3x = BF.map(() => new Set());
-        NOTE.start_check("variable", BF);
-        for (const [i, k] of BF.entries()) {
-            NOTE.check(i);
-            const [f1, f2] = M.decode(k);
-            for (const T of [BT0[i], BT1[i]]) {
-                for (const F of T) {
-                    for (const f of F) {
-                        if ((f == f1) || (f == f2)) { continue; }
-                        BT3x[i].add(f);
-                    }
-                }
-            }
-        }
-        const FG = FC.map(() => new Map());
-        NOTE.start_check("taco-tortilla", BT1);
-        for (const [i, T] of BT1.entries()) {    // construct connectivity graphs
-            NOTE.check(i);
-            for (const [a, b, c] of T) {
-                const G = FG[c];
-                if (!G.has(a)) { G.set(a, []); }
-                if (!G.has(b)) { G.set(b, []); }
-                G.get(a).push(b);
-                G.get(b).push(a);
-            }
-        }
-        const CC = [];
-        const seen = new Set();
-        NOTE.start_check("face", FG);
-        for (const [c, G] of FG.entries()) {    // find connected components
-            NOTE.check(c);
-            seen.clear();
-            for (const [F, _] of G) {
-                if (seen.has(F)) { continue; }
-                seen.add(F);
-                const C = [F];
-                let i = 0;
-                while (i < C.length) {
-                    for (const f of G.get(C[i])) {
-                        if (seen.has(f)) { continue; }
-                        seen.add(f);
-                        C.push(f);
-                    }
-                    ++i;
-                }
-                CC.push([c, C]);
-            }
-            G.clear();
-        }
-        FG.length = 0;
-        const P = W.map((_, wi) => new Promise(res => res([wi, undefined])));
-        await Promise.all(W.map(w => PAR.send_message(w, "BT3x_start", [BI])));
-        const load = 10;
-        let i = 0, j = 0;
-        NOTE.start_check("component", CC);
-        while (j < CC.length) {
-            NOTE.check(j);
-            const [wi, R] = await Promise.any(P);
-            if (R != undefined) {
-                for (const [ci, c, cB] of R) {
-                    for (const [a, b, kab, kbc, kca] of cB) {
-                        BT3x[kbc].add(a);
-                        BT3x[kca].add(b);
-                        BT3x[kab].add(c);
-                    }
-                    cB.length = 0;
-                    ++j;
-                }
-                R.length = 0;
-            }
-            const J = [];
-            for (let k = 0; (k < load) && (i < CC.length); ++k, ++i) {
-                const [c, C] = CC[i];
-                J.push([i, c, C]);
-            }
-            P[wi] = ((J.length == 0) ? (new Promise(res => {}))
-                : PAR.send_message(W[wi], "BT3x", [J]));
-            J.length = 0;
-        }
-        await Promise.all(W.map(w => PAR.send_message(w, "BT3x_stop", [])));
-        CC.length = 0;
-        for (let i = 0; i < BT3x.length; ++i) {
-            BT3x[i] = M.encode(BT3x[i]);
-        }
-        return BT3x;
-    },
-    FC_CF_BF_BT3x_2_BT3: (FC, CF, BF, BT3x) => { // O(|B|kt) <= O(|F|^5)
-        const BT3 = [];                          // k is max cells in a face,
-        const FC_sets = FC.map(C => new Set(C)); // t is max faces in a cell
-        let nx = 0;                              // k = O(|C|) <= O(|F|^2)
-        NOTE.start_check("variable", BF);        // t = O(|F|)
-        for (const [i, k] of BF.entries()) {     // |B| = O(|F|^2)
-            NOTE.check(i);
-            const [f1, f2] = M.decode(k);
-            const C = FC_sets[f1];
-            const S = new Set(M.decode(BT3x[i]));
-            delete BT3x[i];
-            const X = new Set();
-            const T = new Set();
-            for (const c of FC[f2]) {
-                if (C.has(c)) {
-                    for (const f3 of CF[c]) {
-                        if ((f3 == f1) || (f3 == f2)) { continue; }
-                        if (S.has(f3)) { X.add(f3); }
-                        else           { T.add(f3); }
-                    }
-                }
-            }
-            nx += X.size;
-            BT3.push(M.encode(T));
-        }
-        return [BT3, nx/3];     // |BT3| = O(|B||F|) <= O(|F|^3)
-    },
-    FC_CF_BF_BT3x_W_2_BT3: async (FC, CF, BF, BT3x, W) => {
-        const P = W.map((_, wi) => new Promise(res => res([wi, undefined])));
-        await Promise.all(W.map(w => PAR.send_message(w, "BT3_start", [FC, CF])));
-        const BT3 = BF.map(() => undefined);
-        const load = 100;
-        let i = 0, j = 0, nx = 0;
-        NOTE.start_check("variable", BF);
-        while (j < BF.length) {
-            NOTE.check(j);
-            const [wi, R] = await Promise.any(P);
-            if (R != undefined) {
-                for (const [bi, bF, nxi] of R) {
-                    BT3[bi] = bF;
-                    ++j;
-                    nx += nxi;
-                }
-            }
-            const J = [];
-            for (let k = 0; (k < load) && (i < BF.length); ++k, ++i) {
-                J.push([i, BF[i], BT3x[i]]);
-                delete BT3x[i];
-            }
-            P[wi] = ((J.length == 0) ? (new Promise(res => {}))
-                : PAR.send_message(W[wi], "BT3", [J]));
-            J.length = 0;
-        }
-        await Promise.all(W.map(w => PAR.send_message(w, "BT3_stop", [])));
-        return [BT3, nx/3];
-    },
-    EF_SP_SE_CP_FC_CF_BF_BT3x_2_BT3: (EF, SP, SE, CP, FC, CF, BF, BT3x) => {
-        const FC_set = FC.map(C => new Set(C));
-        const CF_set = CF.map(F => new Set(F));
-        const SC_map = new Map();
-        for (const [i, C] of CP.entries()) {
-            let v1 = C[C.length - 1];
-            for (const v2 of C) {
-                SC_map.set(M.encode([v2, v1]), i);
-                v1 = v2;
-            }
-        }
-        const SF_map = new Map();
-        for (const [i, [v1, v2]] of SP.entries()) {
-            const F1 = [];
-            const F2 = [];
-            for (const ei of SE[i]) {
-                for (const f of EF[ei]) {
-                    const c1 = SC_map.get(M.encode([v1, v2]));
-                    const c2 = SC_map.get(M.encode([v2, v1]));
-                    if ((c1 != undefined) && CF_set[c1].has(f)) { F1.push(f); }
-                    if ((c2 != undefined) && CF_set[c2].has(f)) { F2.push(f); }
-                }
-            }
-            SF_map.set(M.encode([v1, v2]), F1);
-            SF_map.set(M.encode([v2, v1]), F2);
-        }
-        const BT3 = [];
-        let nx = 0;
-        const C = new Set();
-        const X = new Set();
+    FC_CF_CC_Bf_2_Bt3: (FC, CF, CC, [f1, f2], trans_count) => {
+        const C = new Set(FC[f1]);
         const T = new Set();
-        NOTE.start_check("variable", BF);
-        for (const [i, k] of BF.entries()) {
-            NOTE.check(i);
-            let [f1, f2] = M.decode(k);
-            if (FC[f1].length > FC[f2].length) { [f1, f2] = [f2, f1]; }
-            C.clear();
-            X.clear();
-            T.clear();
-            for (const ci of FC[f1]) {
-                if (FC_set[f2].has(ci)) {
-                    C.add(ci);
-                }
+        for (const c of FC[f2]) {
+            if (!C.has(c)) { continue; }
+            for (const f3 of CF[c]) {
+                T.add(f3);
             }
-            const S = new Set(M.decode(BT3x[i]));
-            delete BT3x[i];
-            const seen = new Set();
-            for (const ci of C) {
-                if (seen.has(ci)) { continue; }
-                for (const f3 of CF[ci]) {
-                    if ((f3 == f1) || (f3 == f2)) { continue; }
-                    if (S.has(f3)) { X.add(f3); }
-                    else           { T.add(f3); }
-                }
-                const Q = [ci];
-                seen.add(ci);
-                let qi = 0;
-                while (qi < Q.length) {
-                    const cj = Q[qi++];
-                    const P = CP[cj];
-                    let v1 = P[P.length - 1];
-                    for (const v2 of P) {
-                        const cj = SC_map.get(M.encode([v1, v2]));
-                        if ((cj != undefined) && C.has(cj) && !seen.has(cj)) {
-                            Q.push(cj);
-                            seen.add(cj);
-                            const k = M.encode([v1, v2]);
-                            for (const f3 of SF_map.get(k)) {
-                                if ((f3 == f1) || (f3 == f2)) { continue; }
-                                if (S.has(f3)) { X.add(f3); }
-                                else           { T.add(f3); }
-                            }
-                        }
-                        v1 = v2;
-                    }
-                }
-            }
-            nx += X.size;
-            BT3.push(M.encode(T));
+            T.delete(f1);
+            T.delete(f2);
         }
-        return [BT3, nx/3];
+        if (trans_count != undefined) { trans_count.all += T.size; }
+        const CC1 = CC[f1], CC2 = CC[f2];
+        const c12 = CC1.get(f2);
+        const c21 = CC2.get(f1);
+        const out = Array.from(T).filter(f3 => {
+            const CC3 = CC[f3];
+            const c31 = CC3.get(f1);
+            return !(
+                ((c12 != undefined) && (c12 == CC1.get(f3))) ||
+                ((c21 != undefined) && (c21 == CC2.get(f3))) ||
+                ((c31 != undefined) && (c31 == CC3.get(f2)))
+            );
+        });
+        if (trans_count != undefined) { trans_count.reduced += out.length; }
+        return out;
     },
     BF_GB_GA_GI_2_edges: (BF, GB, GA, GI) => {
         const edges = [];
