@@ -492,20 +492,21 @@ export const X = {     // CONVERSION
         }
         return [CF, FC];
     },
-    SE_2_ExE: (SE) => {
-        const ExE = new Set();
+    EF_SE_2_ExE: (EF, SE) => {
+        const ExE = EF.map(() => new Set());
         for (const edges of SE) {
             for (const [j, v1] of edges.entries()) {
                 for (let k = j + 1; k < edges.length; ++k) {
                     const v2 = edges[k];
-                    ExE.add(M.encode_order_pair([v1, v2]));
+                    const [a, b] = (v1 < v2) ? [v1, v2] : [v2, v1];
+                    ExE[a].add(b);
                 }
             }
         }
-        return Array.from(ExE);
+        return ExE.map(E => Array.from(E));
     },
-    SE_CF_SC_2_ExF: (SE, CF, SC) => {
-        const ExF = new Set();
+    EF_SE_CF_SC_2_ExF: (EF, SE, CF, SC) => {
+        const ExF = EF.map(() => new Set());
         for (const [i, C] of SC.entries()) {
             if (C.length == 2) {
                 const E = SE[i];
@@ -519,12 +520,12 @@ export const X = {     // CONVERSION
                 }
                 for (const ei of E) {
                     for (const fi of F) {
-                        ExF.add(M.encode([ei, fi]));
+                        ExF[ei].add(fi);
                     }
                 }
             }
         }
-        return Array.from(ExF);
+        return ExF.map(F => Array.from(F));
     },
     CF_2_BF: (CF) => {                          // O(|C|t^2) <= O(|F|^4)
         const BF_set = new Set();               // t is max faces in a cell
@@ -601,14 +602,13 @@ export const X = {     // CONVERSION
         return (BI.has(M.encode_order_pair(p)) ? 1 : 0);
     },
     add_constraint: (T, BI, BT) => {
-        if (T != undefined) {
-            const [type, F] = T;
-            const pairs = CON.type_F_2_pairs(type, F);
-            for (const p of pairs) {
-                const i = BI.get(M.encode_order_pair(p));
-                if (i == undefined) { debugger; }
-                BT[type][i].push(F);
-            }
+        if (T == undefined) { return; }
+        const [type, F] = T;
+        const pairs = CON.type_F_2_pairs(type, F);
+        for (const p of pairs) {
+            const i = BI.get(M.encode_order_pair(p));
+            if (i == undefined) { debugger; }
+            BT[type][i].push(M.encode(F));
         }
     },
     BF_BI_EF_ExE_ExF_2_BT0_BT1_BT2: (BF, BI, EF, ExE, ExF) => {
@@ -617,57 +617,64 @@ export const X = {     // CONVERSION
         const BT2 = BF.map(() => []); // tortilla-tortilla
         const BT = [BT0, BT1, BT2];
         NOTE.time("Computing from edge-edge intersections");
-        NOTE.start_check("edge-edge intersection", ExE);
-        for (const [i, k] of ExE.entries()) {
-            NOTE.check(i);
-            const [e1, e2] = M.decode(k);
-            if ((EF[e1].length != 2) || (EF[e2].length != 2)) { continue; }
-            const [f1, f2] = EF[e1];
-            const [f3, f4] = EF[e2];
-            // note that all of f1, f2, f3, f4 must be unique
-            const f1f2 = X.check_overlap([f1, f2], BI);
-            const f1f3 = X.check_overlap([f1, f3], BI);
-            const f1f4 = X.check_overlap([f1, f4], BI);
-            let cons;
-            const choice = (f1f2 << 2) | (f1f3 << 1) | f1f4;
-            switch (choice) {
-                case 0: // 000
-                    cons = [CON.T.taco_tortilla, [f3, f4, f2]]; break;
-                case 1: // 001
-                    cons = [CON.T.tortilla_tortilla, [f1, f2, f4, f3]]; break;
-                case 2: // 010
-                    cons = [CON.T.tortilla_tortilla, [f1, f2, f3, f4]]; break;
-                case 3: // 011
-                    cons = [CON.T.taco_tortilla, [f3, f4, f1]]; break;
-                case 4: // 100  no overlap
-                    break;
-                case 5: // 101
-                    cons = [CON.T.taco_tortilla, [f1, f2, f4]]; break;
-                case 6: // 110
-                    cons = [CON.T.taco_tortilla, [f1, f2, f3]]; break;
-                case 7: // 111
-                    cons = [CON.T.taco_taco, [f1, f2, f3, f4]]; break;
-                default: break;
+        NOTE.start_check("edge", ExE);
+        for (const [e1, E] of ExE.entries()) {
+            NOTE.check(e1);
+            for (const e2 of E) {
+                if ((EF[e1].length != 2) || (EF[e2].length != 2)) { continue; }
+                const [f1, f2] = EF[e1];
+                const [f3, f4] = EF[e2];
+                // note that all of f1, f2, f3, f4 must be unique
+                const f1f2 = X.check_overlap([f1, f2], BI);
+                const f1f3 = X.check_overlap([f1, f3], BI);
+                const f1f4 = X.check_overlap([f1, f4], BI);
+                let cons;
+                const choice = (f1f2 << 2) | (f1f3 << 1) | f1f4;
+                if (choice == 4) { continue; } // 100 no overlap
+                switch (choice) {
+                    case 0: // 000
+                        cons = [CON.T.taco_tortilla, [f3, f4, f2]]; break;
+                    case 1: // 001
+                        cons = [CON.T.tortilla_tortilla, [f1, f2, f4, f3]]; break;
+                    case 2: // 010
+                        cons = [CON.T.tortilla_tortilla, [f1, f2, f3, f4]]; break;
+                    case 3: // 011
+                        cons = [CON.T.taco_tortilla, [f3, f4, f1]]; break;
+                    case 4: // 100  no overlap
+                        break;
+                    case 5: // 101
+                        cons = [CON.T.taco_tortilla, [f1, f2, f4]]; break;
+                    case 6: // 110
+                        cons = [CON.T.taco_tortilla, [f1, f2, f3]]; break;
+                    case 7: // 111
+                        cons = [CON.T.taco_taco, [f1, f2, f3, f4]]; break;
+                    default: break;
+                }
+                X.add_constraint(cons, BI, BT);
             }
-            X.add_constraint(cons, BI, BT);
+            E.length = 0;
         }
+        ExE.length = 0;
         NOTE.time("Computing from edge-face intersections");
-        NOTE.start_check("edge-face intersection", ExF);
-        for (const [i, k] of ExF.entries()) {
-            NOTE.check(i);
-            const [e, f3] = M.decode(k);
-            if (EF[e].length != 2) { continue; }
-            const [f1, f2] = EF[e];
-            if ((f1 == f3) || (f2 == f3)) { continue; }
-            const f1f2 = X.check_overlap([f1, f2], BI);
-            let cons;
-            if (f1f2 == 1) {
-                cons = [CON.T.taco_tortilla, [f1, f2, f3]];
-            } else {
-                cons = [CON.T.tortilla_tortilla, [f1, f2, f3, f3]];
+        NOTE.start_check("edge", ExF);
+        for (const [e, F] of ExF.entries()) {
+            NOTE.check(e);
+            for (const f3 of F) {
+                if (EF[e].length != 2) { continue; }
+                const [f1, f2] = EF[e];
+                if ((f1 == f3) || (f2 == f3)) { continue; }
+                const f1f2 = X.check_overlap([f1, f2], BI);
+                let cons;
+                if (f1f2 == 1) {
+                    cons = [CON.T.taco_tortilla, [f1, f2, f3]];
+                } else {
+                    cons = [CON.T.tortilla_tortilla, [f1, f2, f3, f3]];
+                }
+                X.add_constraint(cons, BI, BT);
             }
-            X.add_constraint(cons, BI, BT);
+            F.length = 0;
         }
+        ExF.length = 0;
         return BT;
     },
     FC_BF_BI_BT1_2_CC: (FC, BF, BI, BT1) => {
@@ -675,7 +682,8 @@ export const X = {     // CONVERSION
         NOTE.start_check("taco-tortilla", BT1);
         for (const [i, T] of BT1.entries()) {    // construct connectivity graphs
             NOTE.check(i);
-            for (const [a, b, c] of T) {
+            for (const k of T) {
+                const [a, b, c] = M.decode(k);
                 const G = FG[c];
                 if (!G.has(a)) { G.set(a, new Set()); }
                 if (!G.has(b)) { G.set(b, new Set()); }

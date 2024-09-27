@@ -115,7 +115,7 @@ export const SOLVER = {    // STATE SOLVER
     unpack_cons: (C, type, f1, f2, FC, CF, CC, trans_count) => (
         (type == CON.T.transitivity)
         ? X.FC_CF_CC_Bf_2_Bt3(FC, CF, CC, [f1, f2], trans_count).map(f3 => [f1, f2, f3])
-        : C[type]
+        : C[type].map(k => M.decode(k))
     ),
     guess_vars: (G, BI, BF, BT, BA, FC, CF, CC, lim) => {
         const guesses = [];

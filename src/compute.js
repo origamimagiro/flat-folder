@@ -92,11 +92,11 @@ const actions = {
         const {EF} = G.FOLD;
         const {SP, SE, CP, SC, CF, FC} = G.CELL;
         NOTE.time("Computing edge-edge overlaps");
-        const ExE = X.SE_2_ExE(SE);
+        const ExE = X.EF_SE_2_ExE(EF, SE);
         NOTE.count(ExE, "edge-edge adjacencies");
         NOTE.lap();
         NOTE.time("Computing edge-face overlaps");
-        const ExF = X.SE_CF_SC_2_ExF(SE, CF, SC);
+        const ExF = X.EF_SE_CF_SC_2_ExF(EF, SE, CF, SC);
         NOTE.count(ExF, "edge-face adjacencies");
         NOTE.lap();
         NOTE.time("Computing non-transitivity constraints");
