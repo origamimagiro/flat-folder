@@ -581,7 +581,7 @@ export const X = {     // CONVERSION
         const BT1 = BF.map(() => []); // taco-tortilla
         const BT2 = BF.map(() => []); // tortilla-tortilla
         const BT = [BT0, BT1, BT2];
-        NOTE.time("Computing edge-edge overlaps");
+        NOTE.time("Computing from edge-edge intersections");
         const ExE = EF.map(() => new Set());
         for (const edges of SE) {
             for (const [j, v1] of edges.entries()) {
@@ -592,11 +592,6 @@ export const X = {     // CONVERSION
                 }
             }
         }
-        for (let i = 0; i < ExE.length; ++i) {
-            ExE[i] = Array.from(ExE[i]);
-        }
-        NOTE.count(ExE, "edge-edge adjacencies");
-        NOTE.time("Computing from edge-edge intersections");
         NOTE.start_check("edge", ExE);
         for (const [e1, E] of ExE.entries()) {
             NOTE.check(e1);
@@ -632,10 +627,10 @@ export const X = {     // CONVERSION
                 }
                 X.add_constraint(cons, BI, BT);
             }
-            E.length = 0;
+            E.clear();
         }
         ExE.length = 0;
-        NOTE.time("Computing edge-face overlaps");
+        NOTE.time("Computing from edge-face intersections");
         const ExF = EF.map(() => new Set());
         for (const [i, C] of SC.entries()) {
             if (C.length == 2) {
@@ -655,11 +650,6 @@ export const X = {     // CONVERSION
                 }
             }
         }
-        for (let i = 0; i < ExF.length; ++i) {
-            ExF[i] = Array.from(ExF[i]);
-        }
-        NOTE.count(ExF, "edge-face adjacencies");
-        NOTE.time("Computing from edge-face intersections");
         NOTE.start_check("edge", ExF);
         for (const [e, F] of ExF.entries()) {
             NOTE.check(e);
@@ -676,7 +666,7 @@ export const X = {     // CONVERSION
                 }
                 X.add_constraint(cons, BI, BT);
             }
-            F.length = 0;
+            F.clear();
         }
         ExF.length = 0;
         return BT;

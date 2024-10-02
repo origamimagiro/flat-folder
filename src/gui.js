@@ -311,9 +311,9 @@ export const GUI = {   // INTERFACE
                     const [ti, T] = await PAR.send_message(
                         COMP, "f1_f2_2_T", [f1, f2]);
                     const SL = [];
+                    console.log(T);
                     for (const j of [0, 1, 2]) {
-                        const Ti = T[j];
-                        SL.push(Ti.map((t) => `[${t.join(",")}]`));
+                        SL.push(T[j].map(t => `[${M.decode(t).join(",")}]`));
                     }
                     const S = new Set();
                     const bC = [];
