@@ -96,10 +96,8 @@ export const BATCH = {
         const BI = new Map();
         const num = {};
         for (const [i, F] of BF.entries()) { BI.set(F, i); }
-        const ExE = X.SE_2_ExE(SE);
-        const ExF = X.SE_CF_SC_2_ExF(SE, CF, SC);
-        const [BT0, BT1, BT2] = X.BF_BI_EF_ExE_ExF_2_BT0_BT1_BT2(
-            BF, BI, EF, ExE, ExF);
+        const [BT0, BT1, BT2] = X.BF_BI_EF_SE_CF_SC_2_BT0_BT1_BT2(
+            BF, BI, EF, SE, CF, SC);
         num.BT0 = NOTE.count_subarrays(BT0)/6;
         num.BT1 = NOTE.count_subarrays(BT1)/2;
         num.BT2 = NOTE.count_subarrays(BT2)/2;

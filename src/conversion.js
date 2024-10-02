@@ -492,41 +492,6 @@ export const X = {     // CONVERSION
         }
         return [CF, FC];
     },
-    EF_SE_2_ExE: (EF, SE) => {
-        const ExE = EF.map(() => new Set());
-        for (const edges of SE) {
-            for (const [j, v1] of edges.entries()) {
-                for (let k = j + 1; k < edges.length; ++k) {
-                    const v2 = edges[k];
-                    const [a, b] = (v1 < v2) ? [v1, v2] : [v2, v1];
-                    ExE[a].add(b);
-                }
-            }
-        }
-        return ExE.map(E => Array.from(E));
-    },
-    EF_SE_CF_SC_2_ExF: (EF, SE, CF, SC) => {
-        const ExF = EF.map(() => new Set());
-        for (const [i, C] of SC.entries()) {
-            if (C.length == 2) {
-                const E = SE[i];
-                const [c1, c2] = C;
-                const F = [];
-                const F1 = new Set(CF[c1]);
-                for (const fi of CF[c2]) {
-                    if (F1.has(fi)) {
-                        F.push(fi);
-                    }
-                }
-                for (const ei of E) {
-                    for (const fi of F) {
-                        ExF[ei].add(fi);
-                    }
-                }
-            }
-        }
-        return ExF.map(F => Array.from(F));
-    },
     CF_2_BF: (CF) => {                          // O(|C|t^2) <= O(|F|^4)
         const BF_set = new Set();               // t is max faces in a cell
         NOTE.start_check("cell", CF);           // t^2 = O(|B|) <= O(|F|^2)
@@ -611,11 +576,26 @@ export const X = {     // CONVERSION
             BT[type][i].push(M.encode(F));
         }
     },
-    BF_BI_EF_ExE_ExF_2_BT0_BT1_BT2: (BF, BI, EF, ExE, ExF) => {
+    BF_BI_EF_SE_CF_SC_2_BT0_BT1_BT2: (BF, BI, EF, SE, CF, SC) => {
         const BT0 = BF.map(() => []); // taco-taco
         const BT1 = BF.map(() => []); // taco-tortilla
         const BT2 = BF.map(() => []); // tortilla-tortilla
         const BT = [BT0, BT1, BT2];
+        NOTE.time("Computing edge-edge overlaps");
+        const ExE = EF.map(() => new Set());
+        for (const edges of SE) {
+            for (const [j, v1] of edges.entries()) {
+                for (let k = j + 1; k < edges.length; ++k) {
+                    const v2 = edges[k];
+                    const [a, b] = (v1 < v2) ? [v1, v2] : [v2, v1];
+                    ExE[a].add(b);
+                }
+            }
+        }
+        for (let i = 0; i < ExE.length; ++i) {
+            ExE[i] = Array.from(ExE[i]);
+        }
+        NOTE.count(ExE, "edge-edge adjacencies");
         NOTE.time("Computing from edge-edge intersections");
         NOTE.start_check("edge", ExE);
         for (const [e1, E] of ExE.entries()) {
@@ -655,6 +635,30 @@ export const X = {     // CONVERSION
             E.length = 0;
         }
         ExE.length = 0;
+        NOTE.time("Computing edge-face overlaps");
+        const ExF = EF.map(() => new Set());
+        for (const [i, C] of SC.entries()) {
+            if (C.length == 2) {
+                const E = SE[i];
+                const [c1, c2] = C;
+                const F = [];
+                const F1 = new Set(CF[c1]);
+                for (const fi of CF[c2]) {
+                    if (F1.has(fi)) {
+                        F.push(fi);
+                    }
+                }
+                for (const ei of E) {
+                    for (const fi of F) {
+                        ExF[ei].add(fi);
+                    }
+                }
+            }
+        }
+        for (let i = 0; i < ExF.length; ++i) {
+            ExF[i] = Array.from(ExF[i]);
+        }
+        NOTE.count(ExF, "edge-face adjacencies");
         NOTE.time("Computing from edge-face intersections");
         NOTE.start_check("edge", ExF);
         for (const [e, F] of ExF.entries()) {

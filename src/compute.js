@@ -91,18 +91,9 @@ const actions = {
     build_constraints: () => {
         const {EF} = G.FOLD;
         const {SP, SE, CP, SC, CF, FC} = G.CELL;
-        NOTE.time("Computing edge-edge overlaps");
-        const ExE = X.EF_SE_2_ExE(EF, SE);
-        NOTE.count(ExE, "edge-edge adjacencies");
-        NOTE.lap();
-        NOTE.time("Computing edge-face overlaps");
-        const ExF = X.EF_SE_CF_SC_2_ExF(EF, SE, CF, SC);
-        NOTE.count(ExF, "edge-face adjacencies");
-        NOTE.lap();
         NOTE.time("Computing non-transitivity constraints");
-        const [BT0, BT1, BT2] = X.BF_BI_EF_ExE_ExF_2_BT0_BT1_BT2(
-            G.BF, G.BI, EF, ExE, ExF);
-        ExE.length = 0; ExF.length = 0;
+        const [BT0, BT1, BT2] = X.BF_BI_EF_SE_CF_SC_2_BT0_BT1_BT2(
+            G.BF, G.BI, EF, SE, CF, SC);
         NOTE.count(BT0, "taco-taco", 6);
         NOTE.count(BT1, "taco-tortilla", 2);
         NOTE.count(BT2, "tortilla-tortilla", 2);
