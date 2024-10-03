@@ -121,11 +121,15 @@ export const GUI = {   // INTERFACE
                 visFC.push([b, i]);
             }
         }
-        const vis = visFC.map(([fi, ci]) => GUI.transform_points(M.image(
-            M.expand(FV[fi], Vf),
-            M.expand(FV[fi], V),
-            M.expand(CP[ci], P)
-        ), "flat"));
+        const Vf_norm = M.normalize_points(Vf);
+        const V_norm = M.normalize_points(V);
+        const P_norm = M.normalize_points(P);
+        const vis = visFC.map(([fi, ci]) => {
+            const v = M.expand(FV[fi], Vf_norm);
+            const v_ = M.expand(FV[fi], V_norm);
+            const p = M.expand(CP[ci], P_norm);
+            return GUI.transform_points(M.image(v, v_, p), "flat", false);
+        });
         const vis_el = SVG.clear("flat_vis");
         SVG.draw_polygons(vis_el, vis, {stroke: "none",
             fill: GUI.COLORS.face.visible, opacity: 0.1});
