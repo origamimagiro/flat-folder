@@ -92,15 +92,17 @@ const actions = {
         const {EF} = G.FOLD;
         const {SP, SE, CP, SC, CF, FC} = G.CELL;
         NOTE.time("Computing non-transitivity constraints");
-        const [BT0, BT1, BT2] = X.BF_BI_EF_SE_CF_SC_2_BT0_BT1_BT2(
-            G.BF, G.BI, EF, SE, CF, SC);
-        NOTE.count(BT0, "taco-taco", 6);
-        NOTE.count(BT1, "taco-tortilla", 2);
-        NOTE.count(BT2, "tortilla-tortilla", 2);
+        G.BT = X.BF_BI_EF_SE_CF_SC_2_BT(G.BF, G.BI, EF, SE, CF, SC);
+        const BTn = [0, 0, 0];
+        for (const bT of G.BT) {
+            for (let i = 0; i < 3; ++i) { BTn[i] += bT[i].length; }
+        }
+        for (const [i, d] of [[0, 6], [1, 2], [2, 2]]) { BTn[i] /= d; }
+        NOTE.log(`   - Found ${BTn[0]} taco-taco`);
+        NOTE.log(`   - Found ${BTn[1]} taco-tortilla`);
+        NOTE.log(`   - Found ${BTn[2]} tortilla-tortilla`);
         NOTE.lap();
-        G.BT = G.BF.map((F,i) => [BT0[i], BT1[i], BT2[i]]);
-        G.CC = X.FC_BF_BI_BT1_2_CC(FC, G.BF, G.BI, BT1);
-        BT0.length = 0; BT1.length = 0; BT2.length = 0;
+        G.CC = X.FC_BF_BI_BT_2_CC(FC, G.BF, G.BI, G.BT);
         postMessage({type: "end", arg: []});
     },
     presolve: () => {

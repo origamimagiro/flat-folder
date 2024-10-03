@@ -573,14 +573,15 @@ export const X = {     // CONVERSION
         for (const p of pairs) {
             const i = BI.get(M.encode_order_pair(p));
             if (i == undefined) { debugger; }
-            BT[type][i].push(M.encode(F));
+            BT[i][type].push(M.encode(F));
         }
     },
-    BF_BI_EF_SE_CF_SC_2_BT0_BT1_BT2: (BF, BI, EF, SE, CF, SC) => {
-        const BT0 = BF.map(() => []); // taco-taco
-        const BT1 = BF.map(() => []); // taco-tortilla
-        const BT2 = BF.map(() => []); // tortilla-tortilla
-        const BT = [BT0, BT1, BT2];
+    BF_BI_EF_SE_CF_SC_2_BT: (BF, BI, EF, SE, CF, SC) => {
+        const BT = BF.map(() => [
+            [], // taco-taco
+            [], // taco-tortilla
+            [], // tortilla-tortilla
+        ]);
         NOTE.time("Computing from edge-edge intersections");
         const ExE = EF.map(() => new Set());
         for (const edges of SE) {
@@ -671,12 +672,12 @@ export const X = {     // CONVERSION
         ExF.length = 0;
         return BT;
     },
-    FC_BF_BI_BT1_2_CC: (FC, BF, BI, BT1) => {
+    FC_BF_BI_BT_2_CC: (FC, BF, BI, BT) => {
         const FG = FC.map(() => new Map());
-        NOTE.start_check("taco-tortilla", BT1);
-        for (const [i, T] of BT1.entries()) {    // construct connectivity graphs
+        NOTE.start_check("taco-tortilla", BT);
+        for (const [i, T] of BT.entries()) {    // construct connectivity graphs
             NOTE.check(i);
-            for (const k of T) {
+            for (const k of T[1]) {
                 const [a, b, c] = M.decode(k);
                 const G = FG[c];
                 if (!G.has(a)) { G.set(a, new Set()); }

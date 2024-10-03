@@ -94,15 +94,14 @@ export const BATCH = {
         const [CF, FC] = X.EF_FV_SP_SE_CP_SC_2_CF_FC(EF, FV, SP, SE, CP, SC);
         const BF = X.EF_SP_SE_CP_CF_2_BF(EF, SP, SE, CP, CF);
         const BI = new Map();
-        const num = {};
         for (const [i, F] of BF.entries()) { BI.set(F, i); }
-        const [BT0, BT1, BT2] = X.BF_BI_EF_SE_CF_SC_2_BT0_BT1_BT2(
-            BF, BI, EF, SE, CF, SC);
-        num.BT0 = NOTE.count_subarrays(BT0)/6;
-        num.BT1 = NOTE.count_subarrays(BT1)/2;
-        num.BT2 = NOTE.count_subarrays(BT2)/2;
-        const CC = X.FC_BF_BI_BT1_2_CC(FC, BF, BI, BT1);
-        const BT = BF.map((F,i) => [BT0[i], BT1[i], BT2[i]]);
+        const BT = X.BF_BI_EF_SE_CF_SC_2_BT(BF, BI, EF, SE, CF, SC);
+        const BTn = [0, 0, 0];
+        for (const bT of BT) {
+            for (let i = 0; i < 3; ++i) { BTn[i] += bT[i].length; }
+        }
+        for (const [i, d] of [[0, 6], [1, 2], [2, 2]]) { BTn[i] /= d; }
+        const CC = X.FC_BF_BI_BT_2_CC(FC, BF, BI, BT);
         const BA0 = SOLVER.EF_EA_Ff_BF_BI_2_BA0(EF, EA, Ff, BF, BI);
         const trans_count = {all: 0, reduced: 0};
         const out = SOLVER.initial_assignment(BA0, BF, BT, BI, FC, CF, CC, trans_count);
@@ -132,9 +131,9 @@ export const BATCH = {
             faces: FV.length,
             eps: eps,
             variables: BF.length,
-            "taco-taco": num.BT0,
-            "taco-tortilla": num.BT1,
-            "tortilla-tortilla": num.BT2,
+            "taco-taco": BTn[0],
+            "taco-tortilla": BTn[1],
+            "tortilla-tortilla": BTn[2],
             transitivity: trans_count.all/3,
             "reduced-trans": trans_count.reduced/3,
             components: GB.length,
