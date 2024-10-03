@@ -5,6 +5,7 @@ import { IO } from "./io.js";
 import { X } from "./conversion.js";
 import { GUI } from "./gui.js";
 import { PAR } from "./parallel.js";
+import { EX } from "./examples.js";
 
 window.onload = () => MAIN.startup();   // entry point
 
@@ -36,6 +37,13 @@ const MAIN = {
                 svg.setAttribute(k, v);
             }
         }
+        const example_select = document.getElementById("example");
+        for (const name of EX) {
+            const el = document.createElement("option");
+            el.setAttribute("value", (name[0] == "S") ? "select" : name);
+            el.textContent = name;
+            example_select.appendChild(el);
+        }
         const limit_select = document.getElementById("limit_select");
         for (const val of ["all", 10000, 1000, 100, 10, 1]) {
             const el = document.createElement("option");
@@ -56,10 +64,25 @@ const MAIN = {
         COMP = new Worker("./src/compute.js", {type: "module"});
         COMP.onerror = (e) => { debugger; }
         await PAR.send_message(COMP, "setup", []);
-        document.getElementById("import").onchange = (e) => {
+        const import_file = document.getElementById("import");
+        example_select.onchange = async (e) => {
+            import_file.value = null;
+            const path = e.target.value;
+            const response = await fetch(
+                "https://raw.githubusercontent.com/origamimagiro/flat-folder/" +
+                `refs/heads/main/examples/${path}`);
+            const doc = await response.text();
+            MAIN.process_file(path, doc, COMP);
+        };
+        import_file.onchange = (e) => {
+            example_select.value = "select";
             if (e.target.files.length > 0) {
                 const file_reader = new FileReader();
-                file_reader.onload = (e) => MAIN.process_file(e, COMP);
+                file_reader.onload = (e) => {
+                    const doc = e.target.result;
+                    const path = document.getElementById("import").value;
+                    MAIN.process_file(path, doc, COMP);
+                };
                 file_reader.readAsText(e.target.files[0]);
             }
         };
@@ -69,12 +92,13 @@ const MAIN = {
         };
         NOTE.end();
     },
-    process_file: async (e, COMP) => {
+    process_file: async (path, doc, COMP) => {
         NOTE.clear_log();
         NOTE.start("*** Starting File Import ***");
-        let doc = e.target.result;
-        const file_name = document.getElementById("import").value;
+        const file_name = path.split("\\").pop().split("/").pop();
+        NOTE.time(`Importing from file ${file_name}`);
         const parts = file_name.split(".");
+        const name = parts[0];
         let type = parts[parts.length - 1].toLowerCase();
         if ((type == "svg") || (type == "opx")) {
             const L = (type == "svg") ? IO.SVG_2_L(doc) : IO.OPX_2_L(doc);
@@ -84,11 +108,11 @@ const MAIN = {
             type = "cp";
         }
         const side = document.getElementById("side").value == "+";
-        NOTE.time(`Importing from file ${file_name}`);
         await PAR.send_message(COMP, "clear", []);
         CELL = undefined;
         FOLD = await PAR.send_message(COMP,
             "doc_type_side_2_fold", [doc, type, side]);
+        FOLD.name = name;
         for (const input of ["text", "flip_flat", "flip_fold", "visible", "scale"]) {
             document.getElementById(input).checked = false;
         }

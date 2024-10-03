@@ -5,9 +5,7 @@ import { X } from "./conversion.js";
 
 export const IO = {    // INPUT-OUTPUT
     write: (FOLD) => {
-        const {V, Vf, EV, EA, FV, FO} = FOLD;
-        const path = document.getElementById("import").value.split("\\");
-        const name = path[path.length - 1].split(".")[0];
+        const {name, V, Vf, EV, EA, FV, FO} = FOLD;
         FOLD = {
             file_spec: 1.1,
             file_creator: "flat-folder",
