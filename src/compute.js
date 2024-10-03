@@ -102,7 +102,9 @@ const actions = {
         NOTE.log(`   - Found ${BTn[1]} taco-tortilla`);
         NOTE.log(`   - Found ${BTn[2]} tortilla-tortilla`);
         NOTE.lap();
+        NOTE.time("Computing taco-tortilla implied transitivity");
         G.CC = X.FC_BF_BI_BT_2_CC(FC, G.BF, G.BI, G.BT);
+        NOTE.lap();
         postMessage({type: "end", arg: []});
     },
     presolve: () => {

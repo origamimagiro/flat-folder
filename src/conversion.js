@@ -677,7 +677,7 @@ export const X = {     // CONVERSION
         NOTE.start_check("taco-tortilla", BT);
         for (const [i, T] of BT.entries()) {    // construct connectivity graphs
             NOTE.check(i);
-            for (const k of T[1]) {
+            for (const k of T[CON.T.taco_tortilla]) {
                 const [a, b, c] = M.decode(k);
                 const G = FG[c];
                 if (!G.has(a)) { G.set(a, new Set()); }
