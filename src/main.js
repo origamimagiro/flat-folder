@@ -72,7 +72,7 @@ const MAIN = {
                 "https://raw.githubusercontent.com/origamimagiro/flat-folder/" +
                 `refs/heads/main/examples/${path}`);
             const doc = await response.text();
-            MAIN.process_file(path, doc, COMP);
+            MAIN.process_file(path, doc);
         };
         import_file.onchange = (e) => {
             example_select.value = "select";
@@ -81,7 +81,7 @@ const MAIN = {
                 file_reader.onload = (e) => {
                     const doc = e.target.result;
                     const path = document.getElementById("import").value;
-                    MAIN.process_file(path, doc, COMP);
+                    MAIN.process_file(path, doc);
                 };
                 file_reader.readAsText(e.target.files[0]);
             }
@@ -92,7 +92,7 @@ const MAIN = {
         };
         NOTE.end();
     },
-    process_file: async (path, doc, COMP) => {
+    process_file: async (path, doc) => {
         NOTE.clear_log();
         NOTE.start("*** Starting File Import ***");
         const file_name = path.split("\\").pop().split("/").pop();
