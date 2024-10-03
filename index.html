@@ -4,9 +4,19 @@
     <meta charset="UTF-8">
     <title>Flat-Folder</title>
     <link rel="icon" href="./favicon.png">
+    <style>
+        div .border {
+            display: inline-block;
+            padding: 3px;
+            margin: -1px;
+            background-color: lightgray;
+            overflow: hidden;
+            min-height: 22px;
+        }
+    </style>
 </head>
 <body style="background:darkgray">
-    <div>
+    <div style="margin: 3px">
         <span style="font-family:sans-serif">
             <b>Flat-Folder&nbsp;&nbsp;</b>
         </span>
@@ -16,42 +26,74 @@
         <div id="export" style="display:inline"></div>
     </div>
     <div id="flat_controls" style="display:none">
-        <span style="display:inline-block;width:110px">Crease Pattern</span>
-        <label for="rotate_flat">Rotate</label>
-        <select id="rotate_flat"></select>
-        <label for="flip_flat">Flip</label>
-        <input type="checkbox" id="flip_flat">
-        <label for="text">Text</label>
-        <input type="checkbox" id="text">
-        <label for="limit_select">Limit</label>
-        <select id="limit_select"></select>
-        <input type="button" id="fold_button" value="Fold">
+        <div class="border">
+            <span style="display:inline-block;width:110px">Crease Pattern</span>
+        </div>
+        <div class="border">
+            <label for="rotate_flat">Rotate</label>
+            <select id="rotate_flat"></select>
+        </div>
+        <div class="border">
+            <label for="flip_flat">Flip</label>
+            <input type="checkbox" id="flip_flat">
+        </div>
+        <div class="border">
+            <label for="text">Text</label>
+            <input type="checkbox" id="text">
+        </div>
+        <div class="border">
+            <label for="limit_select">Limit</label>
+            <select id="limit_select"></select>
+        </div>
+        <div class="border">
+            <input type="button" id="fold_button" value="Fold">
+        </div>
     </div>
     <div id="cell_controls" style="display:none">
-        <span style="display:inline-block;width:110px">Folded View</span>
-        <label for="rotate_fold">Rotate</label>
-        <select id="rotate_fold"></select>
-        <label for="flip_fold">Flip</label>
-        <input type="checkbox" id="flip_fold">
+        <div class="border">
+            <span style="display:inline-block;width:110px">Folded View</span>
+        </div>
+        <div class="border">
+            <label for="rotate_fold">Rotate</label>
+            <select id="rotate_fold"></select>
+        </div>
+        <div class="border">
+            <label for="flip_fold">Flip</label>
+            <input type="checkbox" id="flip_fold">
+        </div>
         <div id="fold_controls" style="display:none">
-            <label for="scale">Scale</label>
-            <input type="checkbox" id="scale">
-            <label for="shadow">Shadows</label>
-            <input id="shadow" type="number" min="0" max="6" step="1">
-            <label for="visible">Visible</label>
-            <input type="checkbox" id="visible">
+            <div class="border">
+                <label for="scale">Scale</label>
+                <input type="checkbox" id="scale">
+            </div>
+            <div class="border">
+                <label for="shadow">Shadows</label>
+                <input id="shadow" type="number" min="0" max="6" step="1">
+            </div>
+            <div class="border">
+                <label for="visible">Visible</label>
+                <input type="checkbox" id="visible">
+            </div>
         </div>
     </div>
     <div id="state_controls" style="display:none">
-        <span style="display:inline-block;width:110px">Folded State</span>
-        <label for="component_select">Component</label>
-        <select id="component_select"></select>
+        <div class="border">
+            <span style="display:inline-block;width:110px">Folded State</span>
+        </div>
+        <div class="border">
+            <label for="component_select">Component</label>
+            <select id="component_select"></select>
+        </div>
         <div id="state_config" style="display:none">
-            <label for="state_select" id="state_label"></label>
-            <input id="state_select" type="number">
+            <div class="border">
+                <label for="state_select" id="state_label"></label>
+                <input id="state_select" type="number">
+            </div>
+        </div>
+        <div class="border">
+            <span id="num_states"></span>
         </div>
     </div>
-    <div><span id="num_states"></span></div>
     <div>
         <svg id="main">
             <svg id="flat"></svg>

@@ -175,7 +175,7 @@ const MAIN = {
                 NOTE.time("Solve completed");
                 NOTE.count(0, "folded states");
                 const num_states = document.getElementById("num_states");
-                num_states.textContent = `(Found 0 states)`;
+                num_states.textContent = `Found 0 states`;
                 NOTE.end();
                 return;
             }
@@ -192,7 +192,7 @@ const MAIN = {
             NOTE.time("Solve completed");
             NOTE.count(0, "folded states");
             const num_states = document.getElementById("num_states");
-            num_states.textContent = `(Found 0 states)`;
+            num_states.textContent = `Found 0 states`;
             NOTE.end();
             return;
         }
@@ -202,7 +202,7 @@ const MAIN = {
         const n = Gn.reduce((s, gn) => s*BigInt(gn), BigInt(1));
         NOTE.count(n, "folded states");
         const num_states = document.getElementById("num_states");
-        num_states.textContent = `(Found ${n} state${(n == 1) ? "" : "s"})`;
+        num_states.textContent = `Found ${n} state${(n == 1) ? "" : "s"}`;
         const Gi = Gn.map(() => 0);
         const [CD, FO] = await PAR.send_message(COMP, "Gi_2_CD_FO", [Gi]);
         CELL.CF = CD;
