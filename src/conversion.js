@@ -576,13 +576,7 @@ export const X = {     // CONVERSION
             BT[i][type].push(M.encode(F));
         }
     },
-    BF_BI_EF_SE_CF_SC_2_BT: (BF, BI, EF, SE, CF, SC) => {
-        const BT = BF.map(() => [
-            [], // taco-taco
-            [], // taco-tortilla
-            [], // tortilla-tortilla
-        ]);
-        NOTE.time("Computing from edge-edge intersections");
+    ExE_fill_BT: (BT, BI, EF, SE) => {
         const ExE = EF.map(() => new Set());
         for (const edges of SE) {
             for (const [j, v1] of edges.entries()) {
@@ -631,7 +625,8 @@ export const X = {     // CONVERSION
             E.clear();
         }
         ExE.length = 0;
-        NOTE.time("Computing from edge-face intersections");
+    },
+    ExF_fill_BT: (BT, BI, EF, SE, CF, SC) => {
         const ExF = EF.map(() => new Set());
         for (const [i, C] of SC.entries()) {
             if (C.length == 2) {
@@ -670,6 +665,17 @@ export const X = {     // CONVERSION
             F.clear();
         }
         ExF.length = 0;
+    },
+    BF_BI_EF_SE_CF_SC_2_BT: (BF, BI, EF, SE, CF, SC) => {
+        const BT = BF.map(() => [
+            [], // taco-taco
+            [], // taco-tortilla
+            [], // tortilla-tortilla
+        ]);
+        NOTE.time("Computing from edge-edge intersections");
+        X.ExE_fill_BT(BT, BI, EF, SE);
+        NOTE.time("Computing from edge-face intersections");
+        X.ExF_fill_BT(BT, BI, EF, SE, CF, SC);
         return BT;
     },
     FC_BF_BI_BT_2_CC: (FC, BF, BI, BT) => {
