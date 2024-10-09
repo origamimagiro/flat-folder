@@ -67,7 +67,7 @@ const MAIN = {
         const import_file = document.getElementById("import");
         example_select.onchange = async (e) => {
             import_file.value = null;
-            const path = e.target.value;
+            const path = encodeURIComponent(e.target.value);
             const response = await fetch(
                 "https://raw.githubusercontent.com/origamimagiro/flat-folder/" +
                 `refs/heads/main/examples/${path}`);
