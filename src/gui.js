@@ -182,12 +182,15 @@ export const GUI = {   // INTERFACE
     },
     update_fold: (FOLD, CELL) => {
         SVG.clear("export");
-        const {Ff, EF} = FOLD;
+        const {Ff, EF, V} = FOLD;
+        const V_ = M.normalize_points(V);
+        const s = M.dist(V_[0], V_[1])/M.dist(V[0], V[1]);
         const {P, CP, CF, SP, SC, SE} = CELL;
         const svg = SVG.clear("fold");
         const scale = document.getElementById("scale").checked;
-        const P_ = GUI.transform_points(
-            scale ? M.center_points_on(P, [0.5, 0.5]) : P, "fold", !scale);
+        const P_ = GUI.transform_points(scale
+            ? M.center_points_on(P.map(p => M.mul(p, s)), [0.5, 0.5])
+            : P, "fold", !scale);
         const flip = document.getElementById("flip_fold").checked;
         const Ctop = CF.map(S => flip ? S[0] : S[S.length - 1]);
         const SD = X.Ctop_SC_SE_EF_Ff_2_SD(Ctop, SC, SE, EF, Ff);
