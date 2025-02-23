@@ -68,10 +68,10 @@ export const X = {     // CONVERSION
                 return j;
             });
             LV.push([vi, vj]);                  // index-based line data
-            const u = M.unit(M.sub(V[vj], V[vi]));
+            const d = M.sub(V[vj], V[vi]);
+            const u = M.unit(d);
             LU.push(u);
-            const lim = (eps > 0.01) ? 0.01 : eps;
-            LA.push((u[1] < lim) ? 0 : M.angle(u));
+            LA.push((d[1] < eps) ? 0 : M.angle(d));
             LD.push(M.dot(M.perp(u), V[vj]));
             VL[vi].push(li);
         }
