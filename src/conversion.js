@@ -33,9 +33,10 @@ export const X = {     // CONVERSION
     },
     L_eps_2_V_EV_EL: (L, eps) => {
         const point_comp = ([x1, y1], [x2, y2]) => {    // point comparator
-            if (M.dist([x1, y1], [x2, y2]) < eps) { return 0; }
+            const dx = x1 - x2;
             const dy = y1 - y2;
-            return (Math.abs(dy) >= eps) ? dy : (x1 - x2);
+            return ((Math.abs(dy) > eps) ? ((dy < 0) ? -1 : 1) :
+                   ((Math.abs(dx) > eps) ? ((dx < 0) ? -1 : 1) : 0));
         };
         const line_intersect = ([x1, y1], [x2, y2], [x3, y3], [x4, y4]) => {
             const dx12 = x1 - x2, dx34 = x3 - x4;
@@ -69,7 +70,8 @@ export const X = {     // CONVERSION
             LV.push([vi, vj]);                  // index-based line data
             const u = M.unit(M.sub(V[vj], V[vi]));
             LU.push(u);
-            LA.push((u[1] < eps) ? 0 : M.angle(u));
+            const lim = (eps > 0.01) ? 0.01 : eps;
+            LA.push((u[1] < lim) ? 0 : M.angle(u));
             LD.push(M.dot(M.perp(u), V[vj]));
             VL[vi].push(li);
         }
@@ -89,9 +91,9 @@ export const X = {     // CONVERSION
             if (Math.abs(dj) < eps) {               // so can order locally
                 const pi = SV[si][1];
                 if ((pi != undefined) && on_line(pi, sj)) { return 0; }
-                return SA[sj] - SA[si];
+                return (SA[sj] - SA[si] > 0) ? 1 : -1;
             }
-            return -dj;
+            return ((-dj) > 0) ? 1 : -1;
         };
         const T = new AVL(seg_comp);
         const VP = Array(V).fill();
@@ -126,6 +128,12 @@ export const X = {     // CONVERSION
                     continue;
                 }
             }
+            if ((VL[vi].length == 1) && (S1.length == 1) &&
+                on_line(LV[VL[vi][0]][1], S1[0])
+            ) {
+                T.insert(S1[0]);
+                continue;
+            }
             VP[vi] = P.length;
             P.push(v);
             for (const si of S1) {      // close segments
@@ -158,8 +166,8 @@ export const X = {     // CONVERSION
                 }
             }
             const pairs = [];
-            pairs.push([T.prev(0), T.next(0)]); SA[0] = -Infinity
-            pairs.push([T.prev(0), T.next(0)]); SA[0] =  Infinity
+            pairs.push([T.prev(0), T.next(0)]); SA[0] = -Infinity;
+            pairs.push([T.prev(0), T.next(0)]); SA[0] =  Infinity;
             for (const [l, r] of pairs) {   // check adjacent pairs
                 if ((l == undefined) || (r == undefined)) {
                     continue;               // incomplete pair
