@@ -356,7 +356,7 @@ export const GUI = {   // INTERFACE
                 const el = document.getElementById(`flat_f${f}`);
                 el.setAttribute("fill", GUI.COLORS.active);
             }
-        } else { // clear and first click
+        } else { // clear or first click
             while (active.length > 0) { active.pop(); }
             if (color == GUI.COLORS.active) {
                 NOTE.log("   - Clearing selection");

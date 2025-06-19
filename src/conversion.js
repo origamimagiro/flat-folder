@@ -120,7 +120,7 @@ export const X = {     // CONVERSION
                 for (const li of SL[si]) {
                     if (point_comp(V[LV[li][1]], V[vi]) <= 0) {
                         ends = true;    // vertex used (ends some segment)
-                        continue;
+                        break;
                     }
                 }
                 if (!ends) {            // vertex unused (one segment passing)
@@ -128,11 +128,22 @@ export const X = {     // CONVERSION
                     continue;
                 }
             }
-            if ((VL[vi].length == 1) && (S1.length == 1) &&
-                on_line(LV[VL[vi][0]][1], S1[0])
-            ) {
-                T.insert(S1[0]);
-                continue;
+            if (S1.length == 1) {
+                const s0 = S1[0];
+                let all_parallel = true;
+                for (const ll of VL[vi]) {
+                    if (!on_line(LV[ll][1], s0)) {
+                        all_parallel = false;
+                        break;
+                    }
+                }
+                if (all_parallel) {     // vertex unused (one segment passing)
+                    T.insert(s0);
+                    for (const ll of VL[vi]) {
+                        SL[s0].push(ll);
+                    }
+                    continue;
+                }
             }
             VP[vi] = P.length;
             P.push(v);
