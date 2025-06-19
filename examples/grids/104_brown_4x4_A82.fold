@@ -1,7 +1,8 @@
 {
   "file_spec": 1.1,
   "file_creator": "flat-folder",
-  "file_title": "104_brown_4x4_A82_cp",
+  "file_author": "Daniel BROWN",
+  "file_title": "4x4 A82",
   "file_classes": [
     "singleModel"
   ],
