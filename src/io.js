@@ -206,7 +206,14 @@ export const IO = {    // INPUT-OUTPUT
             let EL, eps_i;
             const L = EV.map((e) => M.expand(e, V));
             [V, EV, EL, eps_i] = X.L_2_V_EV_EL(L);
-            EA = EL.map(l => EA[l]);
+            EA = EL.map(eL => {
+                for (const l of eL) {
+                    if (EA[l] != 'F') {
+                        return EA[l];
+                    }
+                }
+                return 'F';
+            });
         }
         return [V, EV, EA, VV, FV];
     },
@@ -231,7 +238,14 @@ export const IO = {    // INPUT-OUTPUT
             [V, EV, EL, eps_i] = X.L_2_V_EV_EL(L);
             const eps = M.min_line_length(L)/(2**eps_i);
             NOTE.time(`Used eps: ${2**eps_i} | ${eps}`);
-            EA = EL.map(l => L[l[0]][2]);
+            EA = EL.map(eL => {
+                for (const l of eL) {
+                    if (L[l][2] != 'F') {
+                        return L[l][2];
+                    }
+                }
+                return 'F';
+            });
         }
         const flip_EA = (EA) => {
             return EA.map((a) => (a == "M") ? "V" : ((a == "V") ? "M" : a));
