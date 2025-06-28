@@ -90,9 +90,9 @@ export const IO = {    // INPUT-OUTPUT
                 const attr = parts[0].trim();
                 const  val = parts[1].trim();
                 if (attr == "stroke") {
-                    if (val == "red" || val == "#FF0000") {
+                    if (val == "red" || val == "#FF0000" || val == "#ff0000") {
                         a = "M";
-                    } else if (val == "blue" || val == "#0000FF") {
+                    } else if (val == "blue" || val == "#0000FF" || val == "#0000ff") {
                         a = "V";
                     } else if (val == "gray" || val == "#808080") {
                         a = "F";
