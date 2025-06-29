@@ -37,7 +37,7 @@ or [Twitter](https://twitter.com/_flatfolder_).
           (assignment `"U"`), unless its `"style"` attribute contains a
           `"stroke"` whose value is one of `["red", "blue", "gray"]`
           corresponding to `["M", "V", "F"]` assignments respectively;
-        - will also accept values `["#FF0000", "#0000FF", "#808080"]`.
+        - will also accept values `["#FF0000", "#0000FF", "#808080"]`, uppercase or lowercase.
     - For FOLD format:
         - Import requires two properties:
             - `vertices_coords`
