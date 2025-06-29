@@ -66,7 +66,7 @@ export const GUI = {   // INTERFACE
     },
     update_flat: (FOLD) => {
         SVG.clear("export");
-        const {V, VK, EV, EA, FV} = FOLD;
+        const {V, VK, EV, EA, FV, FO} = FOLD;
         const svg = SVG.clear("flat");
         const V_ = GUI.transform_points(V, "flat");
         const F = FV.map(f => M.expand(f, V_));
@@ -75,6 +75,24 @@ export const GUI = {   // INTERFACE
             "check", "e_flat", "e_folded", "text", "enotes", "cons", "click",
         ]) {
             G[id] = SVG.append("g", svg, {id: `flat_${id}`});
+        }
+        const assign = FO !== undefined && document.getElementById("assign").checked;
+        let assignments = EA;
+        let stroke_width = GUI.WIDTH
+        if (assign) {
+            let [EF, FE] = X.EV_FV_2_EF_FE(EV, FV);
+            let orders = new Map(FO.map(([f1, f2, o]) => f1 < f2 ? [`${f1},${f2}`, o] : [`${f2},${f1}`, o]));
+            assignments = Array.from(assignments);
+            stroke_width = new Array(EA.length).fill(undefined).map((_, i) => EA[i] === "U" ? 3 * GUI.WIDTH : GUI.WIDTH);
+            for (let i = 0; i < EF.length; ++i) {
+                let faces = EF[i];
+                if (EA[i] !== "U" || faces.length !== 2)
+                    continue;
+                if (faces[0] > faces[1])
+                    faces = [faces[1], faces[0]];
+                const order = orders.get(`${faces[0]},${faces[1]}`);
+                assignments[i] = order < 0 ? "M" : "V";
+            }
         }
         const flip = document.getElementById("flip_flat").checked;
         SVG.draw_polygons(G.f, F, {id: true, fill: (
@@ -86,7 +104,7 @@ export const GUI = {   // INTERFACE
         }
         SVG.draw_points(G.check, K, {fill: "red", r: 10});
         const lines = EV.map(l => M.expand(l, V_));
-        const colors = EA.map(a => {
+        const colors = assignments.map(a => {
             if (flip) {
                 switch (a) {
                     case "V": a = "M"; break;
@@ -96,9 +114,9 @@ export const GUI = {   // INTERFACE
             return GUI.COLORS.edge[a];
         });
         SVG.draw_segments(G.e_flat, lines, {id: true, stroke: colors,
-            stroke_width: GUI.WIDTH, filter: (i) => (EA[i] == "F")});
+            stroke_width: stroke_width, filter: (i) => (assignments[i] == "F")});
         SVG.draw_segments(G.e_folded, lines, {id: true, stroke: colors,
-            stroke_width: GUI.WIDTH, filter: (i) => (EA[i] != "F")});
+            stroke_width: stroke_width, filter: (i) => (assignments[i] != "F")});
         SVG.draw_polygons(G.click, F, {id: true, opacity: 0,
             fill: GUI.COLORS.active});
         GUI.update_text(FOLD);
@@ -249,6 +267,10 @@ export const GUI = {   // INTERFACE
                 const [CD, FO] = await PAR.send_message(COMP, "Gi_2_CD_FO", [Gi]);
                 CELL.CF = CD;
                 FOLD.FO = FO;
+                if (document.getElementById("assign").checked) {
+                    GUI.update_flat(FOLD);
+                    await GUI.update_cell_face_listeners(FOLD, CELL, COMP);
+                }
                 GUI.update_fold(FOLD, CELL);
                 GUI.update_visible(FOLD, CELL);
                 NOTE.end();
