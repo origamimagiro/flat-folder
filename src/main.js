@@ -173,8 +173,6 @@ const MAIN = {
                 return;
             }
             NOTE.time("Updating cell");
-            if (document.getElementById("assign").checked)
-                GUI.update_flat(FOLD);
             GUI.update_cell(FOLD, CELL);
             document.getElementById("text").onchange = (e) => {
                 NOTE.start("Toggling Text");
@@ -223,8 +221,6 @@ const MAIN = {
             return;
         }
         const Gn = out;
-        NOTE.time("Updating cell-face listeners");
-        await GUI.update_cell_face_listeners(FOLD, CELL, COMP);
         const n = Gn.reduce((s, gn) => s*BigInt(gn), BigInt(1));
         NOTE.count(n, "folded states");
         const num_states = document.getElementById("num_states");
@@ -233,6 +229,10 @@ const MAIN = {
         const [CD, FO] = await PAR.send_message(COMP, "Gi_2_CD_FO", [Gi]);
         CELL.CF = CD;
         FOLD.FO = FO;
+        NOTE.time("Updating cell-face listeners");
+        if (document.getElementById("assign").checked)
+            GUI.update_flat(FOLD);
+        await GUI.update_cell_face_listeners(FOLD, CELL, COMP);
         document.getElementById("fold_controls").style.display = "inline";
         document.getElementById("state_controls").style.display = "block";
         for (const [id, log] of [["flip", "Flipping"], ["rotate", "Rotating"]]) {
