@@ -221,8 +221,6 @@ const MAIN = {
             return;
         }
         const Gn = out;
-        NOTE.time("Updating cell-face listeners");
-        await GUI.update_cell_face_listeners(FOLD, CELL, COMP);
         const n = Gn.reduce((s, gn) => s*BigInt(gn), BigInt(1));
         NOTE.count(n, "folded states");
         const num_states = document.getElementById("num_states");
@@ -231,6 +229,10 @@ const MAIN = {
         const [CD, FO] = await PAR.send_message(COMP, "Gi_2_CD_FO", [Gi]);
         CELL.CF = CD;
         FOLD.FO = FO;
+        NOTE.time("Updating cell-face listeners");
+        if (document.getElementById("assign").checked)
+            GUI.update_flat(FOLD);
+        await GUI.update_cell_face_listeners(FOLD, CELL, COMP);
         document.getElementById("fold_controls").style.display = "inline";
         document.getElementById("state_controls").style.display = "block";
         for (const [id, log] of [["flip", "Flipping"], ["rotate", "Rotating"]]) {
@@ -268,6 +270,13 @@ const MAIN = {
                 NOTE.log(`Scaled to [width, height] = [${d[0]},${d[1]}]`);
             }
             GUI.update_fold(FOLD, CELL);
+            NOTE.end();
+        };
+        document.getElementById("assign").onchange = async () => {
+            NOTE.start("Toggling showing assignment of unassigned edges");
+            GUI.update_flat(FOLD);
+            GUI.update_visible(FOLD, CELL);
+            await GUI.update_cell_face_listeners(FOLD, CELL, COMP);
             NOTE.end();
         };
         const comp_select = SVG.clear("component_select");
