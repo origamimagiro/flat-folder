@@ -75,6 +75,9 @@ export const X = {     // CONVERSION
             LD.push(M.dot(M.perp(u), V[vj]));
             VL[vi].push(li);
         }
+        const [[x_min, y_min], [x_max, y_max]] = M.bounding_box(V.slice(1));
+        const HEIGHT = y_max - y_min, WIDTH = x_max - x_min;
+        const SCALE = (HEIGHT < WIDTH) ? WIDTH : HEIGHT;
         const SV = [[undefined, undefined]];    // sentinal segment
         const SU = [[-1, 0]];                   // unit vector along segment
         const SA = [Infinity];                  // angle
@@ -185,8 +188,8 @@ export const X = {     // CONVERSION
                 }
                 const vl = SV[l][0], al = SA[l];
                 const vr = SV[r][0], ar = SA[r];
-                const x = line_intersect(V[vl], M.add(V[vl], SU[l]),
-                                         V[vr], M.add(V[vr], SU[r]));
+                const x = line_intersect(V[vl], M.add(V[vl], M.mul(SU[l], SCALE)),
+                                         V[vr], M.add(V[vr], M.mul(SU[r], SCALE)));
                 if ((x == undefined) ||                         // none
                     (point_comp(x, v) == 0) ||                  // near curr
                     ((point_comp(x, v) < 0) && (x[1] <= v[1]))  // behind sweep
