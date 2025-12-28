@@ -225,7 +225,6 @@ export const SOLVER = {    // STATE SOLVER
                                 BP[i_] = [type, i, ci];
                                 new_level.set(i_, a_);
                             } else if (a_ != a__) {
-                                console.log("XXXXXXXXXX");
                                 const E = SOLVER.error_faces(type, F, BF, BT, BI, BA, BP, FC, CF, CC);
                                 return [type, F, E]; // constraint unsatisfiable
                             }
