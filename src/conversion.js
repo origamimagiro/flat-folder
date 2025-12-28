@@ -10,23 +10,21 @@ export const X = {     // CONVERSION
         let nV = 0, nE = 0, count = 0;
         const k = 3;    // decrease eps until feature #s repeat sufficiently
         let V_ = [], EV_ = [], EL_ = [], k_ = 0, i_ = 1;
-        NOTE.start_check("epsilon");
-        for (const i of Array(50).fill().map((_, j) => j + 3)) {
-            const eps = d/(2**i);
+        for (let i = 0; i < 50; ++i) {
+            const eps = d/(2**(i + 3));
             if (eps < M.FLOAT_EPS) { break; }
-            try {
-                const [V, EV, EL] = X.L_eps_2_V_EV_EL(L, eps);
-                if ((V.length == nV) && (EV.length == nE)) {
-                    ++count;
-                    if (count <= k_) { continue; }
-                    V_ = V; EV_ = EV; EL_ = EL; k_ = count; i_ = i;
-                    if (count == k) { break; }
-                } else {
-                    nV = V.length;
-                    nE = EV.length;
-                    count = 0;
-                }
-            } catch { nV = 0; nE = 0; count = 0; }
+            const [V, EV, EL] = X.L_eps_2_V_EV_EL(L, eps);
+            if (V.length == 0) { nV = nE = count = 0; continue; }
+            if ((V.length == nV) && (EV.length == nE)) {
+                ++count;
+                if (count <= k_) { continue; }
+                V_ = V; EV_ = EV; EL_ = EL; k_ = count; i_ = i + 3;
+                if (count == k) { break; }
+            } else {
+                nV = V.length;
+                nE = EV.length;
+                count = 1;
+            }
         }
         return [V_, EV_, EL_, i_ - k_];
     },
@@ -86,9 +84,6 @@ export const X = {     // CONVERSION
         const on_line = (vi, si) => (Math.abs(point_seg_dist(vi, si)) < eps);
         let curr;
         const seg_comp = (si, sj) => {
-            if(!on_line(curr, si)) {                // assumes si on curr
-                throw new Error();
-            }
             const dj = point_seg_dist(curr, sj);    // only search near curr,
             if (Math.abs(dj) < eps) {               // so can order locally
                 const pi = SV[si][1];
@@ -149,7 +144,7 @@ export const X = {     // CONVERSION
             }
             VP[vi] = P.length;
             P.push(v);
-            for (const si of S1) {      // close segments
+            for (const si of S1) {      // close entering segments
                 SV[si][1] = vi;
                 for (const li of SL[si]) {
                     if (point_comp(V[LV[li][1]], V[vi]) <= 0) { continue; }
@@ -179,8 +174,8 @@ export const X = {     // CONVERSION
                 }
             }
             const pairs = [];
-            pairs.push([T.prev(0), T.next(0)]); SA[0] = -Infinity;
-            pairs.push([T.prev(0), T.next(0)]); SA[0] =  Infinity;
+            SA[0] = -1;         pairs.push([T.prev(0), T.next(0)]);
+            SA[0] = Infinity;   pairs.push([T.prev(0), T.next(0)]);
             for (const [l, r] of pairs) {   // check adjacent pairs
                 if ((l == undefined) || (r == undefined)) {
                     continue;               // incomplete pair
@@ -189,27 +184,28 @@ export const X = {     // CONVERSION
                 const vr = SV[r][0], ar = SA[r];
                 const x = line_intersect(V[vl], M.add(V[vl], M.mul(SU[l], SCALE)),
                                          V[vr], M.add(V[vr], M.mul(SU[r], SCALE)));
-                if ((x == undefined) ||                         // none
-                    (point_comp(x, v) == 0) ||                  // near curr
-                    ((point_comp(x, v) < 0) && (x[1] <= v[1]))  // behind sweep
+                let c;
+                if ((x == undefined) ||                 // none
+                    ((c = point_comp(x, v)) == 0) ||    // x is p
+                    ((c < 0) && (x[1] <= v[1]))  // x is behind p
                 ) { continue; }
                 const vx = V.length;        // add point
                 V.push(x);
-                VL.push([]);
                 const vj = Q.insert(vx);
                 if (vj != undefined) {      // point near existing point
                     V.pop();
-                    VL.pop();
+                } else {
+                    VL.push([]);
                 }
             }
         }
+
+        if (T.length != 0) { return [[], [], []]; }
+
         const X = [];
         const X_map = new Map();
         for (let si = 1; si < SV.length; ++si) {    // combine redundant
             const pp = SV[si].map(vi => VP[vi]);
-            if ((pp[0] == undefined) || (pp[1] == undefined)) {
-                throw new Error();                  // missing endpoint
-            }
             if (pp[1] < pp[0]) { pp.reverse(); }
             const k = M.encode(pp);
             let xi = X_map.get(k);
