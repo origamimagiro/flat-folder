@@ -66,7 +66,7 @@ export const GUI = {   // INTERFACE
     },
     update_flat: (FOLD) => {
         SVG.clear("export");
-        const {V, VK, EV, EA, FV} = FOLD;
+        const {V, VK, EV, EA, FV, FO} = FOLD;
         const svg = SVG.clear("flat");
         const V_ = GUI.transform_points(V, "flat");
         const F = FV.map(f => M.expand(f, V_));
@@ -86,7 +86,21 @@ export const GUI = {   // INTERFACE
         }
         SVG.draw_points(G.check, K, {fill: "red", r: 10});
         const lines = EV.map(l => M.expand(l, V_));
-        const colors = EA.map(a => {
+        const U_width = GUI.WIDTH*((FO == undefined) ? 1 : 2);
+        const assignments = EA.map(a => a);
+        if (FO != undefined) {
+            const [EF, FE] = X.EV_FV_2_EF_FE(EV, FV);
+            const FO_map = new Map(FO.map(
+                ([f1, f2, o]) => [M.encode_order_pair([f1, f2]), o])
+            );
+            for (let i = 0; i < EA.length; ++i) {
+                const eF = EF[i];
+                if ((EA[i] != "U") || (eF.length != 2)) { continue; }
+                const o = FO_map.get(M.encode_order_pair(eF));
+                assignments[i] = (o < 0) ? "M" : "V";
+            }
+        }
+        const colors = assignments.map(a => {
             if (flip) {
                 switch (a) {
                     case "V": a = "M"; break;
@@ -98,7 +112,9 @@ export const GUI = {   // INTERFACE
         SVG.draw_segments(G.e_flat, lines, {id: true, stroke: colors,
             stroke_width: GUI.WIDTH, filter: (i) => (EA[i] == "F")});
         SVG.draw_segments(G.e_folded, lines, {id: true, stroke: colors,
-            stroke_width: GUI.WIDTH, filter: (i) => (EA[i] != "F")});
+            stroke_width: GUI.WIDTH, filter: (i) => ((EA[i] != "F") && (EA[i] != "U"))});
+        SVG.draw_segments(G.e_folded, lines, {id: true, stroke: colors,
+            stroke_width: U_width, filter: (i) => (EA[i] == "U")});
         SVG.draw_polygons(G.click, F, {id: true, opacity: 0,
             fill: GUI.COLORS.active});
         GUI.update_text(FOLD);
@@ -249,6 +265,7 @@ export const GUI = {   // INTERFACE
                 const [CD, FO] = await PAR.send_message(COMP, "Gi_2_CD_FO", [Gi]);
                 CELL.CF = CD;
                 FOLD.FO = FO;
+                GUI.update_flat(FOLD);
                 GUI.update_fold(FOLD, CELL);
                 GUI.update_visible(FOLD, CELL);
                 NOTE.end();

@@ -289,6 +289,7 @@ const MAIN = {
             NOTE.end();
         };
         NOTE.time("Drawing fold");
+        GUI.update_flat(FOLD);
         GUI.update_fold(FOLD, CELL);
         NOTE.time("Drawing component");
         GUI.update_component(FOLD, CELL, COMP, Gn, Gi);
