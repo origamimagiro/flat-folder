@@ -222,7 +222,6 @@ const MAIN = {
         }
         const Gn = out;
         NOTE.time("Updating cell-face listeners");
-        await GUI.update_cell_face_listeners(FOLD, CELL, COMP);
         const n = Gn.reduce((s, gn) => s*BigInt(gn), BigInt(1));
         NOTE.count(n, "folded states");
         const num_states = document.getElementById("num_states");
@@ -291,6 +290,7 @@ const MAIN = {
         NOTE.time("Drawing fold");
         GUI.update_flat(FOLD);
         GUI.update_fold(FOLD, CELL);
+        await GUI.update_cell_face_listeners(FOLD, CELL, COMP);
         NOTE.time("Drawing component");
         GUI.update_component(FOLD, CELL, COMP, Gn, Gi);
         NOTE.end();

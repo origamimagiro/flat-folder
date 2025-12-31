@@ -268,6 +268,7 @@ export const GUI = {   // INTERFACE
                 GUI.update_flat(FOLD);
                 GUI.update_fold(FOLD, CELL);
                 GUI.update_visible(FOLD, CELL);
+                await GUI.update_cell_face_listeners(FOLD, CELL, COMP);
                 NOTE.end();
             };
         }
