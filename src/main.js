@@ -186,6 +186,8 @@ const MAIN = {
                     NOTE.end();
                 };
             }
+            NOTE.time("Updating cell-face listeners");
+            await GUI.update_cell_face_listeners(FOLD, CELL, COMP);
             await PAR.send_message(COMP, "build_variables", []);
             await PAR.send_message(COMP, "build_constraints", []);
             const [type, out] = await PAR.send_message(COMP, "presolve", []);
@@ -221,7 +223,6 @@ const MAIN = {
             return;
         }
         const Gn = out;
-        NOTE.time("Updating cell-face listeners");
         const n = Gn.reduce((s, gn) => s*BigInt(gn), BigInt(1));
         NOTE.count(n, "folded states");
         const num_states = document.getElementById("num_states");
@@ -237,6 +238,7 @@ const MAIN = {
                 NOTE.start(`${log} crease pattern`);
                 GUI.update_flat(FOLD);
                 GUI.update_visible(FOLD, CELL);
+                NOTE.time("Updating cell-face listeners");
                 await GUI.update_cell_face_listeners(FOLD, CELL, COMP);
                 NOTE.end();
             };
@@ -244,6 +246,7 @@ const MAIN = {
                 NOTE.start(`${log} folded state`);
                 GUI.update_fold(FOLD, CELL);
                 GUI.update_cell(FOLD, CELL);
+                NOTE.time("Updating cell-face listeners");
                 await GUI.update_cell_face_listeners(FOLD, CELL, COMP);
                 GUI.update_component(FOLD, CELL, COMP, Gn, Gi);
                 NOTE.end();
@@ -290,6 +293,7 @@ const MAIN = {
         NOTE.time("Drawing fold");
         GUI.update_flat(FOLD);
         GUI.update_fold(FOLD, CELL);
+        NOTE.time("Updating cell-face listeners");
         await GUI.update_cell_face_listeners(FOLD, CELL, COMP);
         NOTE.time("Drawing component");
         GUI.update_component(FOLD, CELL, COMP, Gn, Gi);
