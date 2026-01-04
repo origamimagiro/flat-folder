@@ -484,36 +484,34 @@ export const X = {     // CONVERSION
             const ci = Q[next][0]; next++;
             if (seen.has(ci)) { continue; }
             seen.add(ci);
-            const C = CP[ci];
-            let v1 = C[C.length - 1];
-            for (const v2 of C) {
-                const c = SC_map.get(M.encode([v1, v2]));
-                if ((c != undefined) && !seen.has(c)) {
-                    const d = M.distsq(P[v1], P[v2]);
-                    Q.push([c, d]);
-                    for (let i = Q.length - 1; i > next; --i) {
-                        const d_ = Q[i - 1][1];
+            const cP = CP[ci];
+            let p1 = cP[cP.length - 1];
+            for (const p2 of cP) {
+                const cj = SC_map.get(M.encode([p1, p2]));
+                if ((cj != undefined) && !seen.has(cj)) {
+                    const d = M.distsq(P[p1], P[p2]);
+                    Q.push([cj, d]);
+                    for (let i = Q.length - 2; i > next; --i) {
+                        const d_ = Q[i][1];
                         if (d_ < d) {
-                            [Q[i], Q[i - 1]] = [Q[i - 1], Q[i]];
+                            [Q[i + 1], Q[i]] = [Q[i], Q[i + 1]];
                         }
                     }
-                    const Fs = new Set(CF[ci]);
-                    const k = M.encode_order_pair([v1, v2]);
+                    const cF = new Set(CF[ci]);
+                    const k = M.encode_order_pair([p1, p2]);
                     for (const f of SF_map.get(k)) {
-                        const removed = Fs.delete(f);
-                        if (!removed) {
-                            Fs.add(f);
-                        }
+                        const removed = cF.delete(f);
+                        if (!removed) { cF.add(f); }
                     }
-                    CF[c] = Array.from(Fs);
+                    CF[cj] = Array.from(cF);
                 }
-                v1 = v2;
+                p1 = p2;
             }
         }
         const FC = FV.map(() => []);
-        for (let ci = 0; ci < CF.length; ci++) {
-            CF[ci].sort((a, b) => a - b);
-            for (const f of CF[ci]) {
+        for (const [ci, cF] of CF.entries()) {
+            cF.sort((a, b) => a - b);
+            for (const f of cF) {
                 FC[f].push(ci);
             }
         }
