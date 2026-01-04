@@ -442,36 +442,44 @@ export const X = {     // CONVERSION
         return fB;
     },
     EF_FV_P_SP_SE_CP_SC_2_CF_FC: (EF, FV, P, SP, SE, CP, SC) => {
-        const SF_map = new Map();
-        for (const [i, vs] of SP.entries()) {
-            const Fs = [];
+        const SF_map = new Map();   // set of faces bounding each segment
+        for (const [i, sP] of SP.entries()) {
+            const sF = [];
             for (const ei of SE[i]) {
                 for (const f of EF[ei]) {
-                    Fs.push(f);
+                    sF.push(f);
                 }
             }
-            SF_map.set(M.encode_order_pair(vs), Fs);
+            SF_map.set(M.encode_order_pair(sP), sF);
         }
-        const SC_map = new Map();
-        for (const [i, C] of CP.entries()) {
-            let v1 = C[C.length - 1];
-            for (const v2 of C) {
-                SC_map.set(M.encode([v2, v1]), i);
-                v1 = v2;
+        const SC_map = new Map();   // cell from directed segment
+        for (const [i, cP] of CP.entries()) {
+            let p1 = cP[cP.length - 1];
+            for (const p2 of cP) {
+                SC_map.set(M.encode([p2, p1]), i);
+                p1 = p2;
             }
         }
         const CF = CP.map(() => []);
-        const seen = new Set();
         const Q = [];
-        for (const [i, Cs] of SC.entries()) {   // Look for a segment on the
-            if (Cs.length == 1) {               // border of the overlap graph
-                const ci = Cs[0];               // to start BFS
-                CF[ci] = SF_map.get(M.encode_order_pair(SP[i]));
-                Q.push([ci, Infinity]);
-                break;
+        {                                   // Look for a segment on the
+            let si, ci, d = -1;             // border of the overlap graph
+            for (const [i, sC] of SC.entries()) {   // to start BFS
+                if (sC.length == 1) {
+                    const [p1, p2] = SP[i].map(pi => P[pi]);
+                    const d_ = M.distsq(p1, p2);
+                    if (d_ > d) {
+                        si = i;
+                        ci = sC[0];
+                        d = d_;
+                    }
+                }
             }
+            CF[ci] = SF_map.get(M.encode_order_pair(SP[si]));
+            Q.push([ci, d]);
         }
         let next = 0;
+        const seen = new Set();
         while (next < Q.length) {   // BFS on cells in the overlap graph
             const ci = Q[next][0]; next++;
             if (seen.has(ci)) { continue; }
