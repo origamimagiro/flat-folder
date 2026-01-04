@@ -70,7 +70,7 @@ const actions = {
         NOTE.annotate(CS, "cells_segments");
         NOTE.lap();
         NOTE.time("Making face-cell maps");
-        const [CF, FC] = X.EF_FV_SP_SE_CP_SC_2_CF_FC(EF, FV, SP, SE, CP, SC);
+        const [CF, FC] = X.EF_FV_P_SP_SE_CP_SC_2_CF_FC(EF, FV, P, SP, SE, CP, SC);
         NOTE.count(CF, "face-cell adjacencies");
         NOTE.lap();
         G.CELL = {P, SP, SE, CP, CS, SC, CF, FC, eps: eps_i};

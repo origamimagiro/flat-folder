@@ -7,26 +7,25 @@ import { PAR } from "./parallel.js";
 export const X = {     // CONVERSION
     L_2_V_EV_EL: (L) => {
         const d = M.min_line_length(L);
-        let nV = 0, nE = 0, count = 0;
         const k = 3;    // decrease eps until feature #s repeat sufficiently
-        let V_ = [], EV_ = [], EL_ = [], k_ = 0, i_ = 1;
-        for (let i = 0; i < 50; ++i) {
-            const eps = d/(2**(i + 3));
+        const N = 25;
+        let k_ = 0, i_ = 1, nV = 0, nE = 0, count = 0;
+        for (let i = 3; i < (N + 3); ++i) {
+            const eps = d/(2**i);
             if (eps < M.FLOAT_EPS) { break; }
             const [V, EV, EL] = X.L_eps_2_V_EV_EL(L, eps);
             if (V.length == 0) { nV = nE = count = 0; continue; }
-            if ((V.length == nV) && (EV.length == nE)) {
-                ++count;
-                if (count <= k_) { continue; }
-                V_ = V; EV_ = EV; EL_ = EL; k_ = count; i_ = i + 3;
-                if (count == k) { break; }
-            } else {
-                nV = V.length;
-                nE = EV.length;
-                count = 1;
-            }
+            count = ((V.length == nV) && (EV.length == nE)) ? (count + 1) : 1;
+            nV = V.length;
+            nE = EV.length;
+            if (count <= k_) { continue; }
+            k_ = count; i_ = i;
+            if (k_ == k) { break; }
         }
-        return [V_, EV_, EL_, i_ - k_];
+        const eps_i = i_ - k_ + 1;
+        const eps = d/(2**eps_i);
+        const [V, EV, EL] = X.L_eps_2_V_EV_EL(L, eps);
+        return [V, EV, EL, eps_i];
     },
     L_eps_2_V_EV_EL: (L, eps) => {
         const point_comp = ([x1, y1], [x2, y2]) => {    // point comparator
@@ -39,7 +38,7 @@ export const X = {     // CONVERSION
             const dx12 = x1 - x2, dx34 = x3 - x4;
             const dy12 = y1 - y2, dy34 = y3 - y4;
             const denom = dx12*dy34 - dx34*dy12;
-            if (denom < eps*eps) { return undefined; }
+            if (Math.abs(denom) < eps*eps) { return undefined; }
             const x = ((x1*y2 - y1*x2)*dx34 - (x3*y4 - y3*x4)*dx12)/denom;
             const y = ((x1*y2 - y1*x2)*dy34 - (x3*y4 - y3*x4)*dy12)/denom;
             return [x, y];
@@ -154,7 +153,7 @@ export const X = {     // CONVERSION
             VL[vi].sort((i, j) => {     // process lines by distance from vi
                 const dj = M.distsq(v, V[LV[j][1]]);
                 const di = M.distsq(v, V[LV[i][1]]);
-                return dj - di;
+                return (dj == di) ? (i - j) : ((dj < di) ? -1 : 1);
             });
             for (const li of VL[vi]) {      // add lines to new segments
                 const si = SV.length;
@@ -184,11 +183,10 @@ export const X = {     // CONVERSION
                 const vr = SV[r][0], ar = SA[r];
                 const x = line_intersect(V[vl], M.add(V[vl], M.mul(SU[l], SCALE)),
                                          V[vr], M.add(V[vr], M.mul(SU[r], SCALE)));
-                let c;
-                if ((x == undefined) ||                 // none
-                    ((c = point_comp(x, v)) == 0) ||    // x is p
-                    ((c < 0) && (x[1] <= v[1]))  // x is behind p
-                ) { continue; }
+                if (x == undefined) { continue; }   // none
+                const c = point_comp(x, v);
+                if (c == 0) { continue; }           // x is p
+                if ((c < 0) && ((x[1] - v[1]) < eps)) { continue; } // x is behind p
                 const vx = V.length;        // add point
                 V.push(x);
                 const vj = Q.insert(vx);
@@ -352,19 +350,20 @@ export const X = {     // CONVERSION
         }
         const Vf = V.map((p) => undefined);
         const seen = new Set();
-        seen.add(0);                    // start search at face 0
         const [v1, v2,] = FV[0];        // first edge of first face
         for (const i of [v1, v2]) {
             Vf[i] = V[i];
         }            // [face, edge, len, parity]
         const Ff = new Array(FV.length);
-        const queue = [[0, v1, v2, Infinity, true]];
+        const Q = [[0, v1, v2, Infinity, true]];
         let next = 0;
-        while (next < queue.length) {                   // Prim's algorithm to
-            const [fi, i1, i2, l, s] = queue[next];     // traverse face graph
-            Ff[fi] = !s;                                // over spanning tree
-            next += 1;                                  // crossing edges of
-            const F = FV[fi];                           // maximum length
+        while (next < Q.length) {                       // Prim's algorithm to
+            const [fi, i1, i2, l, s] = Q[next];         // traverse face graph
+            next++;                                     // over spanning tree
+            if (seen.has(fi)) { continue; }             // crossing edges of
+            seen.add(fi);                               // low depth and
+            Ff[fi] = !s;                                // maximum length
+            const F = FV[fi];
             const x = M.unit(M.sub(V[i2], V[i1]));
             const y = M.perp(x);
             const xf = M.unit(M.sub(Vf[i2], Vf[i1]));
@@ -383,17 +382,14 @@ export const X = {     // CONVERSION
                 const a = EA_map.get(M.encode_order_pair([vi, vj]));
                 const new_s = (a == "M" || a == "V" || a == "U") ? !s : s;
                 if ((f != undefined) && !seen.has(f)) {
-                    queue.push([f, vj, vi, len, new_s]);
-                    seen.add(f);
-                    let prev = len;
-                    for (let i = queue.length - 1; i > next; --i) {
-                        const curr = queue[i - 1][3];   // O(n^2) but could be
-                        if (curr < prev) {              // O(n log n)
-                            [queue[i], queue[i - 1]] = [queue[i - 1], queue[i]];
+                    Q.push([f, vi, vj, len, new_s]);
+                    for (let i = Q.length - 1; i > next; --i) {
+                        const len_ = Q[i - 1][3];       // O(n^2) but could be
+                        if (len_ < len) {               // O(n log n)
+                            [Q[i], Q[i - 1]] = [Q[i - 1], Q[i]];
                         } else {
                             break;
                         }
-                        prev = curr;
                     }
                 }
                 vi = vj;
@@ -445,7 +441,7 @@ export const X = {     // CONVERSION
         }
         return fB;
     },
-    EF_FV_SP_SE_CP_SC_2_CF_FC: (EF, FV, SP, SE, CP, SC) => {
+    EF_FV_P_SP_SE_CP_SC_2_CF_FC: (EF, FV, P, SP, SE, CP, SC) => {
         const SF_map = new Map();
         for (const [i, vs] of SP.entries()) {
             const Fs = [];
@@ -466,27 +462,33 @@ export const X = {     // CONVERSION
         }
         const CF = CP.map(() => []);
         const seen = new Set();
-        const queue = [];
+        const Q = [];
         for (const [i, Cs] of SC.entries()) {   // Look for a segment on the
             if (Cs.length == 1) {               // border of the overlap graph
                 const ci = Cs[0];               // to start BFS
                 CF[ci] = SF_map.get(M.encode_order_pair(SP[i]));
-                queue.push(ci);
-                seen.add(ci);
+                Q.push([ci, Infinity]);
                 break;
             }
         }
         let next = 0;
-        while (next < queue.length) {   // BFS on cells in the overlap graph
-            const ci = queue[next];
-            next++;
+        while (next < Q.length) {   // BFS on cells in the overlap graph
+            const ci = Q[next][0]; next++;
+            if (seen.has(ci)) { continue; }
+            seen.add(ci);
             const C = CP[ci];
             let v1 = C[C.length - 1];
             for (const v2 of C) {
                 const c = SC_map.get(M.encode([v1, v2]));
                 if ((c != undefined) && !seen.has(c)) {
-                    queue.push(c);
-                    seen.add(c);
+                    const d = M.distsq(P[v1], P[v2]);
+                    Q.push([c, d]);
+                    for (let i = Q.length - 1; i > next; --i) {
+                        const d_ = Q[i - 1][1];
+                        if (d_ < d) {
+                            [Q[i], Q[i - 1]] = [Q[i - 1], Q[i]];
+                        }
+                    }
                     const Fs = new Set(CF[ci]);
                     const k = M.encode_order_pair([v1, v2]);
                     for (const f of SF_map.get(k)) {
@@ -544,7 +546,7 @@ export const X = {     // CONVERSION
         }
         const BF_set = new Set();
         const seen = new Set();
-        const queue = [0];
+        const Q = [0];
         {
             const F = CF[0];
             for (let j = 1; j < F.length; ++j) {
@@ -555,14 +557,14 @@ export const X = {     // CONVERSION
         }
         let next = 0;
         const CF_set = CF.map(F => new Set(F));
-        while (next < queue.length) {   // BFS on cells in the overlap graph
-            const ci = queue[next++];
+        while (next < Q.length) {   // BFS on cells in the overlap graph
+            const ci = Q[next++];
             const C = CP[ci];
             let v1 = C[C.length - 1];
             for (const v2 of C) {
                 const cj = SC_map.get(M.encode([v1, v2]));
                 if ((cj != undefined) && !seen.has(cj)) {
-                    queue.push(cj);
+                    Q.push(cj);
                     seen.add(cj);
                     const Fi_set = CF_set[ci];
                     const Fj_set = CF_set[cj];

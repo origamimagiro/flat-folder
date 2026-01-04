@@ -91,7 +91,7 @@ export const BATCH = {
         const eps = 2**eps_i;
         const [,CP] = X.V_EV_2_VV_FV(P, SP);
         const [SC, CS] = X.EV_FV_2_EF_FE(SP, CP);
-        const [CF, FC] = X.EF_FV_SP_SE_CP_SC_2_CF_FC(EF, FV, SP, SE, CP, SC);
+        const [CF, FC] = X.EF_FV_P_SP_SE_CP_SC_2_CF_FC(EF, FV, P, SP, SE, CP, SC);
         const BF = X.EF_SP_SE_CP_CF_2_BF(EF, SP, SE, CP, CF);
         const BI = new Map();
         for (const [i, F] of BF.entries()) { BI.set(F, i); }
@@ -132,7 +132,7 @@ export const BATCH = {
             points: P.length,
             segments: SP.length,
             cells: CP.length,
-            eps: eps,
+            eps: eps_i,
             variables: BF.length,
             "taco-taco": BTn[0],
             "taco-tortilla": BTn[1],

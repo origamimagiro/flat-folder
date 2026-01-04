@@ -144,11 +144,11 @@ export class AVL {
     }
     #remove(P) {
         let i = P[P.length - 1];
-        let r = R;
-        let c = this.#get(R, i);
+        let r = L;
+        let c = this.#get(L, i);
         if (c == undefined) {
-            r = L
-            c = this.#get(L, i);
+            r = R;
+            c = this.#get(R, i);
         }
         while (c != undefined) {
             while (c != undefined) {
