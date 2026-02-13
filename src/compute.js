@@ -116,7 +116,7 @@ const actions = {
         const trans_count = {all: 0, reduced: 0};
         const out = SOLVER.initial_assignment(BA0, G.BF, G.BT, G.BI,
             FC, CF, G.CC, trans_count);
-        if ((out.length == 3) && (out[0].length == undefined)) {
+        if ((out.length == 3) && (out[1].length != undefined)) {
             const [type, F, E] = out;
             const str = `Unable to resolve ${CON.names[type]} on faces [${F}]`;
             NOTE.log(`   - ${str}`);
