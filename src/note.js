@@ -15,7 +15,7 @@ export const NOTE = {  // ANNOTATION
         return time;
     },
     start_check: (label, A, interval = 5000) => {
-        const lim = (A == undefined) ? A : A.length;
+        const lim = ((A == undefined) || (A.length == undefined)) ? A : A.length;
         TIME.start_est(lim);
         NOTE.check_interval = interval;
         NOTE.check_label = label;
