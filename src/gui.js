@@ -82,7 +82,9 @@ export const GUI = {   // INTERFACE
         const K = [];
         const eps = 1/M.EPS;
         for (const [i, k] of VK.entries()) {
-            if (k > eps) { K.push(V_[i]); }
+            if (k <= eps) { continue; }
+            K.push(V_[i]);
+            NOTE.log(`   - Vertex ${i} exceeds Kawasaki threshold: ${k} > ${eps}`);
         }
         SVG.draw_points(G.check, K, {fill: "red", r: 10});
         const lines = EV.map(l => M.expand(l, V_));
