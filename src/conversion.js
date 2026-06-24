@@ -2,7 +2,6 @@ import { M } from "./math.js";
 import { CON } from "./constraints.js";
 import { NOTE } from "./note.js";
 import { AVL } from "./avl.js";
-import { PAR } from "./parallel.js";
 
 export const X = {     // CONVERSION
     L_2_V_EV_EL: (L) => {
